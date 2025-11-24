@@ -5,6 +5,15 @@ import '../screens/s3_browser_screen.dart';
 class ApiService {
   static const String baseUrl = 'http://localhost:9480/api';
 
+  // IAM Caller Identity
+  static Future<Map<String, dynamic>> getCallerIdentity() async {
+    final response = await http.get(Uri.parse('$baseUrl/iam/caller-identity'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to get caller identity');
+  }
+
   // IAM Users
   static Future<List<dynamic>> listIAMUsers() async {
     final response = await http.get(Uri.parse('$baseUrl/iam/users'));

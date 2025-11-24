@@ -7,6 +7,7 @@ import 'cloudwatch_screen.dart';
 import '../widgets/service_card.dart';
 import '../widgets/floating_particles.dart';
 import '../theme/app_theme.dart';
+import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulseAnimation;
   late Animation<double> _rotateAnimation;
+  
+  String _username = 'User';
+  String _greeting = 'Good day';
+  String _quote = 'Loading...';
+  bool _isLoadingUserInfo = true;
+  bool _isConnected = false;
+  String _loadingMessage = 'Fetching your cloud identity...';
 
   final List<ServiceInfo> _mainServices = [
     ServiceInfo(
@@ -84,6 +92,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ),
   ];
 
+  final List<String> _cloudQuotes = [
+    "The cloud is just someone else's computer... but way cooler!",
+    "In the cloud, we trust. On-premise, we backup.",
+    "There's no place like 127.0.0.1, but the cloud comes close.",
+    "Keep calm and scale horizontally.",
+    "Infrastructure as code: Because clicking is for mortals.",
+    "May your deployments be smooth and your rollbacks unnecessary.",
+    "Cloud computing: Where virtual becomes reality.",
+    "Automate everything, question nothing... except your bills.",
+    "In the cloud, every day is a deployment day.",
+    "The best time to migrate to cloud was yesterday. The second best time is now.",
+    "Cloud: Because managing your own servers is so 2010.",
+    "Your infrastructure should be cattle, not pets.",
+    "May your uptime be high and your latency low.",
+    "In AWS we trust, all others must bring IAM policies.",
+    "The cloud never sleeps, and neither do DevOps engineers.",
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -115,6 +141,80 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
     )..repeat();
     _rotateAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(_rotateController);
+    
+    // Set initial greeting and quote immediately
+    _greeting = _getGreeting();
+    _quote = _getRandomQuote();
+    
+    // Cycle through funny loading messages
+    _cycleLoadingMessages();
+    
+    // Load user info asynchronously
+    _loadUserInfo();
+  }
+
+  void _cycleLoadingMessages() {
+    final messages = [
+      'Fetching your cloud identity...',
+      'Diving into the AWS matrix...',
+      'Asking the cloud gods for your name...',
+      'Decrypting your digital DNA...',
+      'Scanning the cloud for your existence...',
+      'Retrieving your cosmic credentials...',
+    ];
+    
+    int index = 0;
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 2));
+      if (_isLoadingUserInfo && mounted) {
+        setState(() {
+          index = (index + 1) % messages.length;
+          _loadingMessage = messages[index];
+        });
+        return true;
+      }
+      return false;
+    });
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      final identity = await ApiService.getCallerIdentity();
+      final username = identity['username'] ?? 'User';
+      
+      setState(() {
+        _username = username;
+        _greeting = _getGreeting();
+        _quote = _getRandomQuote();
+        _isLoadingUserInfo = false;
+        _isConnected = true;
+      });
+    } catch (e) {
+      debugPrint('Error loading user info: $e');
+      setState(() {
+        _username = 'User';
+        _greeting = _getGreeting();
+        _quote = _getRandomQuote();
+        _isLoadingUserInfo = false;
+        _isConnected = false;
+      });
+    }
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good morning';
+    } else if (hour < 17) {
+      return 'Good afternoon';
+    } else {
+      return 'Good evening';
+    }
+  }
+
+  String _getRandomQuote() {
+    final random = math.Random();
+    return _cloudQuotes[random.nextInt(_cloudQuotes.length)];
   }
 
   @override
@@ -197,26 +297,205 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             backgroundColor: Colors.white,
             elevation: 0,
             actions: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _isLoadingUserInfo
+                      ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+                      : _isConnected 
+                          ? AppTheme.successGreen.withValues(alpha: 0.1)
+                          : AppTheme.errorRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _isLoadingUserInfo
+                        ? AppTheme.primaryBlue.withValues(alpha: 0.3)
+                        : _isConnected 
+                            ? AppTheme.successGreen.withValues(alpha: 0.3)
+                            : AppTheme.errorRed.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isLoadingUserInfo)
+                      SizedBox(
+                        width: 8,
+                        height: 8,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppTheme.primaryBlue,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _isConnected 
+                              ? AppTheme.successGreen
+                              : AppTheme.errorRed,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isLoadingUserInfo 
+                          ? 'Connecting...' 
+                          : _isConnected 
+                              ? 'Connected' 
+                              : 'Disconnected',
+                      style: TextStyle(
+                        color: _isLoadingUserInfo
+                            ? AppTheme.primaryBlue
+                            : _isConnected 
+                                ? AppTheme.successGreen
+                                : AppTheme.errorRed,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
                 onPressed: () => _navigateToService('/settings', false),
                 tooltip: 'Settings',
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              title: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
-                ).createShader(bounds),
-                child: const Text(
-                  'AWS Manager',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            flexibleSpace: LayoutBuilder(
+              builder: (context, constraints) {
+                final isCollapsed = constraints.maxHeight <= 120;
+                
+                return FlexibleSpaceBar(
+                  titlePadding: EdgeInsets.only(
+                    left: 16,
+                    right: 60,
+                    bottom: 16,
                   ),
-                ),
-              ),
-              background: Stack(
+                  title: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                AppTheme.primaryBlue.withValues(alpha: 0.1),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: 14,
+                                color: AppTheme.primaryPurple,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '$_greeting, $_username',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!isCollapsed) ...[
+                          const SizedBox(height: 4),
+                          if (_isLoadingUserInfo)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppTheme.primaryPurple,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _loadingMessage,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      fontStyle: FontStyle.italic,
+                                      color: AppTheme.primaryPurple,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2.0),
+                                    child: Icon(
+                                      Icons.format_quote,
+                                      size: 12,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      _quote,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        fontStyle: FontStyle.italic,
+                                        color: AppTheme.textPrimary,
+                                        letterSpacing: 0.2,
+                                        height: 1.3,
+                                      ),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  background: Stack(
                 fit: StackFit.expand,
                 children: [
                   Container(
@@ -295,6 +574,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
+                );
+              },
             ),
           ),
 
@@ -329,41 +610,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.successGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.successGreen.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppTheme.successGreen,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              'Connected',
-                              style: TextStyle(
-                                color: AppTheme.successGreen,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

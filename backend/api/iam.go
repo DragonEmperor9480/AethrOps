@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -10,8 +11,55 @@ import (
 	"github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
 	"github.com/DragonEmperor9480/aws_cli_manager/service"
 	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/gorilla/mux"
 )
+
+// GetCallerIdentity returns the caller's identity information
+func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
+	ctx := context.TODO()
+	stsClient := utils.GetSTSClient()
+
+	result, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Extract username from ARN
+	// ARN format: arn:aws:iam::123456789012:user/username or arn:aws:iam::123456789012:root
+	arn := *result.Arn
+	username := "Unknown"
+	userType := "IAMUser"
+
+	// Parse ARN to extract username
+	if strings.Contains(arn, ":user/") {
+		parts := strings.Split(arn, ":user/")
+		if len(parts) == 2 {
+			username = parts[1]
+		}
+	} else if strings.Contains(arn, ":root") {
+		username = "Owner"
+		userType = "Root"
+	} else if strings.Contains(arn, ":assumed-role/") {
+		parts := strings.Split(arn, ":assumed-role/")
+		if len(parts) == 2 {
+			roleParts := strings.Split(parts[1], "/")
+			if len(roleParts) > 0 {
+				username = roleParts[0]
+			}
+		}
+		userType = "AssumedRole"
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"username":   username,
+		"user_type":  userType,
+		"account_id": *result.Account,
+		"arn":        arn,
+		"user_id":    *result.UserId,
+	})
+}
 
 // ListIAMUsers returns all IAM users
 func ListIAMUsers(w http.ResponseWriter, r *http.Request) {

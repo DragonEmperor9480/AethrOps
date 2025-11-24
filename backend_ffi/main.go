@@ -101,6 +101,7 @@ func StartBackend() int {
 	r := mux.NewRouter()
 
 	// IAM Users
+	r.HandleFunc("/api/iam/caller-identity", api.GetCallerIdentity).Methods("GET")
 	r.HandleFunc("/api/iam/users", api.ListIAMUsers).Methods("GET")
 	r.HandleFunc("/api/iam/users", api.CreateIAMUser).Methods("POST")
 	r.HandleFunc("/api/iam/users/batch", api.CreateMultipleIAMUsers).Methods("POST")
