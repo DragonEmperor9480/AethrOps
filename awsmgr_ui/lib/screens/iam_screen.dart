@@ -615,7 +615,7 @@ class _IAMScreenState extends State<IAMScreen>
         ),
         Expanded(
           child: _loading
-              ? const LoadingAnimation(message: 'Loading users...')
+              ? const LoadingAnimation(message: 'Loading users')
               : _users.isEmpty
                   ? Center(
                       child: Column(
@@ -884,7 +884,7 @@ class _IAMScreenState extends State<IAMScreen>
         ),
         Expanded(
           child: _loading
-              ? const LoadingAnimation(message: 'Loading groups...')
+              ? const LoadingAnimation(message: 'Loading groups')
               : _groups.isEmpty
                   ? Center(
                       child: Column(

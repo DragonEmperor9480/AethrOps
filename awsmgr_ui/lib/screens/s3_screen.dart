@@ -301,7 +301,7 @@ class _S3ScreenState extends State<S3Screen> {
             ),
             Expanded(
               child: _loading
-                  ? const LoadingAnimation(message: 'Loading buckets...')
+                  ? const LoadingAnimation(message: 'Loading buckets')
                   : _buckets.isEmpty
                       ? Center(
                           child: Column(
@@ -746,7 +746,7 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
           ),
           Expanded(
             child: _loading
-                ? const LoadingAnimation(message: 'Loading objects...')
+                ? const LoadingAnimation(message: 'Loading objects')
                 : _objects.isEmpty
                     ? Center(
                         child: Column(
