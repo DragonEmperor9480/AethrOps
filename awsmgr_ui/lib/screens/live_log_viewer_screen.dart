@@ -133,11 +133,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
   void _updateSearchMatches() {
     if (_searchQuery.isEmpty) {
-      _searchMatches.clear();
-      _currentMatchIndex = -1;
+      setState(() {
+        _searchMatches.clear();
+        _currentMatchIndex = -1;
+      });
       return;
     }
 
+    final oldMatchCount = _searchMatches.length;
     _searchMatches.clear();
     final query = _searchQuery.toLowerCase();
     
@@ -147,14 +150,22 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
       }
     }
 
-    if (_searchMatches.isNotEmpty) {
-      if (_currentMatchIndex == -1 || _currentMatchIndex >= _searchMatches.length) {
-        _currentMatchIndex = 0;
-        _scrollToMatch();
+    setState(() {
+      if (_searchMatches.isNotEmpty) {
+        // If this is a new search or we had no matches before, go to first match
+        if (_currentMatchIndex == -1 || oldMatchCount == 0) {
+          _currentMatchIndex = 0;
+          _scrollToMatch();
+        } 
+        // If current index is out of bounds, adjust it
+        else if (_currentMatchIndex >= _searchMatches.length) {
+          _currentMatchIndex = _searchMatches.length - 1;
+          _scrollToMatch();
+        }
+      } else {
+        _currentMatchIndex = -1;
       }
-    } else {
-      _currentMatchIndex = -1;
-    }
+    });
   }
 
   void _nextMatch() {
@@ -187,18 +198,27 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     
     final matchLine = _searchMatches[_currentMatchIndex];
     
-    // Calculate the position to scroll to
-    // We want to center the match in the viewport
+    // Disable auto-scroll when searching
+    _autoScroll = false;
+    
+    // Calculate scroll position to center the match (like TUI does)
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    
     final viewportHeight = _scrollController.position.viewportDimension;
-    final itemHeight = 24.0; // Approximate height per log line
-    final targetScroll = (matchLine * itemHeight) - (viewportHeight / 2) + (itemHeight / 2);
+    final estimatedLineHeight = 40.0; // Conservative estimate for variable height logs
     
-    // Clamp to valid scroll range
+    // Center the match in viewport
+    final targetPosition = (matchLine * estimatedLineHeight) - (viewportHeight / 2);
+    
+    // Clamp to valid range
     final maxScroll = _scrollController.position.maxScrollExtent;
-    final clampedScroll = targetScroll.clamp(0.0, maxScroll);
+    final minScroll = _scrollController.position.minScrollExtent;
+    final clampedPosition = targetPosition.clamp(minScroll, maxScroll);
     
+    // Scroll to position
     _scrollController.animateTo(
-      clampedScroll,
+      clampedPosition,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
