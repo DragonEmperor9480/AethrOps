@@ -122,8 +122,8 @@ func main() {
 	// Version
 	r.HandleFunc("/api/version", api.GetVersion).Methods("GET")
 
-	log.Println("Server running on http://127.0.0.1:8080")
-	if err := http.ListenAndServe("127.0.0.1:8080", corsMiddleware(r)); err != nil {
+	log.Println("Server running on http://127.0.0.1:9480")
+	if err := http.ListenAndServe("127.0.0.1:9480", corsMiddleware(r)); err != nil {
 		log.Fatal("Server error:", err)
 	}
 }

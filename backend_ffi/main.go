@@ -178,14 +178,14 @@ func StartBackend() int {
 	r.HandleFunc("/api/version", api.GetVersion).Methods("GET")
 
 	server = &http.Server{
-		Addr:         "127.0.0.1:8080",
+		Addr:         "127.0.0.1:948-",
 		Handler:      corsMiddleware(r),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 0, // Disable write timeout for SSE streaming
 	}
 
 	go func() {
-		log.Println("Backend starting on http://127.0.0.1:8080")
+		log.Println("Backend starting on http://127.0.0.1:9480")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("Server error: %v", err)
 		}

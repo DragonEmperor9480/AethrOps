@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 class S3Service {
   static final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:8080/api',
+    baseUrl: 'http://localhost:9480/api',
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(minutes: 5),
   ));

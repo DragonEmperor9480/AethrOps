@@ -23,7 +23,7 @@ typedef SetAWSCredentialsDart = int Function(
 class BackendService {
   static Process? _process;
   static DynamicLibrary? _lib;
-  static const String baseUrl = 'http://127.0.0.1:8080';
+  static const String baseUrl = 'http://127.0.0.1:9480';
 
   static Future<void> start() async {
     try {

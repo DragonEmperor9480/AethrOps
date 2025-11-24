@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../screens/s3_browser_screen.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api';
+  static const String baseUrl = 'http://localhost:9480/api';
 
   // IAM Users
   static Future<List<dynamic>> listIAMUsers() async {
