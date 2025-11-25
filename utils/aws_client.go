@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -12,6 +13,7 @@ import (
 )
 
 var (
+	EC2Client    *ec2.Client
 	IAMClient    *iam.Client
 	LogsClient   *cloudwatchlogs.Client
 	LambdaClient *lambda.Client
@@ -26,12 +28,18 @@ func InitAWSClients() error {
 		return err
 	}
 
+	EC2Client = ec2.NewFromConfig(cfg)
 	IAMClient = iam.NewFromConfig(cfg)
 	LogsClient = cloudwatchlogs.NewFromConfig(cfg)
 	LambdaClient = lambda.NewFromConfig(cfg)
 	S3Client = s3.NewFromConfig(cfg)
 	STSClient = sts.NewFromConfig(cfg)
 	return nil
+}
+
+// GetEC2Client returns the EC2 client
+func GetEC2Client() *ec2.Client {
+	return EC2Client
 }
 
 // GetIAMClient returns the IAM client

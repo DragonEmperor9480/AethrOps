@@ -100,6 +100,15 @@ func main() {
 	r.HandleFunc("/api/cloudwatch/lambda/functions", api.ListLambdaFunctions).Methods("GET")
 	r.HandleFunc("/api/cloudwatch/lambda/{function}/logs", api.StreamLambdaLogs).Methods("GET")
 
+	// EC2 Instances
+	r.HandleFunc("/api/ec2/instances", api.ListEC2Instances).Methods("GET")
+	r.HandleFunc("/api/ec2/instances/{instance_id}", api.GetEC2Instance).Methods("GET")
+	r.HandleFunc("/api/ec2/instances/{instance_id}/start", api.StartEC2Instance).Methods("POST")
+	r.HandleFunc("/api/ec2/instances/{instance_id}/stop", api.StopEC2Instance).Methods("POST")
+	r.HandleFunc("/api/ec2/instances/{instance_id}/reboot", api.RebootEC2Instance).Methods("POST")
+	r.HandleFunc("/api/ec2/instances/{instance_id}/terminate", api.TerminateEC2Instance).Methods("DELETE")
+	r.HandleFunc("/api/ec2/instances/by-state", api.GetInstanceStateChanges).Methods("GET")
+
 	// Settings
 	r.HandleFunc("/api/settings/mfa", api.GetMFADevice).Methods("GET")
 	r.HandleFunc("/api/settings/mfa", api.SaveMFADevice).Methods("POST")
