@@ -15,6 +15,12 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   Map<String, dynamic>? _dependencies;
   List<dynamic> _groups = [];
   bool _loading = true;
+  
+  // Expansion states for collapsible sections
+  bool _groupsExpanded = false;
+  bool _accessKeysExpanded = false;
+  bool _managedPoliciesExpanded = false;
+  bool _inlinePoliciesExpanded = false;
 
   @override
   void initState() {
@@ -137,13 +143,6 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
       appBar: AppBar(
         title: Text(username),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.policy),
-            tooltip: 'Attach Policies',
-            onPressed: () => _showAttachPoliciesDialog(),
-          ),
-        ],
       ),
       body: _loading
           ? const LoadingAnimation(message: 'Loading user details...')
@@ -240,88 +239,102 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                         const SizedBox(height: 24),
 
                         // Groups Section
-                        _buildSectionTitle('Groups (${_groups.length})'),
-                        const SizedBox(height: 12),
-                        if (_groups.isEmpty)
-                          _buildEmptyState(
-                            Icons.group_outlined,
-                            'Not a member of any groups',
-                          )
-                        else
-                          _buildInfoCard(
-                            _groups.map<Widget>((group) {
-                              return _buildListItem(
-                                Icons.group,
-                                group.toString(),
-                              );
-                            }).toList(),
-                          ),
+                        _buildCollapsibleSection(
+                          title: 'Groups',
+                          count: _groups.length,
+                          icon: Icons.group,
+                          isExpanded: _groupsExpanded,
+                          onToggle: () => setState(() => _groupsExpanded = !_groupsExpanded),
+                          emptyIcon: Icons.group_outlined,
+                          emptyMessage: 'Not a member of any groups',
+                          isEmpty: _groups.isEmpty,
+                          child: _groups.isEmpty
+                              ? null
+                              : Column(
+                                  children: _groups.map<Widget>((group) {
+                                    return _buildListItem(
+                                      Icons.group,
+                                      group.toString(),
+                                    );
+                                  }).toList(),
+                                ),
+                        ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         // Access Keys Section
-                        _buildSectionTitle(
-                          'Access Keys (${(_dependencies?['access_keys'] as List?)?.length ?? 0})',
+                        _buildCollapsibleSection(
+                          title: 'Access Keys',
+                          count: (_dependencies?['access_keys'] as List?)?.length ?? 0,
+                          icon: Icons.vpn_key,
+                          isExpanded: _accessKeysExpanded,
+                          onToggle: () => setState(() => _accessKeysExpanded = !_accessKeysExpanded),
+                          emptyIcon: Icons.vpn_key_outlined,
+                          emptyMessage: 'No access keys',
+                          isEmpty: (_dependencies?['access_keys'] as List?)?.isEmpty ?? true,
+                          child: (_dependencies?['access_keys'] as List?)?.isEmpty ?? true
+                              ? null
+                              : Column(
+                                  children: (_dependencies!['access_keys'] as List).map<Widget>((key) {
+                                    return _buildListItem(
+                                      Icons.vpn_key,
+                                      key.toString(),
+                                    );
+                                  }).toList(),
+                                ),
                         ),
-                        const SizedBox(height: 12),
-                        if ((_dependencies?['access_keys'] as List?)?.isEmpty ?? true)
-                          _buildEmptyState(
-                            Icons.vpn_key_outlined,
-                            'No access keys',
-                          )
-                        else
-                          _buildInfoCard(
-                            (_dependencies!['access_keys'] as List).map<Widget>((key) {
-                              return _buildListItem(
-                                Icons.vpn_key,
-                                key.toString(),
-                              );
-                            }).toList(),
-                          ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         // Managed Policies Section
-                        _buildSectionTitle(
-                          'Managed Policies (${(_dependencies?['managed_policies'] as List?)?.length ?? 0})',
+                        _buildCollapsibleSection(
+                          title: 'Managed Policies',
+                          count: (_dependencies?['managed_policies'] as List?)?.length ?? 0,
+                          icon: Icons.policy,
+                          isExpanded: _managedPoliciesExpanded,
+                          onToggle: () => setState(() => _managedPoliciesExpanded = !_managedPoliciesExpanded),
+                          emptyIcon: Icons.policy_outlined,
+                          emptyMessage: 'No managed policies attached',
+                          isEmpty: (_dependencies?['managed_policies'] as List?)?.isEmpty ?? true,
+                          hasAction: true,
+                          actionIcon: Icons.add,
+                          actionLabel: 'Attach',
+                          onAction: _showAttachPoliciesDialog,
+                          child: (_dependencies?['managed_policies'] as List?)?.isEmpty ?? true
+                              ? null
+                              : Column(
+                                  children: (_dependencies!['managed_policies'] as List).map<Widget>((policy) {
+                                    return _buildListItem(
+                                      Icons.policy,
+                                      policy.toString(),
+                                    );
+                                  }).toList(),
+                                ),
                         ),
-                        const SizedBox(height: 12),
-                        if ((_dependencies?['managed_policies'] as List?)?.isEmpty ?? true)
-                          _buildEmptyState(
-                            Icons.policy_outlined,
-                            'No managed policies attached',
-                          )
-                        else
-                          _buildInfoCard(
-                            (_dependencies!['managed_policies'] as List).map<Widget>((policy) {
-                              return _buildListItem(
-                                Icons.policy,
-                                policy.toString(),
-                              );
-                            }).toList(),
-                          ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         // Inline Policies Section
-                        _buildSectionTitle(
-                          'Inline Policies (${(_dependencies?['inline_policies'] as List?)?.length ?? 0})',
+                        _buildCollapsibleSection(
+                          title: 'Inline Policies',
+                          count: (_dependencies?['inline_policies'] as List?)?.length ?? 0,
+                          icon: Icons.description,
+                          isExpanded: _inlinePoliciesExpanded,
+                          onToggle: () => setState(() => _inlinePoliciesExpanded = !_inlinePoliciesExpanded),
+                          emptyIcon: Icons.description_outlined,
+                          emptyMessage: 'No inline policies',
+                          isEmpty: (_dependencies?['inline_policies'] as List?)?.isEmpty ?? true,
+                          child: (_dependencies?['inline_policies'] as List?)?.isEmpty ?? true
+                              ? null
+                              : Column(
+                                  children: (_dependencies!['inline_policies'] as List).map<Widget>((policy) {
+                                    return _buildListItem(
+                                      Icons.description,
+                                      policy.toString(),
+                                    );
+                                  }).toList(),
+                                ),
                         ),
-                        const SizedBox(height: 12),
-                        if ((_dependencies?['inline_policies'] as List?)?.isEmpty ?? true)
-                          _buildEmptyState(
-                            Icons.description_outlined,
-                            'No inline policies',
-                          )
-                        else
-                          _buildInfoCard(
-                            (_dependencies!['inline_policies'] as List).map<Widget>((policy) {
-                              return _buildListItem(
-                                Icons.description,
-                                policy.toString(),
-                              );
-                            }).toList(),
-                          ),
 
                         const SizedBox(height: 24),
                       ],
@@ -339,6 +352,132 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleSection({
+    required String title,
+    required int count,
+    required IconData icon,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required IconData emptyIcon,
+    required String emptyMessage,
+    required bool isEmpty,
+    Widget? child,
+    bool hasAction = false,
+    IconData? actionIcon,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: isEmpty ? null : onToggle,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, size: 20, color: Colors.blue.shade700),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '$count ${count == 1 ? 'item' : 'items'}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasAction && onAction != null && !isEmpty)
+                    IconButton(
+                      icon: Icon(actionIcon ?? Icons.add, size: 18),
+                      tooltip: actionLabel,
+                      onPressed: onAction,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.blue.shade50,
+                        foregroundColor: Colors.blue.shade700,
+                      ),
+                    ),
+                  if (hasAction && onAction != null && !isEmpty)
+                    const SizedBox(width: 8),
+                  if (!isEmpty)
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.grey[600],
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(emptyIcon, size: 36, color: Colors.grey[300]),
+                    const SizedBox(height: 8),
+                    Text(
+                      emptyMessage,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (hasAction && onAction != null)
+                      const SizedBox(height: 12),
+                    if (hasAction && onAction != null)
+                      TextButton.icon(
+                        onPressed: onAction,
+                        icon: Icon(actionIcon ?? Icons.add, size: 16),
+                        label: Text(actionLabel ?? 'Add'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            )
+          else if (isExpanded && child != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: child,
+            ),
+        ],
       ),
     );
   }

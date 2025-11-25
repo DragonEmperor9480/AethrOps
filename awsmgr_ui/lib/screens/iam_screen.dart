@@ -655,16 +655,16 @@ class _IAMScreenState extends State<IAMScreen>
                         
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 2,
-                          color: isSelected ? Colors.orange.shade50 : null,
+                          elevation: isSelected ? 3 : 1,
+                          color: isSelected ? Colors.blue.shade50 : null,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                             side: isSelected
-                                ? BorderSide(color: Colors.orange, width: 2)
-                                : BorderSide.none,
+                                ? BorderSide(color: Colors.blue, width: 2)
+                                : BorderSide(color: Colors.grey.shade200, width: 1),
                           ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
                             onTap: _selectionMode
                                 ? () {
                                     setState(() {
@@ -683,95 +683,130 @@ class _IAMScreenState extends State<IAMScreen>
                                       ),
                                     );
                                   },
-                            leading: _selectionMode
-                                ? Checkbox(
-                                    value: isSelected,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        if (value == true) {
-                                          _selectedUsers.add(username);
-                                        } else {
-                                          _selectedUsers.remove(username);
-                                        }
-                                      });
-                                    },
-                                  )
-                                : Container(
-                                    width: 50,
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.blue.shade400,
-                                          Colors.blue.shade600,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Leading
+                                  _selectionMode
+                                      ? Checkbox(
+                                          value: isSelected,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              if (value == true) {
+                                                _selectedUsers.add(username);
+                                              } else {
+                                                _selectedUsers.remove(username);
+                                              }
+                                            });
+                                          },
+                                        )
+                                      : Container(
+                                          width: 56,
+                                          height: 56,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.blue.shade400,
+                                                Colors.blue.shade600,
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                            borderRadius: BorderRadius.circular(14),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.blue.withValues(alpha: 0.2),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.person,
+                                            color: Colors.white,
+                                            size: 30,
+                                          ),
+                                        ),
+                                  const SizedBox(width: 16),
+                                  // Content
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          user['username'] ?? '',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.fingerprint,
+                                                size: 14, color: Colors.grey[500]),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                user['user_id'] ?? '',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (user['create_date'] != null) ...[
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.calendar_today,
+                                                  size: 14, color: Colors.grey[500]),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                user['create_date'],
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                      size: 28,
+                                      ],
                                     ),
                                   ),
-                            title: Text(
-                              user['username'] ?? '',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                  // Trailing
+                                  if (!_selectionMode)
+                                    PopupMenuButton<String>(
+                                      tooltip: 'Actions',
+                                      icon: Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
+                                      onSelected: (value) {
+                                        if (value == 'delete') {
+                                          _deleteUser(username);
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                              SizedBox(width: 12),
+                                              Text('Delete User', style: TextStyle(color: Colors.red)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
                               ),
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.fingerprint,
-                                        size: 14, color: Colors.grey[600]),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      user['user_id'] ?? '',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (user['create_date'] != null) ...[
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.calendar_today,
-                                          size: 14, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Created: ${user['create_date']}',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                            trailing: _selectionMode
-                                ? null
-                                : IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    color: Colors.red,
-                                    tooltip: 'Delete user',
-                                    onPressed: () => _deleteUser(username),
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: Colors.red.shade50,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                  ),
                           ),
                         );
                       },

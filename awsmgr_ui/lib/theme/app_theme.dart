@@ -7,16 +7,16 @@ class AppTheme {
   static const Color accentCyan = Color(0xFF06B6D4);
   static const Color accentPink = Color(0xFFEC4899);
   
-  // Service colors
-  static const Color iamColor = Color(0xFF8B5CF6); // Purple
-  static const Color s3Color = Color(0xFF10B981); // Green
-  static const Color cloudwatchColor = Color(0xFFF59E0B); // Amber
+  // Service colors - AWS-inspired brand colors
+  static const Color iamColor = Color(0xFFDD344C); // AWS IAM Red
+  static const Color s3Color = Color(0xFF1B660F); // AWS S3 Green
+  static const Color cloudwatchColor = Color(0xFF7C3AED); // CloudWatch Purple
   static const Color settingsColor = Color(0xFF6366F1); // Indigo
   
   // Additional service colors
-  static const Color ec2Color = Color(0xFFEF4444); // Red
-  static const Color lambdaColor = Color(0xFFF97316); // Orange
-  static const Color rdsColor = Color(0xFF14B8A6); // Teal
+  static const Color ec2Color = Color(0xFFFF9900); // AWS Orange
+  static const Color lambdaColor = Color(0xFFFF9900); // AWS Lambda Orange
+  static const Color rdsColor = Color(0xFF527FFF); // AWS RDS Blue
   static const Color vpcColor = Color(0xFF3B82F6); // Blue
   
   // Neutral colors

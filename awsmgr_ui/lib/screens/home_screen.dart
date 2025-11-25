@@ -36,22 +36,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final List<ServiceInfo> _mainServices = [
     ServiceInfo(
       title: 'IAM',
-      description: 'Identity & Access Management',
-      icon: Icons.shield_outlined,
+      description: 'Control access to AWS resources',
+      icon: Icons.security,
       color: AppTheme.iamColor,
       route: '/iam',
     ),
     ServiceInfo(
       title: 'S3',
-      description: 'Object Storage Service',
-      icon: Icons.storage_outlined,
+      description: 'Scalable cloud storage',
+      icon: Icons.cloud_queue,
       color: AppTheme.s3Color,
       route: '/s3',
     ),
     ServiceInfo(
       title: 'CloudWatch',
-      description: 'Monitoring & Logs',
-      icon: Icons.analytics_outlined,
+      description: 'Monitor resources & logs',
+      icon: Icons.insights,
       color: AppTheme.cloudwatchColor,
       route: '/cloudwatch',
     ),
@@ -60,16 +60,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final List<ServiceInfo> _additionalServices = [
     ServiceInfo(
       title: 'EC2',
-      description: 'Elastic Compute Cloud',
-      icon: Icons.computer_outlined,
+      description: 'Virtual servers in the cloud',
+      icon: Icons.developer_board,
       color: AppTheme.ec2Color,
       route: '/ec2',
       comingSoon: true,
     ),
     ServiceInfo(
       title: 'Lambda',
-      description: 'Serverless Functions',
-      icon: Icons.functions,
+      description: 'Run code without servers',
+      icon: Icons.offline_bolt,
       color: AppTheme.lambdaColor,
       route: '/lambda',
       comingSoon: true,
@@ -84,8 +84,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ),
     ServiceInfo(
       title: 'VPC',
-      description: 'Virtual Private Cloud',
-      icon: Icons.cloud_outlined,
+      description: 'Isolated cloud networks',
+      icon: Icons.hub,
       color: AppTheme.vpcColor,
       route: '/vpc',
       comingSoon: true,
@@ -296,6 +296,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             pinned: true,
             backgroundColor: Colors.white,
             elevation: 0,
+            leading: LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = MediaQuery.of(context).size.width < 600;
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Center(
+                    child: Text(
+                      'AWS Manager',
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                      style: TextStyle(
+                        fontSize: isMobile ? 19 : 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.primaryPurple,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            leadingWidth: 155,
             actions: [
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -379,121 +401,131 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     right: 60,
                     bottom: 16,
                   ),
-                  title: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppTheme.primaryPurple.withValues(alpha: 0.1),
-                                AppTheme.primaryBlue.withValues(alpha: 0.1),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                  title: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isMobile = MediaQuery.of(context).size.width < 600;
+                      return SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 8 : 10,
+                                vertical: isMobile ? 5 : 6,
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 14,
-                                color: AppTheme.primaryPurple,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '$_greeting, $_username',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimary,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                    AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                        if (!isCollapsed) ...[
-                          const SizedBox(height: 4),
-                          if (_isLoadingUserInfo)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4.0),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppTheme.primaryPurple,
-                                      ),
-                                    ),
+                                  Icon(
+                                    Icons.person_outline,
+                                    size: isMobile ? 12 : 14,
+                                    color: AppTheme.primaryPurple,
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _loadingMessage,
+                                    '$_greeting, $_username',
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FontStyle.italic,
-                                      color: AppTheme.primaryPurple,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          else
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2.0),
-                                    child: Icon(
-                                      Icons.format_quote,
-                                      size: 12,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      _quote,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FontStyle.italic,
-                                        color: AppTheme.textPrimary,
-                                        letterSpacing: 0.2,
-                                        height: 1.3,
-                                      ),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
+                                      fontSize: isMobile ? 10 : 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.textPrimary,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                        ],
-                      ],
-                    ),
+                            if (!isCollapsed) ...[
+                              const SizedBox(height: 4),
+                              if (_isLoadingUserInfo)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4.0),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: isMobile ? 10 : 12,
+                                        height: isMobile ? 10 : 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            AppTheme.primaryPurple,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          _loadingMessage,
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 8 : 11,
+                                            fontWeight: FontWeight.w500,
+                                            fontStyle: FontStyle.italic,
+                                            color: AppTheme.primaryPurple,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2.0),
+                                        child: Icon(
+                                          Icons.format_quote,
+                                          size: isMobile ? 9 : 12,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          _quote,
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 8 : 11,
+                                            fontWeight: FontWeight.w600,
+                                            fontStyle: FontStyle.italic,
+                                            color: AppTheme.textPrimary,
+                                            letterSpacing: 0.2,
+                                            height: 1.3,
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   background: Stack(
                 fit: StackFit.expand,
@@ -515,17 +547,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     count: 15,
                     color: AppTheme.primaryPurple,
                   ),
-                  // Animated circles
-                  AnimatedBuilder(
-                    animation: _rotateAnimation,
-                    builder: (context, child) {
-                      return CustomPaint(
-                        painter: CirclesPainter(
-                          rotation: _rotateAnimation.value,
-                        ),
-                      );
-                    },
-                  ),
                   // Shimmer effect
                   AnimatedBuilder(
                     animation: _shimmerController,
@@ -536,41 +557,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       );
                     },
-                  ),
-                  // Pulsing cloud icon
-                  Center(
-                    child: AnimatedBuilder(
-                      animation: _pulseAnimation,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  AppTheme.primaryPurple.withValues(alpha: 0.3),
-                                  Colors.transparent,
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.cloud_outlined,
-                              size: 60,
-                              color: AppTheme.primaryPurple,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),
@@ -585,39 +571,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.dashboard_outlined,
-                          color: Colors.white,
-                          size: 20,
+                  // Services Header
+                  Container(
+                    padding: const EdgeInsets.only(bottom: 4, left: 2),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: AppTheme.primaryPurple,
+                          width: 4,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Services',
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        'Available Services',
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Manage your AWS infrastructure',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -628,6 +603,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           : constraints.maxWidth > 600
                               ? 3
                               : 2;
+                      
+                      // Adjust aspect ratio based on screen size
+                      final aspectRatio = constraints.maxWidth > 600 ? 1.15 : 1.0;
 
                       return GridView.builder(
                         shrinkWrap: true,
@@ -636,7 +614,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           crossAxisCount: crossAxisCount,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
-                          childAspectRatio: 1.15,
+                          childAspectRatio: aspectRatio,
                         ),
                         itemCount: _mainServices.length,
                         itemBuilder: (context, index) {
@@ -668,7 +646,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       );
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
+                  // Show All Services Button with enhanced design
                   Center(
                     child: OutlinedButton.icon(
                       onPressed: () {
@@ -681,49 +660,87 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           }
                         });
                       },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        side: BorderSide(
+                          color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       icon: Icon(
                         _showAllServices ? Icons.expand_less : Icons.expand_more,
+                        color: AppTheme.primaryPurple,
                       ),
                       label: Text(
-                        _showAllServices ? 'Show Less' : 'Show All Services',
+                        _showAllServices ? 'Show Less Services' : 'Show All Services',
+                        style: TextStyle(
+                          color: AppTheme.primaryPurple,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
 
                   if (_showAllServices) ...[
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 36),
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Divider(),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.textSecondary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.apps_outlined,
-                                  color: AppTheme.textSecondary,
-                                  size: 20,
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color: AppTheme.primaryPurple,
+                                  width: 3,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Additional Services',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 16),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.apps_outlined,
+                                    color: AppTheme.primaryPurple,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Additional Services',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'Coming Soon',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.primaryPurple,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final crossAxisCount = constraints.maxWidth > 900
@@ -731,6 +748,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   : constraints.maxWidth > 600
                                       ? 3
                                       : 2;
+                              
+                              // Adjust aspect ratio based on screen size
+                              final aspectRatio = constraints.maxWidth > 600 ? 1.15 : 1.0;
 
                               return GridView.builder(
                                 shrinkWrap: true,
@@ -739,7 +759,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   crossAxisCount: crossAxisCount,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
-                                  childAspectRatio: 1.15,
+                                  childAspectRatio: aspectRatio,
                                 ),
                                 itemCount: _additionalServices.length,
                                 itemBuilder: (context, index) {
