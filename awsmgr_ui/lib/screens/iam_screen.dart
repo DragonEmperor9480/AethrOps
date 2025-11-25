@@ -32,17 +32,21 @@ class _IAMScreenState extends State<IAMScreen>
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final users = await ApiService.listIAMUsers();
       final groups = await ApiService.listIAMGroups();
+      if (!mounted) return;
       setState(() {
         _users = users;
         _groups = groups;
       });
     } catch (e) {
+      if (!mounted) return;
       _showError('Failed to load data: $e');
     } finally {
+      if (!mounted) return;
       setState(() => _loading = false);
     }
   }
@@ -102,6 +106,7 @@ class _IAMScreenState extends State<IAMScreen>
     );
 
     if (result != null && result['username'] != null) {
+      if (!mounted) return;
       setState(() => _operationInProgress = true);
       try {
         await ApiService.createIAMUser(
@@ -110,6 +115,7 @@ class _IAMScreenState extends State<IAMScreen>
           requireReset: result['require_reset'] ?? false,
         );
         
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
         
         // Show credentials dialog only if password was set
@@ -133,6 +139,7 @@ class _IAMScreenState extends State<IAMScreen>
         
         await _loadData();
       } catch (e) {
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
         _showError('Failed to create user: $e');
       }
@@ -146,6 +153,7 @@ class _IAMScreenState extends State<IAMScreen>
     );
 
     if (result != null && result.isNotEmpty) {
+      if (!mounted) return;
       setState(() => _operationInProgress = true);
       try {
         final response = await ApiService.createMultipleIAMUsers(result);
@@ -154,6 +162,7 @@ class _IAMScreenState extends State<IAMScreen>
         final failureCount = response['failure_count'] ?? 0;
         final results = response['results'] as List;
         
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
         
         // Prepare credentials for successful users with passwords
@@ -192,6 +201,7 @@ class _IAMScreenState extends State<IAMScreen>
         
         await _loadData();
       } catch (e) {
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
         _showError('Failed to create users: $e');
       }
@@ -204,17 +214,20 @@ class _IAMScreenState extends State<IAMScreen>
     final usernames = _selectedUsers.toList();
     
     // Check dependencies for all selected users
+    if (!mounted) return;
     setState(() => _operationInProgress = true);
     late List<dynamic> dependencies;
     
     try {
       dependencies = await ApiService.checkMultipleUserDependencies(usernames);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _operationInProgress = false);
       _showError('Failed to check dependencies: $e');
       return;
     }
     
+    if (!mounted) return;
     setState(() => _operationInProgress = false);
 
     // Show dependencies dialog and get confirmation
@@ -226,6 +239,7 @@ class _IAMScreenState extends State<IAMScreen>
     );
 
     if (confirmed == true) {
+      if (!mounted) return;
       setState(() => _operationInProgress = true);
       
       try {
@@ -243,6 +257,7 @@ class _IAMScreenState extends State<IAMScreen>
         final failureCount = response['failure_count'] ?? 0;
         final results = response['results'] as List;
         
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
         
         // Show results dialog
@@ -258,6 +273,7 @@ class _IAMScreenState extends State<IAMScreen>
         }
         
         // Clear selection and exit selection mode
+        if (!mounted) return;
         setState(() {
           _selectedUsers.clear();
           _selectionMode = false;
@@ -265,6 +281,7 @@ class _IAMScreenState extends State<IAMScreen>
         
         await _loadData();
       } catch (e) {
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
         _showError('Failed to delete users: $e');
       }
@@ -273,17 +290,20 @@ class _IAMScreenState extends State<IAMScreen>
 
   Future<void> _deleteUser(String username) async {
     // First check dependencies
+    if (!mounted) return;
     setState(() => _operationInProgress = true);
     late Map<String, dynamic> dependencies;
     
     try {
       dependencies = await ApiService.checkUserDependencies(username);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _operationInProgress = false);
       _showError('Failed to check user dependencies: $e');
       return;
     }
     
+    if (!mounted) return;
     setState(() => _operationInProgress = false);
 
     final hasDeps = (dependencies['groups'] as List?)?.isNotEmpty == true ||
@@ -398,14 +418,18 @@ class _IAMScreenState extends State<IAMScreen>
     );
 
     if (confirm == true) {
+      if (!mounted) return;
       setState(() => _operationInProgress = true);
       try {
         await ApiService.deleteIAMUser(username, force: hasDeps);
+        if (!mounted) return;
         _showSuccess('User "$username" deleted successfully');
         await _loadData();
       } catch (e) {
+        if (!mounted) return;
         _showError('Failed to delete user: $e');
       } finally {
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
       }
     }
@@ -1062,14 +1086,18 @@ class _IAMScreenState extends State<IAMScreen>
     );
 
     if (result != null && result.isNotEmpty) {
+      if (!mounted) return;
       setState(() => _operationInProgress = true);
       try {
         await ApiService.createIAMGroup(result);
+        if (!mounted) return;
         _showSuccess('Group "$result" created successfully');
         await _loadData();
       } catch (e) {
+        if (!mounted) return;
         _showError('Failed to create group: $e');
       } finally {
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
       }
     }
@@ -1077,17 +1105,20 @@ class _IAMScreenState extends State<IAMScreen>
 
   Future<void> _deleteGroup(String groupname) async {
     // Check dependencies first
+    if (!mounted) return;
     setState(() => _operationInProgress = true);
     late Map<String, dynamic> dependencies;
     
     try {
       dependencies = await ApiService.checkGroupDependencies(groupname);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _operationInProgress = false);
       _showError('Failed to check group dependencies: $e');
       return;
     }
     
+    if (!mounted) return;
     setState(() => _operationInProgress = false);
 
     final users = dependencies['users'] as List? ?? [];
@@ -1183,14 +1214,18 @@ class _IAMScreenState extends State<IAMScreen>
     );
 
     if (confirm == true) {
+      if (!mounted) return;
       setState(() => _operationInProgress = true);
       try {
         await ApiService.deleteIAMGroup(groupname, force: hasDeps);
+        if (!mounted) return;
         _showSuccess('Group "$groupname" deleted successfully');
         await _loadData();
       } catch (e) {
+        if (!mounted) return;
         _showError('Failed to delete group: $e');
       } finally {
+        if (!mounted) return;
         setState(() => _operationInProgress = false);
       }
     }
