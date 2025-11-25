@@ -179,7 +179,7 @@ func StartBackend() int {
 	r.HandleFunc("/api/version", api.GetVersion).Methods("GET")
 
 	server = &http.Server{
-		Addr:         "127.0.0.1:948-",
+		Addr:         "127.0.0.1:9480",
 		Handler:      corsMiddleware(r),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 0, // Disable write timeout for SSE streaming
