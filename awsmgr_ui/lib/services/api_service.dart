@@ -545,6 +545,78 @@ class ApiService {
     }
   }
 
+  // EC2 Instances
+  static Future<List<dynamic>> listEC2Instances() async {
+    final response = await http.get(Uri.parse('$baseUrl/ec2/instances'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['instances'] ?? [];
+    }
+    throw Exception('Failed to load EC2 instances');
+  }
+
+  static Future<Map<String, dynamic>> getEC2Instance(String instanceId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/ec2/instances/$instanceId'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to get instance details');
+  }
+
+  static Future<void> startEC2Instance(String instanceId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/ec2/instances/$instanceId/start'),
+    );
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['error'] ?? 'Failed to start instance');
+    }
+  }
+
+  static Future<void> stopEC2Instance(String instanceId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/ec2/instances/$instanceId/stop'),
+    );
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['error'] ?? 'Failed to stop instance');
+    }
+  }
+
+  static Future<void> rebootEC2Instance(String instanceId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/ec2/instances/$instanceId/reboot'),
+    );
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['error'] ?? 'Failed to reboot instance');
+    }
+  }
+
+  static Future<void> terminateEC2Instance(String instanceId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/ec2/instances/$instanceId/terminate'),
+    );
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['error'] ?? 'Failed to terminate instance');
+    }
+  }
+
+  static Future<List<dynamic>> getEC2InstancesByState(String state) async {
+    final uri = Uri.parse('$baseUrl/ec2/instances/by-state').replace(
+      queryParameters: {'state': state},
+    );
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['instances'] ?? [];
+    }
+    throw Exception('Failed to get instances by state');
+  }
+
   // AWS Configuration
   static Future<Map<String, dynamic>> getAWSConfig() async {
     final response = await http.get(Uri.parse('$baseUrl/aws/config'));
