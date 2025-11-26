@@ -4,6 +4,7 @@ import 'iam_screen.dart';
 import 's3_screen.dart';
 import 'settings_screen.dart';
 import 'cloudwatch_screen.dart';
+import 'ec2_screen.dart';
 import '../widgets/service_card.dart';
 import '../widgets/floating_particles.dart';
 import '../theme/app_theme.dart';
@@ -49,6 +50,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       route: '/s3',
     ),
     ServiceInfo(
+      title: 'EC2',
+      description: 'Virtual servers in the cloud',
+      icon: Icons.developer_board,
+      color: AppTheme.ec2Color,
+      route: '/ec2',
+    ),
+    ServiceInfo(
       title: 'CloudWatch',
       description: 'Monitor resources & logs',
       icon: Icons.insights,
@@ -58,14 +66,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   ];
 
   final List<ServiceInfo> _additionalServices = [
-    ServiceInfo(
-      title: 'EC2',
-      description: 'Virtual servers in the cloud',
-      icon: Icons.developer_board,
-      color: AppTheme.ec2Color,
-      route: '/ec2',
-      comingSoon: true,
-    ),
     ServiceInfo(
       title: 'Lambda',
       description: 'Run code without servers',
@@ -258,6 +258,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         break;
       case '/cloudwatch':
         screen = const CloudWatchScreen();
+        break;
+      case '/ec2':
+        screen = const EC2Screen();
         break;
       case '/settings':
         screen = const SettingsScreen();
