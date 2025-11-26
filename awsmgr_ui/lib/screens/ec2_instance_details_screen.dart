@@ -23,6 +23,7 @@ class EC2InstanceDetailsScreen extends StatefulWidget {
 class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   Map<String, dynamic>? _instanceDetails;
   bool _loading = true;
+  bool _operationInProgress = false;
   String? _error;
 
   @override
@@ -62,6 +63,286 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: AppTheme.successGreen,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: AppTheme.errorRed,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _startInstance() async {
+    final confirm = await _showConfirmDialog(
+      'Start Instance',
+      'Are you sure you want to start this instance?',
+      Icons.play_circle,
+      AppTheme.successGreen,
+    );
+
+    if (confirm == true) {
+      setState(() => _operationInProgress = true);
+      try {
+        await ApiService.startEC2Instance(widget.instanceId);
+        _showSuccess('Instance start initiated');
+        await Future.delayed(const Duration(seconds: 2));
+        await _loadInstanceDetails();
+      } catch (e) {
+        _showError('Failed to start instance: $e');
+      } finally {
+        setState(() => _operationInProgress = false);
+      }
+    }
+  }
+
+  Future<void> _stopInstance() async {
+    final confirm = await _showConfirmDialog(
+      'Stop Instance',
+      'Are you sure you want to stop this instance?',
+      Icons.stop_circle,
+      AppTheme.warningAmber,
+    );
+
+    if (confirm == true) {
+      setState(() => _operationInProgress = true);
+      try {
+        await ApiService.stopEC2Instance(widget.instanceId);
+        _showSuccess('Instance stop initiated');
+        await Future.delayed(const Duration(seconds: 2));
+        await _loadInstanceDetails();
+      } catch (e) {
+        _showError('Failed to stop instance: $e');
+      } finally {
+        setState(() => _operationInProgress = false);
+      }
+    }
+  }
+
+  Future<void> _rebootInstance() async {
+    final confirm = await _showConfirmDialog(
+      'Reboot Instance',
+      'Are you sure you want to reboot this instance?',
+      Icons.refresh,
+      AppTheme.primaryBlue,
+    );
+
+    if (confirm == true) {
+      setState(() => _operationInProgress = true);
+      try {
+        await ApiService.rebootEC2Instance(widget.instanceId);
+        _showSuccess('Instance reboot initiated');
+        await Future.delayed(const Duration(seconds: 2));
+        await _loadInstanceDetails();
+      } catch (e) {
+        _showError('Failed to reboot instance: $e');
+      } finally {
+        setState(() => _operationInProgress = false);
+      }
+    }
+  }
+
+  Future<void> _terminateInstance() async {
+    final confirm = await _showConfirmDialog(
+      'Terminate Instance',
+      'Are you sure you want to TERMINATE this instance?\n\nThis action is IRREVERSIBLE and will permanently delete the instance!',
+      Icons.delete_forever,
+      AppTheme.errorRed,
+      confirmText: 'TERMINATE',
+      isDangerous: true,
+    );
+
+    if (confirm == true) {
+      setState(() => _operationInProgress = true);
+      try {
+        await ApiService.terminateEC2Instance(widget.instanceId);
+        _showSuccess('Instance termination initiated');
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.pop(context, true); // Return to list and refresh
+        }
+      } catch (e) {
+        _showError('Failed to terminate instance: $e');
+        setState(() => _operationInProgress = false);
+      }
+    }
+  }
+
+  Future<bool?> _showConfirmDialog(
+    String title,
+    String message,
+    IconData icon,
+    Color color, {
+    String confirmText = 'Confirm',
+    bool isDangerous = false,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 8),
+            Text(title),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDangerous ? AppTheme.errorRed : color,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(confirmText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActionsMenu() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final state = widget.state.toLowerCase();
+        final isRunning = state == 'running';
+        final isStopped = state == 'stopped';
+        final isPending = state == 'pending' || state == 'stopping';
+
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Instance Actions',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              if (isStopped)
+                _buildActionTile(
+                  icon: Icons.play_circle,
+                  label: 'Start Instance',
+                  color: AppTheme.successGreen,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _startInstance();
+                  },
+                ),
+              if (isRunning)
+                _buildActionTile(
+                  icon: Icons.stop_circle,
+                  label: 'Stop Instance',
+                  color: AppTheme.warningAmber,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _stopInstance();
+                  },
+                ),
+              if (isRunning)
+                _buildActionTile(
+                  icon: Icons.refresh,
+                  label: 'Reboot Instance',
+                  color: AppTheme.primaryBlue,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _rebootInstance();
+                  },
+                ),
+              if (!isPending)
+                _buildActionTile(
+                  icon: Icons.delete_forever,
+                  label: 'Terminate Instance',
+                  color: AppTheme.errorRed,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _terminateInstance();
+                  },
+                  isDangerous: true,
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+    bool isDangerous = false,
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: color, size: 24),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: isDangerous ? AppTheme.errorRed : AppTheme.textPrimary,
+        ),
+      ),
+      onTap: onTap,
+      trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+    );
+  }
+
   Color get _stateColor {
     switch (widget.state.toLowerCase()) {
       case 'running':
@@ -86,17 +367,45 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
         backgroundColor: Colors.white,
         actions: [
           IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: _showActionsMenu,
+            tooltip: 'Actions',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadInstanceDetails,
             tooltip: 'Refresh',
           ),
         ],
       ),
-      body: _loading
-          ? const LoadingAnimation(message: 'Loading instance details')
-          : _error != null
-              ? _buildErrorState()
-              : _buildDetailsContent(),
+      body: Stack(
+        children: [
+          _loading
+              ? const LoadingAnimation(message: 'Loading instance details')
+              : _error != null
+                  ? _buildErrorState()
+                  : _buildDetailsContent(),
+          if (_operationInProgress)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Processing action...'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

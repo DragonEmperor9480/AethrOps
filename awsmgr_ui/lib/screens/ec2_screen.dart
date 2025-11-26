@@ -310,8 +310,8 @@ class _EC2ScreenState extends State<EC2Screen> {
         ),
       ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => EC2InstanceDetailsScreen(
@@ -321,6 +321,10 @@ class _EC2ScreenState extends State<EC2Screen> {
               ),
             ),
           );
+          // Refresh list if instance was terminated or action was performed
+          if (result == true) {
+            _loadInstances();
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
