@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
 import '../services/s3_service.dart';
+import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/progress_dialog.dart';
 import '../theme/app_theme.dart';
@@ -571,6 +572,14 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   }
 
   Future<void> _downloadFile(S3Item item) async {
+    // Request storage permission first
+    final hasPermission = await DownloadService.requestStoragePermission();
+    
+    if (!hasPermission) {
+      _showError(DownloadService.getPermissionDeniedMessage());
+      return;
+    }
+
     // Create progress stream controller
     final progressController = StreamController<double>();
 
@@ -596,20 +605,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         },
       );
 
-      Directory? directory;
-      if (Platform.isAndroid) {
-        directory = await getExternalStorageDirectory();
-      } else {
-        directory = await getDownloadsDirectory();
-      }
-
-      if (directory == null) {
-        throw Exception('Could not access downloads folder');
-      }
-
-      final filePath = '${directory.path}/${item.displayName}';
-      final file = File(filePath);
-      await file.writeAsBytes(bytes);
+      // Save file using DownloadService
+      final result = await DownloadService.saveToDownloads(
+        bytes: bytes,
+        fileName: item.displayName,
+      );
 
       // Close progress stream
       await progressController.close();
@@ -617,7 +617,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       // Hide progress dialog
       if (mounted) Navigator.of(context).pop();
 
-      _showSuccess('Downloaded: ${item.displayName}');
+      if (result['success']) {
+        _showSuccess('Downloaded to ${result['displayPath']}');
+      } else {
+        _showError('Failed to save file: ${result['error']}');
+      }
     } catch (e) {
       // Close progress stream
       await progressController.close();

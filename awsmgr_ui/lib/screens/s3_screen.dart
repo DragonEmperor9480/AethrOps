@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../services/api_service.dart';
+import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
 import 's3_browser_screen.dart';
@@ -634,29 +635,34 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
   }
 
   Future<void> _downloadObject(S3Object object) async {
+    print('===== _downloadObject called for: ${object.key} =====');
     setState(() => _downloadingKey = object.key);
     
     try {
+      // Request storage permission first
+      final hasPermission = await DownloadService.requestStoragePermission();
+      
+      if (!hasPermission) {
+        _showError(DownloadService.getPermissionDeniedMessage());
+        setState(() => _downloadingKey = null);
+        return;
+      }
+      
       final bytes = await ApiService.downloadS3Object(widget.bucketName, object.key);
       
-      Directory? directory;
-      if (Platform.isAndroid) {
-        directory = await getExternalStorageDirectory();
-      } else {
-        directory = await getDownloadsDirectory();
-      }
-      
-      if (directory == null) {
-        throw Exception('Could not access downloads folder');
-      }
-      
       final fileName = object.key.split('/').last;
-      final filePath = '${directory.path}/$fileName';
       
-      final file = File(filePath);
-      await file.writeAsBytes(bytes);
-      
-      _showSuccess('Downloaded: $fileName');
+      // Save file using DownloadService
+      final result = await DownloadService.saveToDownloads(
+        bytes: bytes,
+        fileName: fileName,
+      );
+
+      if (result['success']) {
+        _showSuccess('Downloaded to ${result['displayPath']}');
+      } else {
+        _showError('Failed to save file: ${result['error']}');
+      }
     } catch (e) {
       _showError('Failed to download: $e');
     } finally {
