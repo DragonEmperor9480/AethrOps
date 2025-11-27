@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/backend_service.dart';
+import 'services/api_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/credentials_setup_screen.dart';
 import 'services/aws_credentials_service.dart';
@@ -58,10 +59,10 @@ class _SplashScreenState extends State<SplashScreen> {
       
       if (widget.isReload) {
         // Reload scenario: use provided credentials
-        setState(() => _status = 'Configuring AWS...');
+        setState(() => _status = 'The cloud is just someone else\'s computer...');
         await Future.delayed(const Duration(milliseconds: 500));
         
-        setState(() => _status = 'Verifying connection...');
+        setState(() => _status = 'Establishing secure connection...');
         await Future.delayed(const Duration(milliseconds: 500));
         
         if (widget.accessKey != null && widget.secretKey != null && widget.region != null) {
@@ -80,10 +81,10 @@ class _SplashScreenState extends State<SplashScreen> {
         hasCredentials = await AWSCredentialsService.hasCredentials();
         
         // Start backend
-        setState(() => _status = 'Starting backend...');
+        setState(() => _status = 'Waking up the backend...');
         await BackendService.start();
         
-        setState(() => _status = 'Verifying connection...');
+        setState(() => _status = 'Establishing secure connection...');
         await Future.delayed(const Duration(milliseconds: 500));
         
         final isRunning = await BackendService.isRunning();
@@ -96,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen> {
         
         // Load and set AWS credentials if available
         if (hasCredentials) {
-          setState(() => _status = 'Configuring AWS...');
+          setState(() => _status = 'Configuring AWS services...');
           final creds = await AWSCredentialsService.getCredentials();
           
           if (creds['accessKey'] != null && 
@@ -111,8 +112,18 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       }
       
-      setState(() => _status = 'Ready!');
+      setState(() => _status = 'All systems go!');
       await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Prefetch user info if we have credentials
+      if (hasCredentials) {
+        setState(() => _status = 'Your data is floating somewhere nice...');
+        try {
+          await ApiService.getCallerIdentity();
+        } catch (e) {
+          debugPrint('Failed to prefetch user info: $e');
+        }
+      }
       
       // Navigate to appropriate screen
       if (mounted) {
