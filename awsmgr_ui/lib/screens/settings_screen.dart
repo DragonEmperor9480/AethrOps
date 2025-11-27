@@ -137,6 +137,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: AppTheme.successGreen,
             ),
           );
+          
+          // Navigate to credentials setup screen
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => const CredentialsSetupScreen(),
+            ),
+            (route) => false,
+          );
         }
       } catch (e) {
         if (mounted) {
