@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/aws_credentials_service.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import '../main.dart';
 
 class CredentialsSetupScreen extends StatefulWidget {
   const CredentialsSetupScreen({super.key});
@@ -40,15 +40,16 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Credentials saved successfully'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
-
+        // Navigate to splash screen to reload backend with new credentials
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => SplashScreen(
+              isReload: true,
+              accessKey: _accessKeyController.text.trim(),
+              secretKey: _secretKeyController.text.trim(),
+              region: _regionController.text.trim(),
+            ),
+          ),
         );
       }
     } catch (e) {

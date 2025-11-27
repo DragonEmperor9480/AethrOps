@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../main.dart';
 
 class AWSConfigDialog extends StatefulWidget {
   const AWSConfigDialog({super.key});
@@ -32,11 +33,17 @@ class _AWSConfigDialogState extends State<AWSConfigDialog> {
       );
       
       if (mounted) {
+        // Close dialog and navigate to splash screen to reload backend
         Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AWS credentials configured successfully!'),
-            backgroundColor: Colors.green,
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => SplashScreen(
+              isReload: true,
+              accessKey: _accessKeyController.text,
+              secretKey: _secretKeyController.text,
+              region: _regionController.text,
+            ),
           ),
         );
       }

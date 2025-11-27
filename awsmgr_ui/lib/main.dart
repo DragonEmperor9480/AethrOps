@@ -25,7 +25,18 @@ class MyApp extends StatelessWidget {
 }
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final bool isReload;
+  final String? accessKey;
+  final String? secretKey;
+  final String? region;
+  
+  const SplashScreen({
+    super.key,
+    this.isReload = false,
+    this.accessKey,
+    this.secretKey,
+    this.region,
+  });
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -43,22 +54,44 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initialize() async {
     try {
-      // Check for credentials
-      setState(() => _status = 'Checking credentials...');
-      await Future.delayed(const Duration(milliseconds: 500));
+      bool hasCredentials = false;
       
-      final hasCredentials = await AWSCredentialsService.hasCredentials();
-      
-      // Start backend
-      setState(() => _status = 'Starting backend...');
-      await BackendService.start();
-      
-      setState(() => _status = 'Verifying connection...');
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      final isRunning = await BackendService.isRunning();
-      
-      if (isRunning) {
+      if (widget.isReload) {
+        // Reload scenario: use provided credentials
+        setState(() => _status = 'Configuring AWS...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        setState(() => _status = 'Verifying connection...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (widget.accessKey != null && widget.secretKey != null && widget.region != null) {
+          await BackendService.setAWSCredentials(
+            widget.accessKey!,
+            widget.secretKey!,
+            widget.region!,
+          );
+        }
+        hasCredentials = true;
+      } else {
+        // Initial load scenario
+        setState(() => _status = 'Checking credentials...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        hasCredentials = await AWSCredentialsService.hasCredentials();
+        
+        // Start backend
+        setState(() => _status = 'Starting backend...');
+        await BackendService.start();
+        
+        setState(() => _status = 'Verifying connection...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        final isRunning = await BackendService.isRunning();
+        
+        if (!isRunning) {
+          throw Exception('Backend health check failed');
+        }
+        
         debugPrint('✓ Backend loaded successfully');
         
         // Load and set AWS credentials if available
@@ -76,22 +109,20 @@ class _SplashScreenState extends State<SplashScreen> {
             );
           }
         }
-        
-        setState(() => _status = 'Ready!');
-        await Future.delayed(const Duration(milliseconds: 500));
-        
-        // Navigate to appropriate screen
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => hasCredentials 
-                  ? const HomeScreen() 
-                  : const CredentialsSetupScreen(),
-            ),
-          );
-        }
-      } else {
-        throw Exception('Backend health check failed');
+      }
+      
+      setState(() => _status = 'Ready!');
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Navigate to appropriate screen
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => hasCredentials 
+                ? const HomeScreen() 
+                : const CredentialsSetupScreen(),
+          ),
+        );
       }
     } catch (e) {
       debugPrint('❌ Backend initialization failed: $e');
