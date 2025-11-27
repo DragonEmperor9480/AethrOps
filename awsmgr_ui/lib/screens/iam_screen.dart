@@ -19,16 +19,34 @@ class _IAMScreenState extends State<IAMScreen>
   late TabController _tabController;
   List<dynamic> _users = [];
   List<dynamic> _groups = [];
+  List<dynamic> _filteredUsers = [];
   bool _loading = false;
   bool _operationInProgress = false;
   bool _selectionMode = false;
   final Set<String> _selectedUsers = {};
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _searchController.addListener(_filterUsers);
     _loadData();
+  }
+
+  void _filterUsers() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredUsers = _users;
+      } else {
+        _filteredUsers = _users.where((user) {
+          final username = (user['username'] ?? '').toString().toLowerCase();
+          final userId = (user['user_id'] ?? '').toString().toLowerCase();
+          return username.contains(query) || userId.contains(query);
+        }).toList();
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -41,6 +59,7 @@ class _IAMScreenState extends State<IAMScreen>
       setState(() {
         _users = users;
         _groups = groups;
+        _filteredUsers = users;
       });
     } catch (e) {
       if (!mounted) return;
@@ -502,7 +521,7 @@ class _IAMScreenState extends State<IAMScreen>
                         Text(
                           _selectionMode
                               ? '${_selectedUsers.length} selected'
-                              : '${_users.length} users',
+                              : '${_filteredUsers.length} of ${_users.length} users',
                           style: TextStyle(color: Colors.grey[600], fontSize: 14),
                         ),
                       ],
@@ -522,6 +541,36 @@ class _IAMScreenState extends State<IAMScreen>
                 ],
               ),
               const SizedBox(height: 12),
+              
+              // Search bar
+              if (!_selectionMode)
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search users by username or ID...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 20),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              
               // Action menu
               if (!_selectionMode)
                 PopupMenuButton<String>(
@@ -640,16 +689,23 @@ class _IAMScreenState extends State<IAMScreen>
         Expanded(
           child: _loading
               ? const LoadingAnimation(message: 'Loading users')
-              : _users.isEmpty
+              : _filteredUsers.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.people_outline,
-                              size: 80, color: Colors.grey[300]),
+                          Icon(
+                            _searchController.text.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.people_outline,
+                            size: 80,
+                            color: Colors.grey[300],
+                          ),
                           const SizedBox(height: 16),
                           Text(
-                            'No users found',
+                            _searchController.text.isNotEmpty
+                                ? 'No users found'
+                                : 'No users found',
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.grey[600],
@@ -657,23 +713,27 @@ class _IAMScreenState extends State<IAMScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Create your first IAM user',
+                            _searchController.text.isNotEmpty
+                                ? 'Try a different search term'
+                                : 'Create your first IAM user',
                             style: TextStyle(color: Colors.grey[500]),
                           ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: _createUser,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Create User'),
-                          ),
+                          if (_searchController.text.isEmpty) ...[
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: _createUser,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Create User'),
+                            ),
+                          ],
                         ],
                       ),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
-                      itemCount: _users.length,
+                      itemCount: _filteredUsers.length,
                       itemBuilder: (context, index) {
-                        final user = _users[index];
+                        final user = _filteredUsers[index];
                         final username = user['username'] ?? '';
                         final isSelected = _selectedUsers.contains(username);
                         
@@ -1246,6 +1306,7 @@ class _IAMScreenState extends State<IAMScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 }
