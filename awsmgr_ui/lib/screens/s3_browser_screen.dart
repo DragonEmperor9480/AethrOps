@@ -844,7 +844,15 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        if (_currentPrefix.isNotEmpty) {
+          _navigateBack();
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
         backgroundColor: AppTheme.backgroundLight,
         floatingActionButton: SpeedDialMenu(
           closedIcon: Icons.menu,
@@ -884,13 +892,15 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           title: Text(widget.bucketName),
           elevation: 0,
           backgroundColor: Colors.white,
+          leading: _currentPrefix.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _navigateBack,
+                  tooltip: 'Go back',
+                )
+              : null,
+          automaticallyImplyLeading: _currentPrefix.isEmpty,
           actions: [
-            if (_currentPrefix.isNotEmpty)
-              IconButton(
-                icon: const Icon(Icons.arrow_upward),
-                onPressed: _navigateBack,
-                tooltip: 'Go back',
-              ),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: _loadItems,
@@ -1148,6 +1158,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
             ),
           ],
         ),
+      ),
     );
   }
 }
