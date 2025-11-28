@@ -343,25 +343,6 @@ class _S3ScreenState extends State<S3Screen> {
                                   padding: const EdgeInsets.all(16),
                                   child: Row(
                                     children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppTheme.primaryPurple.withValues(alpha: 0.8),
-                                              AppTheme.primaryPurple,
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: const Icon(
-                                          Icons.storage,
-                                          color: Colors.white,
-                                          size: 28,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,9 +358,10 @@ class _S3ScreenState extends State<S3Screen> {
                                               child: Text(
                                                 bucket.name,
                                                 style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 20,
                                                   color: Colors.white,
+                                                  letterSpacing: -0.5,
                                                 ),
                                               ),
                                             ),
