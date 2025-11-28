@@ -1,35 +1,53 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Kiro-inspired brand colors
-  static const Color primaryPurple = Color(0xFF6366F1); // Kiro purple
-  static const Color primaryBlue = Color(0xFF3B82F6); // Kiro blue
-  static const Color accentCyan = Color(0xFF06B6D4);
-  static const Color accentPink = Color(0xFFEC4899);
+  // Brand Colors - Soft Periwinkle Palette
+  static const Color primaryPurple = Color(0xFFB892FF); // Soft Periwinkle (Main Brand)
+  static const Color purple50 = Color(0xFFF5F0FF); // Ultra light - backgrounds
+  static const Color purple100 = Color(0xFFEBE0FF); // Very light - cards, highlights
+  static const Color purple200 = Color(0xFFD4C4FF); // Light - hover states
+  static const Color purple300 = Color(0xFFB892FF); // Main - primary actions
+  static const Color purple400 = Color(0xFFA06EFF); // Medium - interactive elements
+  static const Color purple500 = Color(0xFF8B4AFF); // Bold - emphasis
+  static const Color purple600 = Color(0xFF7526FF); // Dark - headers, text
+  static const Color purple700 = Color(0xFF6200EA); // Deep - strong emphasis
+  static const Color purple800 = Color(0xFF4E00B8); // Very dark - contrast
+  static const Color purple900 = Color(0xFF3A0086); // Ultra dark - shadows
   
-  // Service colors - AWS-inspired brand colors
-  static const Color iamColor = Color(0xFFDD344C); // AWS IAM Red
-  static const Color s3Color = Color(0xFF1B660F); // AWS S3 Green
-  static const Color cloudwatchColor = Color(0xFF7C3AED); // CloudWatch Purple
-  static const Color settingsColor = Color(0xFF6366F1); // Indigo
+  // Aliases for backward compatibility
+  static const Color primaryBlue = Color(0xFF6EC6FF); // Soft blue complement
+  static const Color accentCyan = Color(0xFF92FFB8); // Soft mint accent
+  static const Color vpcColor = Color(0xFF92C6FF); // Soft blue for VPC
   
-  // Additional service colors
-  static const Color ec2Color = Color(0xFFFF9900); // AWS Orange
-  static const Color lambdaColor = Color(0xFFFF9900); // AWS Lambda Orange
-  static const Color rdsColor = Color(0xFF527FFF); // AWS RDS Blue
-  static const Color vpcColor = Color(0xFF3B82F6); // Blue
+  // Complementary Colors
+  static const Color accentBlue = Color(0xFF6EC6FF); // Soft blue complement
+  static const Color accentPink = Color(0xFFFF92D0); // Soft pink accent
+  static const Color accentMint = Color(0xFF92FFB8); // Soft mint accent
+  static const Color accentCoral = Color(0xFFFFB892); // Soft coral accent
   
-  // Neutral colors
-  static const Color backgroundLight = Color(0xFFF8FAFC);
+  // Service colors - Soft palette inspired
+  static const Color iamColor = Color(0xFFFF6B6B); // Coral red
+  static const Color s3Color = Color(0xFF6BDFAF); // Teal green
+  static const Color cloudwatchColor = Color(0xFFB28BFF); // Soft purple
+  static const Color ec2Color = Color(0xFFFFB36B); // Warm orange
+  static const Color lambdaColor = Color(0xFFFFC792); // Soft amber
+  static const Color rdsColor = Color(0xFF92C6FF); // Soft blue
+  static const Color settingsColor = Color(0xFFA06EFF); // Medium purple
+  
+  // Neutral colors - Typography Hierarchy
+  static const Color backgroundLight = Color(0xFFFAF8FF); // Slight purple tint
   static const Color cardBackground = Colors.white;
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color borderColor = Color(0xFFE2E8F0);
+  static const Color textPrimary = Color(0xFF1B1B1F); // Title - darkest
+  static const Color textSecondary = Color(0xFF2D2D33); // Subtitle
+  static const Color textBody = Color(0xFF4A4A55); // Body text
+  static const Color textMuted = Color(0xFF6F6F7A); // Muted/Caption
+  static const Color borderColor = Color(0xFFEBE0FF); // Light purple border
   
-  // Status colors
-  static const Color successGreen = Color(0xFF10B981);
-  static const Color errorRed = Color(0xFFEF4444);
-  static const Color warningAmber = Color(0xFFF59E0B);
+  // Status colors - Soft versions
+  static const Color successGreen = Color(0xFF22C55E); // Modern green
+  static const Color errorRed = Color(0xFFFF6B6B); // Soft red
+  static const Color warningAmber = Color(0xFFFFD392); // Soft amber
+  static const Color infoBlue = Color(0xFF92C6FF); // Soft blue
   
   static ThemeData get lightTheme {
     return ThemeData(

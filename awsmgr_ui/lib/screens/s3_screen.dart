@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import '../services/api_service.dart';
 import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
+import '../widgets/list_header_with_search.dart';
+import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 import 's3_browser_screen.dart';
 
@@ -26,13 +28,35 @@ class BucketInfo {
 
 class _S3ScreenState extends State<S3Screen> {
   List<BucketInfo> _buckets = [];
+  List<BucketInfo> _filteredBuckets = [];
   bool _loading = false;
   bool _operationInProgress = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_filterBuckets);
     _loadBuckets();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _filterBuckets() {
+    setState(() {
+      final query = _searchController.text.toLowerCase();
+      _filteredBuckets = query.isEmpty
+          ? _buckets
+          : _buckets
+              .where((bucket) => bucket.name.toLowerCase().contains(query))
+              .toList();
+    });
   }
 
   Future<void> _loadBuckets() async {
@@ -59,7 +83,10 @@ class _S3ScreenState extends State<S3Screen> {
           })
           .toList();
       
-      setState(() => _buckets = bucketList);
+      setState(() {
+        _buckets = bucketList;
+        _filteredBuckets = bucketList;
+      });
     } catch (e) {
       _showError('Failed to load buckets: $e');
     } finally {
@@ -107,7 +134,7 @@ class _S3ScreenState extends State<S3Screen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.add_circle, color: AppTheme.s3Color),
+            Icon(Icons.add_circle, color: AppTheme.primaryPurple),
             SizedBox(width: 8),
             Text('Create S3 Bucket'),
           ],
@@ -232,78 +259,42 @@ class _S3ScreenState extends State<S3Screen> {
           elevation: 0,
           backgroundColor: Colors.white,
         ),
+        floatingActionButton: SpeedDialMenu(
+          closedIcon: Icons.menu,
+          openIcon: Icons.close,
+          backgroundColor: AppTheme.primaryPurple,
+          items: [
+            SpeedDialMenuItem(
+              icon: Icons.add_box,
+              label: 'Create Bucket',
+              color: AppTheme.primaryPurple,
+              onTap: _createBucket,
+            ),
+            SpeedDialMenuItem(
+              icon: Icons.refresh,
+              label: 'Refresh',
+              color: AppTheme.primaryPurple,
+              onTap: _loadBuckets,
+            ),
+          ],
+        ),
         body: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: AppTheme.s3Color.withValues(alpha: 0.1),
-                border: Border(
-                  bottom: BorderSide(color: AppTheme.s3Color.withValues(alpha: 0.2)),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.s3Color.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.storage, color: AppTheme.s3Color),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'S3 Buckets',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '${_buckets.length} buckets found',
-                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _createBucket,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create Bucket'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _loadBuckets,
-                    tooltip: 'Refresh',
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            ListHeaderWithSearch(
+              title: 'S3 Buckets',
+              subtitle: '${_filteredBuckets.length} buckets',
+              icon: Icons.storage,
+              iconBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.15),
+              iconColor: AppTheme.primaryPurple,
+              searchController: _searchController,
+              searchFocusNode: _searchFocusNode,
+              searchHint: 'Search buckets by name...',
+              headerBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.08),
             ),
             Expanded(
               child: _loading
                   ? const LoadingAnimation(message: 'Loading buckets')
-                  : _buckets.isEmpty
+                  : _filteredBuckets.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -312,7 +303,7 @@ class _S3ScreenState extends State<S3Screen> {
                                   size: 80, color: Colors.grey[300]),
                               const SizedBox(height: 16),
                               Text(
-                                'No buckets found',
+                                _buckets.isEmpty ? 'No buckets found' : 'No matching buckets',
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: Colors.grey[600],
@@ -320,23 +311,25 @@ class _S3ScreenState extends State<S3Screen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Create your first S3 bucket',
+                                _buckets.isEmpty ? 'Create your first S3 bucket' : 'Try a different search term',
                                 style: TextStyle(color: Colors.grey[500]),
                               ),
-                              const SizedBox(height: 24),
-                              ElevatedButton.icon(
-                                onPressed: _createBucket,
-                                icon: const Icon(Icons.add),
-                                label: const Text('Create Bucket'),
-                              ),
+                              if (_buckets.isEmpty) ...[
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
+                                  onPressed: _createBucket,
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Create Bucket'),
+                                ),
+                              ],
                             ],
                           ),
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          itemCount: _buckets.length,
+                          itemCount: _filteredBuckets.length,
                           itemBuilder: (context, index) {
-                            final bucket = _buckets[index];
+                            final bucket = _filteredBuckets[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
                               elevation: 2,
@@ -356,8 +349,8 @@ class _S3ScreenState extends State<S3Screen> {
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              AppTheme.s3Color.withValues(alpha: 0.8),
-                                              AppTheme.s3Color,
+                                              AppTheme.primaryPurple.withValues(alpha: 0.8),
+                                              AppTheme.primaryPurple,
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(12),
@@ -373,11 +366,21 @@ class _S3ScreenState extends State<S3Screen> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              bucket.name,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                                            ShaderMask(
+                                              shaderCallback: (bounds) => const LinearGradient(
+                                                colors: [
+                                                  Color(0xFF6366F1),
+                                                  Color(0xFF8B5CF6),
+                                                  Color(0xFFA855F7),
+                                                ],
+                                              ).createShader(bounds),
+                                              child: Text(
+                                                bucket.name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(height: 6),
@@ -691,9 +694,9 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: AppTheme.s3Color.withValues(alpha: 0.1),
+              color: AppTheme.primaryPurple.withValues(alpha: 0.1),
               border: Border(
-                bottom: BorderSide(color: AppTheme.s3Color.withValues(alpha: 0.2)),
+                bottom: BorderSide(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
               ),
             ),
             child: Row(
@@ -701,10 +704,10 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.s3Color.withValues(alpha: 0.2),
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.folder_open, color: AppTheme.s3Color),
+                  child: const Icon(Icons.folder_open, color: AppTheme.primaryPurple),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

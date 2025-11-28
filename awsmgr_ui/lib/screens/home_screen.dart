@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
           SliverAppBar.large(
@@ -299,90 +299,53 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             pinned: true,
             backgroundColor: Colors.white,
             elevation: 0,
-            leading: LayoutBuilder(
-              builder: (context, constraints) {
-                final isMobile = MediaQuery.of(context).size.width < 600;
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Center(
-                    child: Text(
-                      'AWS Manager',
-                      maxLines: 1,
-                      overflow: TextOverflow.visible,
-                      style: TextStyle(
-                        fontSize: isMobile ? 19 : 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.primaryPurple,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            leadingWidth: 155,
             actions: [
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                  horizontal: 18,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: _isLoadingUserInfo
-                      ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+                      ? AppTheme.purple400
                       : _isConnected 
-                          ? AppTheme.successGreen.withValues(alpha: 0.1)
-                          : AppTheme.errorRed.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _isLoadingUserInfo
-                        ? AppTheme.primaryBlue.withValues(alpha: 0.3)
-                        : _isConnected 
-                            ? AppTheme.successGreen.withValues(alpha: 0.3)
-                            : AppTheme.errorRed.withValues(alpha: 0.3),
-                  ),
+                          ? AppTheme.successGreen
+                          : AppTheme.errorRed,
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (_isLoadingUserInfo)
-                      SizedBox(
-                        width: 8,
-                        height: 8,
+                      const SizedBox(
+                        width: 10,
+                        height: 10,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryBlue,
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     else
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: BoxDecoration(
-                          color: _isConnected 
-                              ? AppTheme.successGreen
-                              : AppTheme.errorRed,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
                           shape: BoxShape.circle,
                         ),
                       ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
                       _isLoadingUserInfo 
                           ? 'Connecting...' 
                           : _isConnected 
                               ? 'Connected' 
                               : 'Disconnected',
-                      style: TextStyle(
-                        color: _isLoadingUserInfo
-                            ? AppTheme.primaryBlue
-                            : _isConnected 
-                                ? AppTheme.successGreen
-                                : AppTheme.errorRed,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -412,51 +375,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 8 : 10,
-                                vertical: isMobile ? 5 : 6,
+                            Text(
+                              _greeting,
+                              style: TextStyle(
+                                fontSize: isMobile ? 20 : 22,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textSecondary,
+                                letterSpacing: -0.3,
                               ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppTheme.primaryPurple.withValues(alpha: 0.1),
-                                    AppTheme.primaryBlue.withValues(alpha: 0.1),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primaryPurple.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.person_outline,
-                                    size: isMobile ? 12 : 14,
-                                    color: AppTheme.primaryPurple,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '$_greeting, $_username',
-                                    style: TextStyle(
-                                      fontSize: isMobile ? 10 : 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.textPrimary,
-                                    ),
-                                  ),
-                                ],
+                            ),
+                            Text(
+                              _username,
+                              style: TextStyle(
+                                fontSize: isMobile ? 18 : 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                                letterSpacing: -0.3,
                               ),
                             ),
                             if (!isCollapsed) ...[

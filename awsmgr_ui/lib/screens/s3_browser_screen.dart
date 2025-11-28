@@ -8,6 +8,8 @@ import '../services/s3_service.dart';
 import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/progress_dialog.dart';
+import '../widgets/list_header_with_search.dart';
+import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 
 class S3BrowserScreen extends StatefulWidget {
@@ -844,6 +846,40 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: AppTheme.backgroundLight,
+        floatingActionButton: SpeedDialMenu(
+          closedIcon: Icons.menu,
+          openIcon: Icons.close,
+          backgroundColor: AppTheme.primaryPurple,
+          items: [
+            SpeedDialMenuItem(
+              icon: Icons.upload_file,
+              label: 'Upload File',
+              color: AppTheme.primaryPurple,
+              onTap: _uploadFile,
+            ),
+            SpeedDialMenuItem(
+              icon: Icons.create_new_folder,
+              label: 'Create Folder',
+              color: AppTheme.primaryPurple,
+              onTap: _createFolder,
+            ),
+            if (_currentPrefix.isEmpty) ...[
+              SpeedDialMenuItem(
+                icon: Icons.history,
+                label: _versioningEnabled ? 'Disable Versioning' : 'Enable Versioning',
+                color: _versioningEnabled ? AppTheme.successGreen : AppTheme.primaryPurple,
+                onTap: () => _toggleVersioning(!_versioningEnabled),
+              ),
+              if (_versioningEnabled)
+                SpeedDialMenuItem(
+                  icon: Icons.security,
+                  label: _mfaDeleteEnabled ? 'Disable MFA Delete' : 'Enable MFA Delete',
+                  color: _mfaDeleteEnabled ? Colors.orange : AppTheme.primaryPurple,
+                  onTap: () => _toggleMFADelete(!_mfaDeleteEnabled),
+                ),
+            ],
+          ],
+        ),
         appBar: AppBar(
           title: Text(widget.bucketName),
           elevation: 0,
@@ -866,468 +902,90 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           children: [
             if (_currentPrefix.isNotEmpty || _breadcrumbs.isNotEmpty)
               _buildBreadcrumbs(),
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: AppTheme.s3Color.withValues(alpha: 0.1),
-                border: Border(
-                  bottom: BorderSide(color: AppTheme.s3Color.withValues(alpha: 0.2)),
+            ListHeaderWithSearch(
+              title: widget.bucketName,
+              subtitle: '${_filteredItems.length} items${_searchQuery.isNotEmpty ? " (filtered)" : ""}',
+              icon: Icons.storage,
+              iconBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.15),
+              iconColor: AppTheme.primaryPurple,
+              searchController: _searchController,
+              searchHint: 'Search files and folders...',
+              headerBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.08),
+              actionWidget: PopupMenuButton<SortOption>(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+                  ),
+                  child: const Icon(Icons.sort, size: 20, color: AppTheme.primaryPurple),
                 ),
-              ),
-              child: Column(
-                children: [
-                  // Beautiful Bucket Header (Mobile-Friendly)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.s3Color.withValues(alpha: 0.1),
-                          AppTheme.s3Color.withValues(alpha: 0.05),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppTheme.s3Color.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                tooltip: 'Sort by',
+                onSelected: (option) {
+                  setState(() => _sortOption = option);
+                  _filterAndSortItems();
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: SortOption.nameAsc,
+                    child: Row(
                       children: [
-                        // Bucket Name Row
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: AppTheme.s3Color.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.storage,
-                                color: AppTheme.s3Color,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.bucketName,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${_filteredItems.length} items${_searchQuery.isNotEmpty ? " (filtered)" : ""}',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Action Menu
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'upload':
-                                _uploadFile();
-                                break;
-                              case 'create_folder':
-                                _createFolder();
-                                break;
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'upload',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.upload_file, size: 20, color: AppTheme.s3Color),
-                                  SizedBox(width: 12),
-                                  Text('Upload File'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'create_folder',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.create_new_folder, size: 20, color: AppTheme.s3Color),
-                                  SizedBox(width: 12),
-                                  Text('Create Folder'),
-                                ],
-                              ),
-                            ),
-                          ],
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.s3Color,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add, color: Colors.white, size: 18),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Actions',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_currentPrefix.isEmpty) ...[
-                          const SizedBox(height: 12),
-                          const Divider(height: 1),
-                          const SizedBox(height: 12),
-                          // Bucket Settings Menu
-                          PopupMenuButton<String>(
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'versioning':
-                                  _toggleVersioning(!_versioningEnabled);
-                                  break;
-                                case 'mfa_delete':
-                                  if (_versioningEnabled) {
-                                    _toggleMFADelete(!_mfaDeleteEnabled);
-                                  }
-                                  break;
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'versioning',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.history,
-                                      size: 20,
-                                      color: _versioningEnabled ? Colors.green : Colors.grey,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('Versioning', style: TextStyle(fontSize: 14)),
-                                          Text(
-                                            _versioningEnabled ? 'Enabled' : 'Disabled',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: _versioningEnabled ? Colors.green : Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      _versioningEnabled ? Icons.check_circle : Icons.circle_outlined,
-                                      size: 18,
-                                      color: _versioningEnabled ? Colors.green : Colors.grey,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'mfa_delete',
-                                enabled: _versioningEnabled,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.security,
-                                      size: 20,
-                                      color: _versioningEnabled
-                                          ? (_mfaDeleteEnabled ? Colors.orange : Colors.grey)
-                                          : Colors.grey.shade300,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'MFA Delete',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: _versioningEnabled ? Colors.black : Colors.grey.shade400,
-                                            ),
-                                          ),
-                                          Text(
-                                            _versioningEnabled
-                                                ? (_mfaDeleteEnabled ? 'Enabled' : 'Disabled')
-                                                : 'Requires Versioning',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: _versioningEnabled
-                                                  ? (_mfaDeleteEnabled ? Colors.orange : Colors.grey)
-                                                  : Colors.grey.shade400,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      _mfaDeleteEnabled ? Icons.check_circle : Icons.circle_outlined,
-                                      size: 18,
-                                      color: _versioningEnabled
-                                          ? (_mfaDeleteEnabled ? Colors.orange : Colors.grey)
-                                          : Colors.grey.shade300,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.settings, size: 18, color: Colors.grey.shade700),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Bucket Settings',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Icon(Icons.arrow_drop_down, size: 20, color: Colors.grey.shade700),
-                                  if (_loadingVersioning) ...[
-                                    const SizedBox(width: 8),
-                                    const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                        Icon(Icons.sort_by_alpha, size: 18, color: AppTheme.primaryPurple),
+                        const SizedBox(width: 12),
+                        const Text('Name (A-Z)'),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search files and folders...',
-                            prefixIcon: const Icon(Icons.search, size: 20),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, size: 20),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                      _filterAndSortItems();
-                                    },
-                                  )
-                                : null,
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() => _searchQuery = value);
-                            _filterAndSortItems();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      PopupMenuButton<SortOption>(
-                        icon: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.sort, size: 20),
-                        ),
-                        tooltip: 'Sort by',
-                        onSelected: (option) {
-                          setState(() => _sortOption = option);
-                          _filterAndSortItems();
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: SortOption.nameAsc,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.sort_by_alpha,
-                                  size: 18,
-                                  color: _sortOption == SortOption.nameAsc
-                                      ? AppTheme.primaryPurple
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Name (A-Z)',
-                                  style: TextStyle(
-                                    fontWeight: _sortOption == SortOption.nameAsc
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: SortOption.nameDesc,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.sort_by_alpha,
-                                  size: 18,
-                                  color: _sortOption == SortOption.nameDesc
-                                      ? AppTheme.primaryPurple
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Name (Z-A)',
-                                  style: TextStyle(
-                                    fontWeight: _sortOption == SortOption.nameDesc
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: SortOption.sizeAsc,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.arrow_upward,
-                                  size: 18,
-                                  color: _sortOption == SortOption.sizeAsc
-                                      ? AppTheme.primaryPurple
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Size (Smallest)',
-                                  style: TextStyle(
-                                    fontWeight: _sortOption == SortOption.sizeAsc
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: SortOption.sizeDesc,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.arrow_downward,
-                                  size: 18,
-                                  color: _sortOption == SortOption.sizeDesc
-                                      ? AppTheme.primaryPurple
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Size (Largest)',
-                                  style: TextStyle(
-                                    fontWeight: _sortOption == SortOption.sizeDesc
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: SortOption.dateDesc,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 18,
-                                  color: _sortOption == SortOption.dateDesc
-                                      ? AppTheme.primaryPurple
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Date (Newest)',
-                                  style: TextStyle(
-                                    fontWeight: _sortOption == SortOption.dateDesc
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: SortOption.dateAsc,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 18,
-                                  color: _sortOption == SortOption.dateAsc
-                                      ? AppTheme.primaryPurple
-                                      : null,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Date (Oldest)',
-                                  style: TextStyle(
-                                    fontWeight: _sortOption == SortOption.dateAsc
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  PopupMenuItem(
+                    value: SortOption.nameDesc,
+                    child: Row(
+                      children: [
+                        Icon(Icons.sort_by_alpha, size: 18, color: AppTheme.primaryPurple),
+                        const SizedBox(width: 12),
+                        const Text('Name (Z-A)'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: SortOption.sizeAsc,
+                    child: Row(
+                      children: [
+                        Icon(Icons.data_usage, size: 18, color: AppTheme.primaryPurple),
+                        const SizedBox(width: 12),
+                        const Text('Size (Smallest)'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: SortOption.sizeDesc,
+                    child: Row(
+                      children: [
+                        Icon(Icons.data_usage, size: 18, color: AppTheme.primaryPurple),
+                        const SizedBox(width: 12),
+                        const Text('Size (Largest)'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: SortOption.dateAsc,
+                    child: Row(
+                      children: [
+                        Icon(Icons.access_time, size: 18, color: AppTheme.primaryPurple),
+                        const SizedBox(width: 12),
+                        const Text('Date (Oldest)'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: SortOption.dateDesc,
+                    child: Row(
+                      children: [
+                        Icon(Icons.access_time, size: 18, color: AppTheme.primaryPurple),
+                        const SizedBox(width: 12),
+                        const Text('Date (Newest)'),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -584,6 +584,47 @@ class _AboutScreenState extends State<AboutScreen>
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => _launchURL('https://www.linkedin.com/in/amarjeet-aryan/'),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'UX Design Guidance by ',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Amarjeet Aryan',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.open_in_new,
+                    size: 16,
+                    color: AppTheme.primaryPurple,
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             '© 2025 AWS Manager',

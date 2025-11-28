@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../services/email_config_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/aws_config_dialog.dart';
 import '../widgets/loading_animation.dart';
+import '../widgets/speed_dial_menu.dart';
+import '../widgets/list_header_with_search.dart';
 import 'iam_user_profile_screen.dart';
 import 'iam_group_profile_screen.dart';
 
@@ -15,8 +18,8 @@ class IAMScreen extends StatefulWidget {
 }
 
 class _IAMScreenState extends State<IAMScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+    with TickerProviderStateMixin {
+  int _currentIndex = 0;
   List<dynamic> _users = [];
   List<dynamic> _groups = [];
   List<dynamic> _filteredUsers = [];
@@ -25,11 +28,11 @@ class _IAMScreenState extends State<IAMScreen>
   bool _selectionMode = false;
   final Set<String> _selectedUsers = {};
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _searchController.addListener(_filterUsers);
     _loadData();
   }
@@ -463,21 +466,81 @@ class _IAMScreenState extends State<IAMScreen>
         appBar: AppBar(
           title: const Text('IAM Management'),
           elevation: 0,
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Users', icon: Icon(Icons.person)),
-              Tab(text: 'Groups', icon: Icon(Icons.group)),
-            ],
-          ),
         ),
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildUsersTab(),
-            _buildGroupsTab(),
+        body: _currentIndex == 0 ? _buildUsersTab() : _buildGroupsTab(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+              _selectionMode = false;
+              _selectedUsers.clear();
+              _searchController.clear();
+            });
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Users',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.group),
+              label: 'Groups',
+            ),
           ],
         ),
+        floatingActionButton: _currentIndex == 0 && !_selectionMode
+            ? SpeedDialMenu(
+                items: [
+                  SpeedDialMenuItem(
+                    icon: Icons.person_add,
+                    label: 'Create User',
+                    color: AppTheme.purple400,
+                    onTap: _createUser,
+                  ),
+                  SpeedDialMenuItem(
+                    icon: Icons.group_add,
+                    label: 'Batch Create',
+                    color: AppTheme.accentMint,
+                    onTap: _createMultipleUsers,
+                  ),
+                  SpeedDialMenuItem(
+                    icon: Icons.delete_sweep,
+                    label: 'Batch Delete',
+                    color: AppTheme.errorRed,
+                    onTap: () {
+                      setState(() {
+                        _selectionMode = true;
+                        _selectedUsers.clear();
+                      });
+                    },
+                  ),
+                  SpeedDialMenuItem(
+                    icon: Icons.refresh,
+                    label: 'Refresh',
+                    color: AppTheme.accentCoral,
+                    onTap: _loadData,
+                  ),
+                ],
+              )
+            : _currentIndex == 1
+                ? SpeedDialMenu(
+                    items: [
+                      SpeedDialMenuItem(
+                        icon: Icons.group_add,
+                        label: 'Create Group',
+                        color: AppTheme.purple400,
+                        onTap: _createGroup,
+                      ),
+                      SpeedDialMenuItem(
+                        icon: Icons.refresh,
+                        label: 'Refresh',
+                        color: AppTheme.accentCoral,
+                        onTap: _loadData,
+                      ),
+                    ],
+                  )
+                : null,
       ),
     );
   }
@@ -485,169 +548,60 @@ class _IAMScreenState extends State<IAMScreen>
   Widget _buildUsersTab() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: _selectionMode ? Colors.orange.shade50 : Colors.blue.shade50,
-            border: Border(
-              bottom: BorderSide(
-                color: _selectionMode ? Colors.orange.shade100 : Colors.blue.shade100,
+        if (!_selectionMode)
+          ListHeaderWithSearch(
+            title: 'IAM Users',
+            subtitle: '${_filteredUsers.length} users',
+            icon: Icons.people,
+            iconBackgroundColor: AppTheme.purple100,
+            iconColor: AppTheme.purple600,
+            searchController: _searchController,
+            searchFocusNode: _searchFocusNode,
+            searchHint: 'Search users by username or ID...',
+            headerBackgroundColor: AppTheme.purple50,
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: AppTheme.accentCoral.withValues(alpha: 0.1),
+              border: Border(
+                bottom: BorderSide(
+                  color: AppTheme.accentCoral.withValues(alpha: 0.3),
+                ),
               ),
             ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
-                      borderRadius: BorderRadius.circular(8),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentCoral.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.checklist, color: AppTheme.accentCoral),
                     ),
-                    child: Icon(Icons.people, color: Colors.blue.shade700),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                    const SizedBox(width: 12),
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _selectionMode ? 'Select Users' : 'IAM Users',
+                          'Select Users',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
                         Text(
-                          _selectionMode
-                              ? '${_selectedUsers.length} selected'
-                              : '${_filteredUsers.length} of ${_users.length} users',
+                          '${_selectedUsers.length} selected',
                           style: TextStyle(color: Colors.grey[600], fontSize: 14),
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _loadData,
-                    tooltip: 'Refresh',
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              
-              // Search bar
-              if (!_selectionMode)
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search users by username or ID...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
-                            onPressed: () {
-                              _searchController.clear();
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 12),
-              
-              // Action menu
-              if (!_selectionMode)
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'create':
-                        _createUser();
-                        break;
-                      case 'batch_create':
-                        _createMultipleUsers();
-                        break;
-                      case 'batch_delete':
-                        setState(() {
-                          _selectionMode = true;
-                          _selectedUsers.clear();
-                        });
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'create',
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_add, size: 20, color: Colors.blue),
-                          SizedBox(width: 12),
-                          Text('Create User'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'batch_create',
-                      child: Row(
-                        children: [
-                          Icon(Icons.group_add, size: 20, color: Colors.green),
-                          SizedBox(width: 12),
-                          Text('Batch Create Users'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    const PopupMenuItem(
-                      value: 'batch_delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_sweep, size: 20, color: Colors.red),
-                          SizedBox(width: 12),
-                          Text('Batch Delete Users'),
-                        ],
-                      ),
-                    ),
                   ],
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Actions',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
-                      ],
-                    ),
-                  ),
-                )
-              else
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -657,7 +611,7 @@ class _IAMScreenState extends State<IAMScreen>
                         label: Text('Delete (${_selectedUsers.length})'),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppTheme.errorRed,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -683,9 +637,9 @@ class _IAMScreenState extends State<IAMScreen>
                     ),
                   ],
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
         Expanded(
           child: _loading
               ? const LoadingAnimation(message: 'Loading users')
@@ -740,11 +694,11 @@ class _IAMScreenState extends State<IAMScreen>
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           elevation: isSelected ? 3 : 1,
-                          color: isSelected ? Colors.blue.shade50 : null,
+                          color: isSelected ? AppTheme.purple50 : null,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                             side: isSelected
-                                ? BorderSide(color: Colors.blue, width: 2)
+                                ? BorderSide(color: AppTheme.purple400, width: 2)
                                 : BorderSide(color: Colors.grey.shade200, width: 1),
                           ),
                           child: InkWell(
@@ -771,59 +725,45 @@ class _IAMScreenState extends State<IAMScreen>
                               padding: const EdgeInsets.all(16),
                               child: Row(
                                 children: [
-                                  // Leading
-                                  _selectionMode
-                                      ? Checkbox(
-                                          value: isSelected,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              if (value == true) {
-                                                _selectedUsers.add(username);
-                                              } else {
-                                                _selectedUsers.remove(username);
-                                              }
-                                            });
-                                          },
-                                        )
-                                      : Container(
-                                          width: 56,
-                                          height: 56,
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Colors.blue.shade400,
-                                                Colors.blue.shade600,
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(14),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.blue.withValues(alpha: 0.2),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(
-                                            Icons.person,
-                                            color: Colors.white,
-                                            size: 30,
-                                          ),
-                                        ),
-                                  const SizedBox(width: 16),
+                                  // Leading - checkbox only in selection mode
+                                  if (_selectionMode)
+                                    Checkbox(
+                                      value: isSelected,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            _selectedUsers.add(username);
+                                          } else {
+                                            _selectedUsers.remove(username);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  if (_selectionMode)
+                                    const SizedBox(width: 16),
                                   // Content
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          user['username'] ?? '',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            letterSpacing: -0.2,
+                                        ShaderMask(
+                                          shaderCallback: (bounds) => const LinearGradient(
+                                            colors: [
+                                              Color(0xFF6366F1),
+                                              Color(0xFF8B5CF6),
+                                              Color(0xFFA855F7),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(bounds),
+                                          child: Text(
+                                            user['username'] ?? '',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 20,
+                                              color: Colors.white,
+                                              letterSpacing: -0.5,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 6),
@@ -903,103 +843,16 @@ class _IAMScreenState extends State<IAMScreen>
   Widget _buildGroupsTab() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.green.shade50,
-            border: Border(
-              bottom: BorderSide(color: Colors.green.shade100),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.group, color: Colors.green.shade700),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'IAM Groups',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          '${_groups.length} groups',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _loadData,
-                    tooltip: 'Refresh',
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Group Actions Menu
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'create') {
-                    _createGroup();
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'create',
-                    child: Row(
-                      children: [
-                        Icon(Icons.group_add, size: 20, color: Colors.green),
-                        SizedBox(width: 12),
-                        Text('Create Group'),
-                      ],
-                    ),
-                  ),
-                ],
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add, color: Colors.white, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Actions',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+        ListHeaderWithSearch(
+          title: 'IAM Groups',
+          subtitle: '${_groups.length} groups',
+          icon: Icons.group,
+          iconBackgroundColor: AppTheme.purple200,
+          iconColor: AppTheme.purple600,
+          searchController: _searchController,
+          searchFocusNode: _searchFocusNode,
+          searchHint: 'Search groups by name or ID...',
+          headerBackgroundColor: AppTheme.purple100,
         ),
         Expanded(
           child: _loading
@@ -1029,68 +882,88 @@ class _IAMScreenState extends State<IAMScreen>
                         final group = _groups[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 2,
+                          elevation: 1,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: Colors.grey.shade200, width: 1),
                           ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
                             onTap: () => _showGroupDetails(group),
-                            leading: Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.green.shade400,
-                                    Colors.green.shade600,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.group,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            title: Text(
-                              group['groupname'] ?? '',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.fingerprint,
-                                        size: 14, color: Colors.grey[600]),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      group['group_id'] ?? '',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Content
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ShaderMask(
+                                          shaderCallback: (bounds) => const LinearGradient(
+                                            colors: [
+                                              Color(0xFF6366F1),
+                                              Color(0xFF8B5CF6),
+                                              Color(0xFFA855F7),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(bounds),
+                                          child: Text(
+                                            group['groupname'] ?? '',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 20,
+                                              color: Colors.white,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.fingerprint,
+                                                size: 14, color: Colors.grey[500]),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                group['group_id'] ?? '',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              color: Colors.red,
-                              tooltip: 'Delete group',
-                              onPressed: () => _deleteGroup(group['groupname'] ?? ''),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.red.shade50,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                                  ),
+                                  // Trailing
+                                  PopupMenuButton<String>(
+                                    tooltip: 'Actions',
+                                    icon: Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
+                                    onSelected: (value) {
+                                      if (value == 'delete') {
+                                        _deleteGroup(group['groupname'] ?? '');
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                            SizedBox(width: 12),
+                                            Text('Delete Group', style: TextStyle(color: Colors.red)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -1305,8 +1178,8 @@ class _IAMScreenState extends State<IAMScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
+import '../widgets/list_header_with_search.dart';
+import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 import 'ec2_instance_details_screen.dart';
 
@@ -76,14 +78,50 @@ class EC2Instance {
 
 class _EC2ScreenState extends State<EC2Screen> {
   List<EC2Instance> _instances = [];
+  List<EC2Instance> _filteredInstances = [];
   bool _loading = false;
   bool _operationInProgress = false;
   String _filterState = 'all';
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_filterInstances);
     _loadInstances();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _filterInstances() {
+    setState(() {
+      var instances = _instances;
+      
+      // Filter by state
+      if (_filterState != 'all') {
+        instances = instances.where((instance) => 
+          instance.state.toLowerCase() == _filterState.toLowerCase()
+        ).toList();
+      }
+      
+      // Filter by search
+      if (_searchController.text.isNotEmpty) {
+        final query = _searchController.text.toLowerCase();
+        instances = instances.where((instance) {
+          return instance.name.toLowerCase().contains(query) ||
+                 instance.instanceId.toLowerCase().contains(query) ||
+                 instance.instanceType.toLowerCase().contains(query);
+        }).toList();
+      }
+      
+      _filteredInstances = instances;
+    });
   }
 
   Future<void> _loadInstances() async {
@@ -92,6 +130,7 @@ class _EC2ScreenState extends State<EC2Screen> {
       final instances = await ApiService.listEC2Instances();
       setState(() {
         _instances = instances.map((json) => EC2Instance.fromJson(json)).toList();
+        _filterInstances();
       });
     } catch (e) {
       _showError('Failed to load instances: $e');
@@ -132,18 +171,8 @@ class _EC2ScreenState extends State<EC2Screen> {
     );
   }
 
-  List<EC2Instance> get _filteredInstances {
-    if (_filterState == 'all') {
-      return _instances;
-    }
-    return _instances.where((instance) => 
-      instance.state.toLowerCase() == _filterState.toLowerCase()
-    ).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final filteredInstances = _filteredInstances;
 
     return LoadingOverlay(
       isLoading: _operationInProgress,
@@ -155,85 +184,54 @@ class _EC2ScreenState extends State<EC2Screen> {
           elevation: 0,
           backgroundColor: Colors.white,
         ),
+        floatingActionButton: SpeedDialMenu(
+          items: [
+            SpeedDialMenuItem(
+              icon: Icons.refresh,
+              label: 'Refresh',
+              color: AppTheme.primaryPurple,
+              onTap: _loadInstances,
+            ),
+          ],
+        ),
         body: Column(
           children: [
-            // Header Section
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: AppTheme.ec2Color.withValues(alpha: 0.1),
-                border: Border(
-                  bottom: BorderSide(color: AppTheme.ec2Color.withValues(alpha: 0.2)),
+            ListHeaderWithSearch(
+              title: 'EC2 Instances',
+              subtitle: _searchController.text.isNotEmpty || _filterState != 'all'
+                  ? '${_filteredInstances.length} instances (filtered)'
+                  : '${_instances.length} instances',
+              icon: Icons.developer_board,
+              iconBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.15),
+              iconColor: AppTheme.primaryPurple,
+              searchController: _searchController,
+              searchFocusNode: _searchFocusNode,
+              searchHint: 'Search instances by name, ID or type...',
+              headerBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.08),
+            ),
+            // Filter pills outside header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', 'all'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Running', 'running'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Stopped', 'stopped'),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Pending', 'pending'),
+                  ],
                 ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.ec2Color.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.developer_board, color: AppTheme.ec2Color),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'EC2 Instances',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              '${filteredInstances.length} instance${filteredInstances.length != 1 ? 's' : ''} found',
-                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _loadInstances,
-                        tooltip: 'Refresh',
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Filter chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildFilterChip('All', 'all'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Running', 'running'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Stopped', 'stopped'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Pending', 'pending'),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
             // Instances List
             Expanded(
               child: _loading
                   ? const LoadingAnimation(message: 'Loading instances')
-                  : filteredInstances.isEmpty
+                  : _filteredInstances.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -262,9 +260,9 @@ class _EC2ScreenState extends State<EC2Screen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
-                          itemCount: filteredInstances.length,
+                          itemCount: _filteredInstances.length,
                           itemBuilder: (context, index) {
-                            final instance = filteredInstances[index];
+                            final instance = _filteredInstances[index];
                             return _buildInstanceCard(instance);
                           },
                         ),
@@ -277,23 +275,31 @@ class _EC2ScreenState extends State<EC2Screen> {
 
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _filterState == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _filterState = value);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _filterState = value;
+          _filterInstances();
+        });
       },
-      backgroundColor: Colors.white,
-      selectedColor: AppTheme.ec2Color.withValues(alpha: 0.2),
-      checkmarkColor: AppTheme.ec2Color,
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.ec2Color : AppTheme.textSecondary,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      side: BorderSide(
-        color: isSelected 
-            ? AppTheme.ec2Color 
-            : AppTheme.borderColor,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.purple400 : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.purple400 : AppTheme.purple200,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.purple600,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }

@@ -1,0 +1,190 @@
+import 'package:flutter/material.dart';
+
+class ListHeaderWithSearch extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconBackgroundColor;
+  final Color iconColor;
+  final TextEditingController? searchController;
+  final FocusNode? searchFocusNode;
+  final String searchHint;
+  final bool showSearch;
+  final Color? headerBackgroundColor;
+  final Widget? actionWidget;
+
+  const ListHeaderWithSearch({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconBackgroundColor,
+    required this.iconColor,
+    this.searchController,
+    this.searchFocusNode,
+    this.searchHint = 'Search...',
+    this.showSearch = true,
+    this.headerBackgroundColor,
+    this.actionWidget,
+  });
+
+  @override
+  State<ListHeaderWithSearch> createState() => _ListHeaderWithSearchState();
+}
+
+class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _searchAnimationController;
+  late Animation<double> _searchAnimation;
+  bool _searchExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _searchAnimation = CurvedAnimation(
+      parent: _searchAnimationController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchExpanded = !_searchExpanded;
+      if (!_searchExpanded) {
+        _searchAnimationController.reverse();
+        widget.searchController?.clear();
+        widget.searchFocusNode?.unfocus();
+      } else {
+        _searchAnimationController.forward();
+        widget.searchFocusNode?.requestFocus();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: widget.headerBackgroundColor ?? Colors.blue.shade50,
+        border: Border(
+          bottom: BorderSide(
+            color: widget.iconColor.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: widget.iconBackgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(widget.icon, color: widget.iconColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B1B1F),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  if (!_searchExpanded)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        widget.subtitle,
+                        style: const TextStyle(
+                          color: Color(0xFF6F6F7A),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              if (_searchExpanded && widget.showSearch && widget.searchController != null)
+                Expanded(
+                  child: SizeTransition(
+                    sizeFactor: _searchAnimation,
+                    axis: Axis.horizontal,
+                    axisAlignment: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: TextField(
+                        controller: widget.searchController,
+                        focusNode: widget.searchFocusNode,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: widget.searchHint,
+                          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: widget.iconColor, width: 1.5),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                const Spacer(),
+              if (widget.showSearch && widget.searchController != null)
+                IconButton(
+                  icon: Icon(
+                    _searchExpanded ? Icons.close : Icons.search,
+                    color: widget.iconColor,
+                  ),
+                  onPressed: _toggleSearch,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                )
+              else if (widget.actionWidget != null)
+                widget.actionWidget!,
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
