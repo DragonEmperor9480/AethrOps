@@ -253,11 +253,10 @@ class _S3ScreenState extends State<S3Screen> {
       isLoading: _operationInProgress,
       message: 'Processing...',
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundLight,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('S3 Management'),
           elevation: 0,
-          backgroundColor: Colors.white,
         ),
         floatingActionButton: SpeedDialMenu(
           closedIcon: Icons.menu,

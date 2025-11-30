@@ -759,12 +759,14 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   }
 
   Widget _buildBreadcrumbs() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
+          bottom: BorderSide(color: isDark ? AppTheme.borderColorDark : Colors.grey.shade200),
         ),
       ),
       child: Row(
@@ -789,7 +791,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     size: 16,
                     color: _currentPrefix.isEmpty 
                         ? AppTheme.s3Color 
-                        : Colors.grey.shade600,
+                        : theme.textTheme.bodyMedium?.color,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -801,7 +803,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                           : FontWeight.normal,
                       color: _currentPrefix.isEmpty 
                           ? AppTheme.s3Color 
-                          : Colors.grey.shade700,
+                          : theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                 ],
@@ -810,7 +812,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           ),
           if (_breadcrumbs.isNotEmpty) ...[
             for (int i = 0; i < _breadcrumbs.length; i++) ...[
-              Icon(Icons.chevron_right, size: 16, color: Colors.grey.shade400),
+              Icon(Icons.chevron_right, size: 16, color: theme.textTheme.bodyMedium?.color),
               InkWell(
                 onTap: () => _navigateToBreadcrumb(i),
                 child: Container(
@@ -830,7 +832,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                           : FontWeight.normal,
                       color: i == _breadcrumbs.length - 1
                           ? AppTheme.s3Color
-                          : Colors.grey.shade700,
+                          : theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                 ),
@@ -844,6 +846,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return WillPopScope(
       onWillPop: () async {
         if (_currentPrefix.isNotEmpty) {
@@ -853,7 +856,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         return true;
       },
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundLight,
+        backgroundColor: theme.scaffoldBackgroundColor,
         floatingActionButton: SpeedDialMenu(
           closedIcon: Icons.menu,
           openIcon: Icons.close,
@@ -891,7 +894,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         appBar: AppBar(
           title: Text(widget.bucketName),
           elevation: 0,
-          backgroundColor: Colors.white,
           leading: _currentPrefix.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.arrow_back),
@@ -1013,7 +1015,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                                     ? Icons.search_off 
                                     : Icons.folder_open_outlined,
                                 size: 80, 
-                                color: Colors.grey[300],
+                                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3),
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -1022,7 +1024,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                                     : 'No items found',
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: Colors.grey[600],
+                                  color: theme.textTheme.bodyMedium?.color,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -1030,7 +1032,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                                 _searchQuery.isNotEmpty 
                                     ? 'Try a different search term' 
                                     : 'Upload files or create folders',
-                                style: TextStyle(color: Colors.grey[500]),
+                                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
                               ),
                             ],
                           ),

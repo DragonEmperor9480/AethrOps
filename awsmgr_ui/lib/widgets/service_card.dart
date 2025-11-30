@@ -27,6 +27,8 @@ class _ServiceCardState extends State<ServiceCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -37,7 +39,9 @@ class _ServiceCardState extends State<ServiceCard> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.04),
+              color: isDark
+                  ? Colors.black.withValues(alpha: _isHovered ? 0.5 : 0.3)
+                  : Colors.black.withValues(alpha: _isHovered ? 0.08 : 0.04),
               blurRadius: _isHovered ? 16 : 8,
               offset: Offset(0, _isHovered ? 6 : 3),
             ),
@@ -45,12 +49,12 @@ class _ServiceCardState extends State<ServiceCard> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _isHovered 
                   ? widget.color.withValues(alpha: 0.3)
-                  : const Color(0xFFE5E7EB),
+                  : (isDark ? const Color(0xFF2D2D3A) : const Color(0xFFE5E7EB)),
               width: 1.5,
             ),
           ),
@@ -104,10 +108,10 @@ class _ServiceCardState extends State<ServiceCard> {
                     const SizedBox(height: 12),
                     Text(
                       widget.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827),
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -116,9 +120,9 @@ class _ServiceCardState extends State<ServiceCard> {
                     Flexible(
                       child: Text(
                         widget.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6B7280),
+                          color: theme.textTheme.bodyMedium?.color,
                           height: 1.3,
                         ),
                         maxLines: 2,

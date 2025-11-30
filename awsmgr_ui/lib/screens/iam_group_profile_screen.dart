@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
+import '../theme/app_theme.dart';
 
 class IAMGroupProfileScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -374,11 +375,12 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Icon(icon, size: 20, color: theme.textTheme.bodyMedium?.color),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -388,7 +390,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodyMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -409,6 +411,8 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   }
 
   Widget _buildListItem(IconData icon, String title, {String? subtitle}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -416,10 +420,12 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
+              color: isDark
+                  ? AppTheme.successGreen.withValues(alpha: 0.2)
+                  : Colors.green.shade50,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 20, color: Colors.green.shade700),
+            child: Icon(icon, size: 20, color: isDark ? AppTheme.successGreen : Colors.green.shade700),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -454,6 +460,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   }
 
   Widget _buildEmptyState(IconData icon, String message) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -464,13 +471,13 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
         child: Center(
           child: Column(
             children: [
-              Icon(icon, size: 48, color: Colors.grey[300]),
+              Icon(icon, size: 48, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
               Text(
                 message,
                 style: TextStyle(
-                  color: Colors.grey[600],
                   fontSize: 14,
+                  color: theme.textTheme.bodyMedium?.color,
                 ),
               ),
             ],

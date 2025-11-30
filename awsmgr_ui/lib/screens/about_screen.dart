@@ -89,8 +89,10 @@ class _AboutScreenState extends State<AboutScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Animated particle background
@@ -143,13 +145,17 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildAppBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: theme.cardColor.withValues(alpha: 0.95),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -160,15 +166,15 @@ class _AboutScreenState extends State<AboutScreen>
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'About',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: theme.textTheme.bodyLarge?.color,
             ),
           ),
         ],
@@ -204,6 +210,8 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildInfoCards() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       children: [
         // Title Card
@@ -246,7 +254,7 @@ class _AboutScreenState extends State<AboutScreen>
                 'Version $_version',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppTheme.textSecondary,
+                  color: theme.textTheme.bodyMedium?.color,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -295,11 +303,13 @@ class _AboutScreenState extends State<AboutScreen>
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: isDark 
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -328,12 +338,12 @@ class _AboutScreenState extends State<AboutScreen>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'About This App',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                 ],
@@ -346,19 +356,19 @@ class _AboutScreenState extends State<AboutScreen>
                 style: TextStyle(
                   fontSize: 15,
                   height: 1.6,
-                  color: AppTheme.textSecondary,
+                  color: theme.textTheme.bodyMedium?.color,
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.computer, size: 16, color: AppTheme.textSecondary),
+                  Icon(Icons.computer, size: 16, color: theme.textTheme.bodyMedium?.color),
                   const SizedBox(width: 8),
                   Text(
                     _osName,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.textSecondary,
+                      color: theme.textTheme.bodyMedium?.color,
                     ),
                   ),
                 ],
@@ -371,6 +381,8 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildFeaturesList() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final features = [
       {
         'icon': Icons.rocket_launch,
@@ -418,12 +430,12 @@ class _AboutScreenState extends State<AboutScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Why Choose AWS Manager?',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 20),
@@ -443,7 +455,7 @@ class _AboutScreenState extends State<AboutScreen>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: (feature['color'] as Color).withValues(alpha: 0.2),
@@ -451,7 +463,9 @@ class _AboutScreenState extends State<AboutScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: isDark 
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.03),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -478,10 +492,10 @@ class _AboutScreenState extends State<AboutScreen>
                       children: [
                         Text(
                           feature['title'] as String,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -489,7 +503,7 @@ class _AboutScreenState extends State<AboutScreen>
                           feature['description'] as String,
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppTheme.textSecondary,
+                            color: theme.textTheme.bodyMedium?.color,
                             height: 1.4,
                           ),
                         ),
@@ -506,6 +520,7 @@ class _AboutScreenState extends State<AboutScreen>
   }
 
   Widget _buildFooter() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -534,12 +549,12 @@ class _AboutScreenState extends State<AboutScreen>
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Made with love and passion',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              color: AppTheme.textPrimary,
+              color: theme.textTheme.bodyLarge?.color,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -552,11 +567,11 @@ class _AboutScreenState extends State<AboutScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'By ',
                     style: TextStyle(
                       fontSize: 15,
-                      color: AppTheme.textSecondary,
+                      color: theme.textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -593,11 +608,11 @@ class _AboutScreenState extends State<AboutScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'UX Design Guidance by ',
                     style: TextStyle(
                       fontSize: 15,
-                      color: AppTheme.textSecondary,
+                      color: theme.textTheme.bodyMedium?.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -630,7 +645,7 @@ class _AboutScreenState extends State<AboutScreen>
             '© 2025 AWS Manager',
             style: TextStyle(
               fontSize: 13,
-              color: AppTheme.textSecondary.withValues(alpha: 0.7),
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),

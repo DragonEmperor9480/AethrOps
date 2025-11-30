@@ -463,6 +463,7 @@ class _IAMScreenState extends State<IAMScreen>
       isLoading: _operationInProgress,
       message: 'Processing...',
       child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('IAM Management'),
           elevation: 0,
@@ -558,7 +559,6 @@ class _IAMScreenState extends State<IAMScreen>
             searchController: _searchController,
             searchFocusNode: _searchFocusNode,
             searchHint: 'Search users by username or ID...',
-            headerBackgroundColor: AppTheme.purple50,
           )
         else
           Container(
@@ -852,7 +852,6 @@ class _IAMScreenState extends State<IAMScreen>
           searchController: _searchController,
           searchFocusNode: _searchFocusNode,
           searchHint: 'Search groups by name or ID...',
-          headerBackgroundColor: AppTheme.purple100,
         ),
         Expanded(
           child: _loading

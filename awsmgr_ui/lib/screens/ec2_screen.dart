@@ -178,11 +178,10 @@ class _EC2ScreenState extends State<EC2Screen> {
       isLoading: _operationInProgress,
       message: 'Processing...',
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundLight,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('EC2 Management'),
           elevation: 0,
-          backgroundColor: Colors.white,
         ),
         floatingActionButton: SpeedDialMenu(
           items: [
@@ -275,6 +274,8 @@ class _EC2ScreenState extends State<EC2Screen> {
 
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _filterState == value;
+    final theme = Theme.of(context);
+    
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -285,7 +286,7 @@ class _EC2ScreenState extends State<EC2Screen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.purple400 : Colors.white,
+          color: isSelected ? AppTheme.purple400 : theme.cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppTheme.purple400 : AppTheme.purple200,
@@ -360,7 +361,7 @@ class _EC2ScreenState extends State<EC2Screen> {
                         instance.instanceId,
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppTheme.textSecondary,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontFamily: 'monospace',
                         ),
                       ),
@@ -421,23 +422,24 @@ class _EC2ScreenState extends State<EC2Screen> {
   }
 
   Widget _buildSimpleDetail(String label, String value) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           '$label: ',
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
+          style: TextStyle(
+            color: theme.textTheme.bodyMedium?.color,
             fontSize: 13,
           ),
         ),
         Flexible(
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 13,
-              color: AppTheme.textPrimary,
+              color: theme.textTheme.bodyLarge?.color,
             ),
             overflow: TextOverflow.ellipsis,
           ),

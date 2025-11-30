@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
+import '../theme/app_theme.dart';
 
 class IAMUserProfileScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -371,6 +372,8 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -388,10 +391,12 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: isDark 
+                          ? AppTheme.primaryBlue.withValues(alpha: 0.2)
+                          : Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(icon, size: 20, color: Colors.blue.shade700),
+                    child: Icon(icon, size: 20, color: isDark ? AppTheme.primaryBlue : Colors.blue.shade700),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -409,7 +414,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                           '$count ${count == 1 ? 'item' : 'items'}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: theme.textTheme.bodyMedium?.color,
                           ),
                         ),
                       ],
@@ -421,8 +426,10 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                       tooltip: actionLabel,
                       onPressed: onAction,
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.blue.shade50,
-                        foregroundColor: Colors.blue.shade700,
+                        backgroundColor: isDark 
+                            ? AppTheme.primaryBlue.withValues(alpha: 0.2)
+                            : Colors.blue.shade50,
+                        foregroundColor: isDark ? AppTheme.primaryBlue : Colors.blue.shade700,
                       ),
                     ),
                   if (hasAction && onAction != null && !isEmpty)
@@ -430,7 +437,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   if (!isEmpty)
                     Icon(
                       isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.grey[600],
+                      color: theme.textTheme.bodyMedium?.color,
                     ),
                 ],
               ),
@@ -443,17 +450,19 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: isDark 
+                      ? theme.cardColor.withValues(alpha: 0.5)
+                      : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    Icon(emptyIcon, size: 36, color: Colors.grey[300]),
+                    Icon(emptyIcon, size: 36, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
                     const SizedBox(height: 8),
                     Text(
                       emptyMessage,
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: theme.textTheme.bodyMedium?.color,
                         fontSize: 13,
                       ),
                     ),

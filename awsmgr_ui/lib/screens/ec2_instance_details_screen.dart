@@ -359,12 +359,12 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Instance Details'),
         elevation: 0,
-        backgroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
@@ -410,6 +410,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildErrorState() {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -418,7 +419,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           const SizedBox(height: 16),
           Text(
             'Failed to load instance details',
-            style: TextStyle(fontSize: 18, color: AppTheme.textPrimary),
+            style: TextStyle(fontSize: 18, color: theme.textTheme.bodyLarge?.color),
           ),
           const SizedBox(height: 8),
           Padding(
@@ -426,7 +427,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
             child: Text(
               _error ?? 'Unknown error',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
             ),
           ),
           const SizedBox(height: 24),
@@ -475,11 +476,12 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildHeaderSection() {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         border: Border(
           bottom: BorderSide(color: _stateColor.withValues(alpha: 0.2)),
         ),
@@ -510,7 +512,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                             widget.instanceId,
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.textSecondary,
+                              color: theme.textTheme.bodyMedium?.color,
                               fontFamily: 'monospace',
                             ),
                           ),
@@ -562,14 +564,15 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildQuickInfo(IconData icon, String text) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: AppTheme.textSecondary),
+        Icon(icon, size: 16, color: theme.textTheme.bodyMedium?.color),
         const SizedBox(width: 4),
         Text(
           text,
-          style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+          style: TextStyle(fontSize: 13, color: theme.textTheme.bodyLarge?.color),
         ),
       ],
     );
@@ -620,13 +623,15 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildNetworkInterface(Map<String, dynamic> ni) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLight,
+        color: isDark ? AppTheme.cardBackgroundDark : AppTheme.backgroundLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -663,13 +668,15 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildBlockDevice(Map<String, dynamic> device) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLight,
+        color: isDark ? AppTheme.cardBackgroundDark : AppTheme.backgroundLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,19 +716,21 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           const SizedBox(height: 8),
           ...securityGroups.map((sg) => _buildSecurityGroup(sg)),
         ] else
-          const Text('No security groups', style: TextStyle(color: AppTheme.textSecondary)),
+          Text('No security groups', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
       ],
     );
   }
 
   Widget _buildSecurityGroup(Map<String, dynamic> sg) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLight,
+        color: isDark ? AppTheme.cardBackgroundDark : AppTheme.backgroundLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -748,7 +757,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           const SizedBox(height: 8),
           ...tags.entries.map((tag) => _buildTag(tag.key, tag.value)),
         ] else
-          const Text('No tags', style: TextStyle(color: AppTheme.textSecondary)),
+          Text('No tags', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
       ],
     );
   }

@@ -228,6 +228,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _navigateToService(String route, bool comingSoon) {
     if (comingSoon) {
+      final theme = Theme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -237,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const Text('This service is coming soon'),
             ],
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: theme.cardColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -289,15 +290,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar.large(
             expandedHeight: 200,
             floating: false,
             pinned: true,
-            backgroundColor: Colors.white,
+            backgroundColor: theme.scaffoldBackgroundColor,
             elevation: 0,
             actions: [
               Container(
@@ -318,20 +320,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (_isLoadingUserInfo)
-                      const SizedBox(
+                      SizedBox(
                         width: 10,
                         height: 10,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
                         ),
                       )
                     else
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onPrimary,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -342,8 +344,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           : _isConnected 
                               ? 'Connected' 
                               : 'Disconnected',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: theme.colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -380,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               style: TextStyle(
                                 fontSize: isMobile ? 20 : 22,
                                 fontWeight: FontWeight.w800,
-                                color: AppTheme.textSecondary,
+                                color: theme.textTheme.bodyMedium?.color,
                                 letterSpacing: -0.3,
                               ),
                             ),
@@ -388,8 +390,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               _username,
                               style: TextStyle(
                                 fontSize: isMobile ? 18 : 20,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w700,
+                                color: theme.textTheme.bodyLarge?.color,
                                 letterSpacing: -0.3,
                               ),
                             ),
@@ -436,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         child: Icon(
                                           Icons.format_quote,
                                           size: isMobile ? 9 : 12,
-                                          color: AppTheme.textSecondary,
+                                          color: theme.textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
@@ -447,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             fontSize: isMobile ? 8 : 11,
                                             fontWeight: FontWeight.w600,
                                             fontStyle: FontStyle.italic,
-                                            color: AppTheme.textPrimary,
+                                            color: theme.textTheme.bodyLarge?.color,
                                             letterSpacing: 0.2,
                                             height: 1.3,
                                           ),
@@ -526,7 +528,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
+                          color: theme.textTheme.bodyLarge?.color,
                           letterSpacing: -0.5,
                         ),
                       ),

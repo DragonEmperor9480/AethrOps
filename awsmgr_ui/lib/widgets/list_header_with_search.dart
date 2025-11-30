@@ -73,10 +73,16 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: widget.headerBackgroundColor ?? Colors.blue.shade50,
+        color: widget.headerBackgroundColor ?? 
+          (isDark 
+            ? widget.iconColor.withValues(alpha: 0.15) 
+            : widget.iconColor.withValues(alpha: 0.1)),
         border: Border(
           bottom: BorderSide(
             color: widget.iconColor.withValues(alpha: 0.1),
@@ -102,10 +108,7 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                 children: [
                   Text(
                     widget.title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1B1B1F),
+                    style: theme.textTheme.titleLarge?.copyWith(
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -114,9 +117,7 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         widget.subtitle,
-                        style: const TextStyle(
-                          color: Color(0xFF6F6F7A),
-                          fontSize: 13,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -136,16 +137,25 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                         controller: widget.searchController,
                         focusNode: widget.searchFocusNode,
                         autofocus: true,
+                        style: theme.textTheme.bodyMedium,
                         decoration: InputDecoration(
                           hintText: widget.searchHint,
-                          prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+                          prefixIcon: Icon(
+                            Icons.search, 
+                            color: isDark ? Colors.grey.shade600 : Colors.grey.shade400, 
+                            size: 20,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
+                            borderSide: BorderSide(
+                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -155,9 +165,12 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                             horizontal: 14,
                             vertical: 10,
                           ),
-                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey.shade600 : Colors.grey.shade400, 
+                            fontSize: 14,
+                          ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: theme.cardColor,
                         ),
                       ),
                     ),
@@ -173,7 +186,7 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                   ),
                   onPressed: _toggleSearch,
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: theme.cardColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

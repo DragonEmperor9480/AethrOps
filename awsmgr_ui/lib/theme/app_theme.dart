@@ -34,7 +34,7 @@ class AppTheme {
   static const Color rdsColor = Color(0xFF92C6FF); // Soft blue
   static const Color settingsColor = Color(0xFFA06EFF); // Medium purple
   
-  // Neutral colors - Typography Hierarchy
+  // Light Theme Colors
   static const Color backgroundLight = Color(0xFFFAF8FF); // Slight purple tint
   static const Color cardBackground = Colors.white;
   static const Color textPrimary = Color(0xFF1B1B1F); // Title - darkest
@@ -42,6 +42,15 @@ class AppTheme {
   static const Color textBody = Color(0xFF4A4A55); // Body text
   static const Color textMuted = Color(0xFF6F6F7A); // Muted/Caption
   static const Color borderColor = Color(0xFFEBE0FF); // Light purple border
+  
+  // Dark Theme Colors
+  static const Color backgroundDark = Color(0xFF0F0F14); // Deep dark background
+  static const Color cardBackgroundDark = Color(0xFF1A1A24); // Dark card background
+  static const Color textPrimaryDark = Color(0xFFE8E6F0); // Light text for dark mode
+  static const Color textSecondaryDark = Color(0xFFC4C2D0); // Secondary text for dark
+  static const Color textBodyDark = Color(0xFFA8A6B0); // Body text for dark
+  static const Color textMutedDark = Color(0xFF8C8A94); // Muted text for dark
+  static const Color borderColorDark = Color(0xFF2D2D3A); // Dark border
   
   // Status colors - Soft versions
   static const Color successGreen = Color(0xFF22C55E); // Modern green
@@ -115,6 +124,79 @@ class AppTheme {
         bodyMedium: TextStyle(
           fontSize: 14,
           color: textSecondary,
+        ),
+      ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryPurple,
+        brightness: Brightness.dark,
+        background: backgroundDark,
+        surface: cardBackgroundDark,
+      ),
+      scaffoldBackgroundColor: backgroundDark,
+      cardTheme: CardThemeData(
+        color: cardBackgroundDark,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: borderColorDark),
+        ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: backgroundDark,
+        foregroundColor: textPrimaryDark,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryPurple,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primaryPurple,
+          side: const BorderSide(color: primaryPurple),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+          color: textPrimaryDark,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: textPrimaryDark,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: textPrimaryDark,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          color: textPrimaryDark,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          color: textSecondaryDark,
         ),
       ),
     );
