@@ -11,7 +11,7 @@
 
 [Setup]
 ; Application info
-AppId={A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}
+AppId={{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
