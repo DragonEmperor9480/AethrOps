@@ -45,8 +45,11 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('CloudWatch'),
         backgroundColor: AppTheme.cloudwatchColor,
@@ -56,12 +59,15 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
       body: _isLoading
           ? const Center(child: LoadingAnimation())
           : _error != null
-              ? _buildError()
-              : _buildFunctionList(),
+              ? _buildError(theme, isDark)
+              : _buildFunctionList(theme, isDark),
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(ThemeData theme, bool isDark) {
+    final textColor = isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary;
+    final secondaryColor = isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary;
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -79,7 +85,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 8),
@@ -87,7 +93,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
               _error!,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppTheme.textSecondary,
+                color: secondaryColor,
               ),
             ),
             const SizedBox(height: 24),
@@ -106,7 +112,12 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
     );
   }
 
-  Widget _buildFunctionList() {
+  Widget _buildFunctionList(ThemeData theme, bool isDark) {
+    final textColor = isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary;
+    final secondaryColor = isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary;
+    final cardColor = isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground;
+    final borderColor = isDark ? AppTheme.borderColorDark : AppTheme.borderColor;
+    
     if (_functions.isEmpty) {
       return Center(
         child: Column(
@@ -115,14 +126,14 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
             Icon(
               Icons.functions,
               size: 64,
-              color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              color: secondaryColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
               'No Lambda Functions Found',
               style: TextStyle(
                 fontSize: 18,
-                color: AppTheme.textSecondary,
+                color: secondaryColor,
               ),
             ),
           ],
@@ -136,7 +147,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.cloudwatchColor.withValues(alpha: 0.1),
+            color: AppTheme.cloudwatchColor.withValues(alpha: isDark ? 0.15 : 0.1),
             border: Border(
               bottom: BorderSide(
                 color: AppTheme.cloudwatchColor.withValues(alpha: 0.2),
@@ -153,18 +164,19 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Lambda Functions',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
                   ),
                   Text(
                     '${_functions.length} function${_functions.length != 1 ? 's' : ''} available',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppTheme.textSecondary,
+                      color: secondaryColor,
                     ),
                   ),
                 ],
@@ -180,9 +192,11 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
               final function = _functions[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                elevation: 2,
+                elevation: isDark ? 0 : 2,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: borderColor),
                 ),
                 child: InkWell(
                   onTap: () {
@@ -203,7 +217,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.cloudwatchColor.withValues(alpha: 0.1),
+                            color: AppTheme.cloudwatchColor.withValues(alpha: isDark ? 0.2 : 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -219,9 +233,10 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
                             children: [
                               Text(
                                 function,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
+                                  color: textColor,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -229,7 +244,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
                                 'Tap to view live logs',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: AppTheme.textSecondary,
+                                  color: secondaryColor,
                                 ),
                               ),
                             ],
@@ -237,7 +252,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
                         ),
                         Icon(
                           Icons.chevron_right,
-                          color: AppTheme.textSecondary,
+                          color: secondaryColor,
                         ),
                       ],
                     ),
