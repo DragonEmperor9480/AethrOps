@@ -11,11 +11,38 @@ echo "=========================================="
 cd "$(dirname "$0")/.."
 PROJECT_ROOT=$(pwd)
 
-# Extract version from pubspec.yaml
-VERSION=$(grep "^version:" awsmgr_ui/pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
-if [ -z "$VERSION" ]; then
-    VERSION="1.0.0"
+# Fetch version from GitHub
+echo ""
+echo "Fetching version from GitHub..."
+GITHUB_JSON=$(curl -s --max-time 10 "https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json" 2>/dev/null)
+
+if [ -n "$GITHUB_JSON" ]; then
+    # Try jq first, fall back to python, then grep
+    if command -v jq &> /dev/null; then
+        VERSION=$(echo "$GITHUB_JSON" | jq -r '.linux.version' 2>/dev/null)
+    elif command -v python3 &> /dev/null; then
+        VERSION=$(echo "$GITHUB_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin).get('linux',{}).get('version',''))" 2>/dev/null)
+    fi
 fi
+
+# Fallback to local version.json
+if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+    if [ -f "version.json" ]; then
+        echo "GitHub fetch failed, trying local version.json..."
+        if command -v jq &> /dev/null; then
+            VERSION=$(jq -r '.linux.version' version.json 2>/dev/null)
+        elif command -v python3 &> /dev/null; then
+            VERSION=$(python3 -c "import json; print(json.load(open('version.json')).get('linux',{}).get('version',''))" 2>/dev/null)
+        fi
+    fi
+fi
+
+# Final fallback
+if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+    VERSION="Preview Beta 1"
+fi
+
+echo "Version: $VERSION"
 
 PACKAGE_NAME="awsmgr"
 ARCH="amd64"
@@ -101,8 +128,8 @@ Priority: optional
 Architecture: $ARCH
 Installed-Size: $INSTALLED_SIZE
 Depends: libc6 (>= 2.31), libstdc++6 (>= 10), libglib2.0-0 (>= 2.64), libgtk-3-0 (>= 3.24)
-Maintainer: AWS Manager Team <awsmgr@example.com>
-Homepage: https://github.com/yourusername/aws-manager
+Maintainer: DragonEmperor9480 <amruteshnaregal1234@gmail.com>
+Homepage: https://github.com/DragonEmperor9480/aws-manager
 Description: AWS Resource Management Tool
  A comprehensive desktop application for managing AWS resources including
  IAM users, groups, policies, S3 buckets, Lambda functions, and more.
@@ -184,7 +211,7 @@ mkdir -p "$PACKAGE_DIR/usr/share/doc/$PACKAGE_NAME"
 cat > "$PACKAGE_DIR/usr/share/doc/$PACKAGE_NAME/copyright" << EOF
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: AWS Manager
-Source: https://github.com/yourusername/aws-manager
+Source: https://github.com/DragonEmperor9480/aws-manager
 
 Files: *
 Copyright: $(date +%Y) AWS Manager Team

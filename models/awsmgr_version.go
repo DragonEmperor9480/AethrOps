@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const Version = "PRE RELEASE EDITION"
+const Version = "Preview Beta 1"
 
 // VersionInfo holds version and OS information
 type VersionInfo struct {
@@ -28,7 +28,7 @@ func GetVersion() VersionInfo {
 	// Fetch version from GitHub JSON
 	version := fetchVersionFromGitHub(osInfo)
 
-	// If fetch failed, use hardcoded version as fallback
+	// If fetch failed or empty, use hardcoded version as fallback
 	if version == "" {
 		version = Version
 	}
@@ -58,11 +58,11 @@ type GitHubVersionData struct {
 
 // fetchVersionFromGitHub fetches the version from GitHub JSON based on OS
 func fetchVersionFromGitHub(osInfo string) string {
-	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/refs/heads/awsmgr-gui/version.json"
+	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json"
 
 	// Create HTTP client with timeout
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 10 * time.Second,
 	}
 
 	resp, err := client.Get(githubURL)

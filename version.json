@@ -1,12 +1,12 @@
 {
     "tui": {
-        "version": "Preview Beta 1"
+        "version": ""
     },
     "linux": {
-        "version": ""
+        "version": "Preview Beta 1"
     },
     "windows": {
-        "version": ""
+        "version": "Preview Beta 1"
     },
     "android": {
         "version": "Preview Beta 1"
