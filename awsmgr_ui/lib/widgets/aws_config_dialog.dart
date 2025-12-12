@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../main.dart';
+import '../screens/splash_screen.dart';
 
 class AWSConfigDialog extends StatefulWidget {
   const AWSConfigDialog({super.key});
