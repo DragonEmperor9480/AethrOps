@@ -3,6 +3,7 @@ import 'dart:async';
 import '../services/cloudwatch_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/loading_animation.dart';
+import '../widgets/list_header_with_search.dart';
 import 'live_log_viewer_screen.dart';
 
 class CloudWatchScreen extends StatefulWidget {
@@ -14,13 +15,37 @@ class CloudWatchScreen extends StatefulWidget {
 
 class _CloudWatchScreenState extends State<CloudWatchScreen> {
   List<String> _functions = [];
+  List<String> _filteredFunctions = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _loadFunctions();
+    _searchController.addListener(_filterFunctions);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _filterFunctions() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredFunctions = _functions;
+      } else {
+        _filteredFunctions = _functions
+            .where((func) => func.toLowerCase().contains(query))
+            .toList();
+      }
+    });
   }
 
   Future<void> _loadFunctions() async {
@@ -33,6 +58,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
       final functions = await CloudWatchService.listLambdaFunctions();
       setState(() {
         _functions = functions;
+        _filteredFunctions = functions;
         _isLoading = false;
       });
     } catch (e) {
@@ -144,52 +170,44 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.cloudwatchColor.withValues(alpha: isDark ? 0.15 : 0.1),
-            border: Border(
-              bottom: BorderSide(
-                color: AppTheme.cloudwatchColor.withValues(alpha: 0.2),
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.analytics_outlined,
-                color: AppTheme.cloudwatchColor,
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Lambda Functions',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  Text(
-                    '${_functions.length} function${_functions.length != 1 ? 's' : ''} available',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: secondaryColor,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        ListHeaderWithSearch(
+          title: 'Lambda Functions',
+          subtitle: '${_functions.length} function${_functions.length != 1 ? 's' : ''} available',
+          icon: Icons.analytics_outlined,
+          iconBackgroundColor: AppTheme.cloudwatchColor.withValues(alpha: 0.2),
+          iconColor: AppTheme.cloudwatchColor,
+          searchController: _searchController,
+          searchFocusNode: _searchFocusNode,
+          searchHint: 'Search functions...',
+          showSearch: true,
         ),
         Expanded(
-          child: ListView.builder(
+          child: _filteredFunctions.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.search_off,
+                        size: 64,
+                        color: secondaryColor.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No functions match "${_searchController.text}"',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: _functions.length,
+            itemCount: _filteredFunctions.length,
             itemBuilder: (context, index) {
-              final function = _functions[index];
+              final function = _filteredFunctions[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 elevation: isDark ? 0 : 2,
