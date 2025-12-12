@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/aws_credentials_service.dart';
 import '../theme/app_theme.dart';
-import '../main.dart';
+import 'splash_screen.dart';
+
 
 class CredentialsSetupScreen extends StatefulWidget {
   const CredentialsSetupScreen({super.key});
@@ -68,174 +69,313 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
-                
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.cloud,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
-                
-                const Text(
-                  'AWS Credentials',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                const SizedBox(height: 8),
-                
-                Text(
-                  'Enter your AWS credentials to get started',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                const SizedBox(height: 40),
-                
-                TextFormField(
-                  controller: _accessKeyController,
-                  decoration: InputDecoration(
-                    labelText: 'Access Key ID',
-                    hintText: 'AKIAIOSFODNN7EXAMPLE',
-                    prefixIcon: const Icon(Icons.vpn_key),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Access Key is required';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 20),
-                
-                TextFormField(
-                  controller: _secretKeyController,
-                  obscureText: _obscureSecret,
-                  decoration: InputDecoration(
-                    labelText: 'Secret Access Key',
-                    hintText: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureSecret ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscureSecret = !_obscureSecret);
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Secret Key is required';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 20),
-                
-                TextFormField(
-                  controller: _regionController,
-                  decoration: InputDecoration(
-                    labelText: 'Region',
-                    hintText: 'us-east-1',
-                    prefixIcon: const Icon(Icons.public),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Region is required';
-                    }
-                    return null;
-                  },
-                ),
-                
-                const SizedBox(height: 32),
-                
-                ElevatedButton(
-                  onPressed: _saving ? null : _saveCredentials,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _saving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Save & Continue',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    AppTheme.backgroundDark,
+                    AppTheme.purple900.withValues(alpha: 0.2),
+                  ]
+                : [
+                    AppTheme.backgroundLight,
+                    AppTheme.purple50,
+                  ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Hero Section
+                  Column(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Your credentials are stored securely on your device and never shared.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue.shade900,
+                      // Logo with glow
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppTheme.primaryPurple, AppTheme.purple600],
                           ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              spreadRadius: 3,
+                            ),
+                          ],
                         ),
+                        child: const Icon(
+                          Icons.cloud_rounded,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Title
+                      Text(
+                        'Welcome to AWS Manager',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Subtitle
+                      Text(
+                        'Sign in with your AWS credentials',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                ),
-              ],
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Form Card
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppTheme.cardBackgroundDark.withValues(alpha: 0.7)
+                          : Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark
+                            ? AppTheme.purple600.withValues(alpha: 0.3)
+                            : AppTheme.purple200.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.3)
+                              : AppTheme.primaryPurple.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Access Key Field
+                        TextFormField(
+                          controller: _accessKeyController,
+                          style: TextStyle(
+                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Access Key ID',
+                            hintText: 'AKIAIOSFODNN7EXAMPLE',
+                            prefixIcon: Icon(
+                              Icons.vpn_key_rounded,
+                              color: AppTheme.primaryPurple,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppTheme.primaryPurple,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: isDark
+                                ? AppTheme.backgroundDark
+                                : AppTheme.purple50.withValues(alpha: 0.3),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Access Key is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Secret Key Field
+                        TextFormField(
+                          controller: _secretKeyController,
+                          obscureText: _obscureSecret,
+                          style: TextStyle(
+                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Secret Access Key',
+                            hintText: '••••••••••••••••••••••••••',
+                            prefixIcon: Icon(
+                              Icons.lock_rounded,
+                              color: AppTheme.primaryPurple,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureSecret
+                                    ? Icons.visibility_rounded
+                                    : Icons.visibility_off_rounded,
+                                color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                              ),
+                              onPressed: () {
+                                setState(() => _obscureSecret = !_obscureSecret);
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppTheme.primaryPurple,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: isDark
+                                ? AppTheme.backgroundDark
+                                : AppTheme.purple50.withValues(alpha: 0.3),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Secret Key is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Region Field
+                        TextFormField(
+                          controller: _regionController,
+                          style: TextStyle(
+                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'AWS Region',
+                            hintText: 'us-east-1',
+                            prefixIcon: Icon(
+                              Icons.public_rounded,
+                              color: AppTheme.primaryPurple,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: AppTheme.primaryPurple,
+                                width: 2,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor: isDark
+                                ? AppTheme.backgroundDark
+                                : AppTheme.purple50.withValues(alpha: 0.3),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Region is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Submit Button
+                        ElevatedButton(
+                          onPressed: _saving ? null : _saveCredentials,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryPurple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: _saving ? 0 : 4,
+                            shadowColor: AppTheme.primaryPurple.withValues(alpha: 0.5),
+                          ),
+                          child: _saving
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  'Connect to AWS',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Info Box
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppTheme.primaryPurple.withValues(alpha: 0.1)
+                          : AppTheme.purple50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? AppTheme.primaryPurple.withValues(alpha: 0.3)
+                            : AppTheme.purple200.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.shield_rounded,
+                          color: AppTheme.primaryPurple,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Your credentials are stored securely on your device and never shared with third parties.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? AppTheme.textSecondaryDark
+                                  : AppTheme.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
