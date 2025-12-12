@@ -172,6 +172,7 @@ func StartBackend() int {
 	// AWS Configuration
 	r.HandleFunc("/api/aws/config", api.GetAWSConfig).Methods("GET")
 	r.HandleFunc("/api/aws/config", api.ConfigureAWS).Methods("POST")
+	r.HandleFunc("/api/aws/config", api.DeleteAWSConfig).Methods("DELETE")
 
 	// Email Configuration
 	r.HandleFunc("/api/email/config", api.GetEmailConfig).Methods("GET")

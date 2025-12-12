@@ -62,6 +62,27 @@ output = json
 	respondJSON(w, http.StatusOK, map[string]string{"message": "AWS credentials configured successfully"})
 }
 
+// DeleteAWSConfig deletes AWS credentials and config files
+func DeleteAWSConfig(w http.ResponseWriter, r *http.Request) {
+	// Get config directory
+	configDir, err := db_service.GetConfigDirectory()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to get config directory")
+		return
+	}
+
+	credentialsFile := filepath.Join(configDir, "credentials")
+	configFile := filepath.Join(configDir, "config")
+
+	// Delete credentials file (ignore error if not exists)
+	os.Remove(credentialsFile)
+
+	// Delete config file (ignore error if not exists)
+	os.Remove(configFile)
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "AWS credentials deleted successfully"})
+}
+
 // GetAWSConfig gets current AWS configuration
 func GetAWSConfig(w http.ResponseWriter, r *http.Request) {
 	// Get config directory (works for both mobile and desktop)
