@@ -112,12 +112,12 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
                           ),
                         ),
                         Text(
-                          'Follow these steps to create your access keys',
+                          'Tap image to zoom • Pinch to zoom in/out',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: isDark
-                                ? AppTheme.textSecondaryDark
-                                : AppTheme.textSecondary,
+                                ? AppTheme.textMutedDark
+                                : AppTheme.textMuted,
                           ),
                         ),
                       ],
@@ -178,54 +178,109 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Image
+                        // Image with zoom
                         Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDark
-                                    ? AppTheme.purple600.withValues(alpha: 0.3)
-                                    : AppTheme.purple200,
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryPurple.withValues(
-                                    alpha: 0.1,
+                          child: GestureDetector(
+                            onTap: () {
+                              // Show fullscreen image
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  fullscreenDialog: true,
+                                  builder: (context) => _FullscreenImageViewer(
+                                    imagePath: step['image']!,
+                                    title: step['title']!,
                                   ),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.asset(
-                                step['image']!,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.broken_image_rounded,
-                                          size: 64,
-                                          color: AppTheme.textMuted,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Image not found',
-                                          style: TextStyle(
-                                            color: AppTheme.textMuted,
-                                          ),
-                                        ),
-                                      ],
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppTheme.purple600.withValues(alpha: 0.3)
+                                      : AppTheme.purple200,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryPurple.withValues(
+                                      alpha: 0.1,
                                     ),
-                                  );
-                                },
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: InteractiveViewer(
+                                      minScale: 1.0,
+                                      maxScale: 3.0,
+                                      child: Image.asset(
+                                        step['image']!,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.broken_image_rounded,
+                                                  size: 64,
+                                                  color: AppTheme.textMuted,
+                                                ),
+                                                const SizedBox(height: 16),
+                                                Text(
+                                                  'Image not found',
+                                                  style: TextStyle(
+                                                    color: AppTheme.textMuted,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  // Tap hint overlay
+                                  Positioned(
+                                    bottom: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.zoom_in_rounded,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Tap to expand',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -356,6 +411,43 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Fullscreen image viewer
+class _FullscreenImageViewer extends StatelessWidget {
+  final String imagePath;
+  final String title;
+
+  const _FullscreenImageViewer({
+    required this.imagePath,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? Colors.black : Colors.white,
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: isDark
+            ? AppTheme.backgroundDark
+            : AppTheme.primaryPurple,
+        foregroundColor: Colors.white,
+      ),
+      body: InteractiveViewer(
+        minScale: 0.5,
+        maxScale: 5.0,
+        child: Center(
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.contain,
+          ),
         ),
       ),
     );
