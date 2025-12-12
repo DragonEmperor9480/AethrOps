@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/aws_credentials_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/credentials_tutorial_dialog.dart';
 import 'splash_screen.dart';
 
 
@@ -372,6 +373,33 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Help link
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => const CredentialsTutorialDialog(),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.help_outline_rounded,
+                        size: 18,
+                        color: AppTheme.primaryPurple,
+                      ),
+                      label: Text(
+                        'Need help getting credentials?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.primaryPurple,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],
