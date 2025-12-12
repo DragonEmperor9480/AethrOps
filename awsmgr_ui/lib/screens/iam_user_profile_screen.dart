@@ -16,7 +16,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   Map<String, dynamic>? _dependencies;
   List<dynamic> _groups = [];
   bool _loading = true;
-  
+
   // Expansion states for collapsible sections
   bool _groupsExpanded = false;
   bool _accessKeysExpanded = false;
@@ -30,19 +30,24 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   }
 
   Future<void> _loadUserDetails() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final username = widget.user['username'];
       final deps = await ApiService.checkUserDependencies(username);
       final groups = await ApiService.getUserGroups(username);
-      
+
+      if (!mounted) return;
       setState(() {
         _dependencies = deps;
         _groups = groups;
       });
     } catch (e) {
-      _showError('Failed to load user details: $e');
+      if (mounted) {
+        _showError('Failed to load user details: $e');
+      }
     } finally {
+      if (!mounted) return;
       setState(() => _loading = false);
     }
   }
@@ -81,12 +86,14 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
 
   Future<void> _showAttachPoliciesDialog() async {
     final username = widget.user['username'];
-    
+
     // Get currently attached policy names (not ARNs)
-    final currentPolicyNames = (_dependencies?['managed_policies'] as List?)
-        ?.map((p) => p.toString())
-        .toList() ?? [];
-    
+    final currentPolicyNames =
+        (_dependencies?['managed_policies'] as List?)
+            ?.map((p) => p.toString())
+            .toList() ??
+        [];
+
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AttachPoliciesDialog(
@@ -99,6 +106,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
       final selectedArns = result['selected_arns'] as List<String>;
       final currentArns = result['current_arns'] as List<String>;
 
+      if (!mounted) return;
       setState(() => _loading = true);
       try {
         final response = await ApiService.syncUserPolicies(
@@ -111,24 +119,35 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
         final detachedCount = response['detached_count'] ?? 0;
         final success = response['success'] ?? false;
 
-        if (success) {
-          if (attachedCount > 0 && detachedCount > 0) {
-            _showSuccess('Attached $attachedCount, detached $detachedCount ${attachedCount + detachedCount == 1 ? 'policy' : 'policies'}');
-          } else if (attachedCount > 0) {
-            _showSuccess('Attached $attachedCount ${attachedCount == 1 ? 'policy' : 'policies'}');
-          } else if (detachedCount > 0) {
-            _showSuccess('Detached $detachedCount ${detachedCount == 1 ? 'policy' : 'policies'}');
+        if (mounted) {
+          if (success) {
+            if (attachedCount > 0 && detachedCount > 0) {
+              _showSuccess(
+                'Attached $attachedCount, detached $detachedCount ${attachedCount + detachedCount == 1 ? 'policy' : 'policies'}',
+              );
+            } else if (attachedCount > 0) {
+              _showSuccess(
+                'Attached $attachedCount ${attachedCount == 1 ? 'policy' : 'policies'}',
+              );
+            } else if (detachedCount > 0) {
+              _showSuccess(
+                'Detached $detachedCount ${detachedCount == 1 ? 'policy' : 'policies'}',
+              );
+            } else {
+              _showSuccess('No changes needed');
+            }
           } else {
-            _showSuccess('No changes needed');
+            _showError('Some operations failed. Check details.');
           }
-        } else {
-          _showError('Some operations failed. Check details.');
         }
 
         await _loadUserDetails();
       } catch (e) {
-        _showError('Failed to sync policies: $e');
+        if (mounted) {
+          _showError('Failed to sync policies: $e');
+        }
       } finally {
+        if (!mounted) return;
         setState(() => _loading = false);
       }
     }
@@ -141,10 +160,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     final createDate = widget.user['create_date'] ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(username),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(username), elevation: 0),
       body: _loading
           ? const LoadingAnimation(message: 'Loading user details...')
           : SingleChildScrollView(
@@ -215,11 +231,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                         _buildSectionTitle('User Information'),
                         const SizedBox(height: 12),
                         _buildInfoCard([
-                          _buildInfoRow(
-                            Icons.fingerprint,
-                            'User ID',
-                            userId,
-                          ),
+                          _buildInfoRow(Icons.fingerprint, 'User ID', userId),
                           _buildInfoRow(
                             Icons.calendar_today,
                             'Created',
@@ -231,7 +243,8 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                             _dependencies?['has_login_profile'] == true
                                 ? 'Enabled'
                                 : 'Disabled',
-                            valueColor: _dependencies?['has_login_profile'] == true
+                            valueColor:
+                                _dependencies?['has_login_profile'] == true
                                 ? Colors.green
                                 : Colors.grey,
                           ),
@@ -245,7 +258,9 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                           count: _groups.length,
                           icon: Icons.group,
                           isExpanded: _groupsExpanded,
-                          onToggle: () => setState(() => _groupsExpanded = !_groupsExpanded),
+                          onToggle: () => setState(
+                            () => _groupsExpanded = !_groupsExpanded,
+                          ),
                           emptyIcon: Icons.group_outlined,
                           emptyMessage: 'Not a member of any groups',
                           isEmpty: _groups.isEmpty,
@@ -266,22 +281,36 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                         // Access Keys Section
                         _buildCollapsibleSection(
                           title: 'Access Keys',
-                          count: (_dependencies?['access_keys'] as List?)?.length ?? 0,
+                          count:
+                              (_dependencies?['access_keys'] as List?)
+                                  ?.length ??
+                              0,
                           icon: Icons.vpn_key,
                           isExpanded: _accessKeysExpanded,
-                          onToggle: () => setState(() => _accessKeysExpanded = !_accessKeysExpanded),
+                          onToggle: () => setState(
+                            () => _accessKeysExpanded = !_accessKeysExpanded,
+                          ),
                           emptyIcon: Icons.vpn_key_outlined,
                           emptyMessage: 'No access keys',
-                          isEmpty: (_dependencies?['access_keys'] as List?)?.isEmpty ?? true,
-                          child: (_dependencies?['access_keys'] as List?)?.isEmpty ?? true
+                          isEmpty:
+                              (_dependencies?['access_keys'] as List?)
+                                  ?.isEmpty ??
+                              true,
+                          child:
+                              (_dependencies?['access_keys'] as List?)
+                                      ?.isEmpty ??
+                                  true
                               ? null
                               : Column(
-                                  children: (_dependencies!['access_keys'] as List).map<Widget>((key) {
-                                    return _buildListItem(
-                                      Icons.vpn_key,
-                                      key.toString(),
-                                    );
-                                  }).toList(),
+                                  children:
+                                      (_dependencies!['access_keys'] as List)
+                                          .map<Widget>((key) {
+                                            return _buildListItem(
+                                              Icons.vpn_key,
+                                              key.toString(),
+                                            );
+                                          })
+                                          .toList(),
                                 ),
                         ),
 
@@ -290,26 +319,42 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                         // Managed Policies Section
                         _buildCollapsibleSection(
                           title: 'Managed Policies',
-                          count: (_dependencies?['managed_policies'] as List?)?.length ?? 0,
+                          count:
+                              (_dependencies?['managed_policies'] as List?)
+                                  ?.length ??
+                              0,
                           icon: Icons.policy,
                           isExpanded: _managedPoliciesExpanded,
-                          onToggle: () => setState(() => _managedPoliciesExpanded = !_managedPoliciesExpanded),
+                          onToggle: () => setState(
+                            () => _managedPoliciesExpanded =
+                                !_managedPoliciesExpanded,
+                          ),
                           emptyIcon: Icons.policy_outlined,
                           emptyMessage: 'No managed policies attached',
-                          isEmpty: (_dependencies?['managed_policies'] as List?)?.isEmpty ?? true,
+                          isEmpty:
+                              (_dependencies?['managed_policies'] as List?)
+                                  ?.isEmpty ??
+                              true,
                           hasAction: true,
                           actionIcon: Icons.add,
                           actionLabel: 'Attach',
                           onAction: _showAttachPoliciesDialog,
-                          child: (_dependencies?['managed_policies'] as List?)?.isEmpty ?? true
+                          child:
+                              (_dependencies?['managed_policies'] as List?)
+                                      ?.isEmpty ??
+                                  true
                               ? null
                               : Column(
-                                  children: (_dependencies!['managed_policies'] as List).map<Widget>((policy) {
-                                    return _buildListItem(
-                                      Icons.policy,
-                                      policy.toString(),
-                                    );
-                                  }).toList(),
+                                  children:
+                                      (_dependencies!['managed_policies']
+                                              as List)
+                                          .map<Widget>((policy) {
+                                            return _buildListItem(
+                                              Icons.policy,
+                                              policy.toString(),
+                                            );
+                                          })
+                                          .toList(),
                                 ),
                         ),
 
@@ -318,22 +363,38 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                         // Inline Policies Section
                         _buildCollapsibleSection(
                           title: 'Inline Policies',
-                          count: (_dependencies?['inline_policies'] as List?)?.length ?? 0,
+                          count:
+                              (_dependencies?['inline_policies'] as List?)
+                                  ?.length ??
+                              0,
                           icon: Icons.description,
                           isExpanded: _inlinePoliciesExpanded,
-                          onToggle: () => setState(() => _inlinePoliciesExpanded = !_inlinePoliciesExpanded),
+                          onToggle: () => setState(
+                            () => _inlinePoliciesExpanded =
+                                !_inlinePoliciesExpanded,
+                          ),
                           emptyIcon: Icons.description_outlined,
                           emptyMessage: 'No inline policies',
-                          isEmpty: (_dependencies?['inline_policies'] as List?)?.isEmpty ?? true,
-                          child: (_dependencies?['inline_policies'] as List?)?.isEmpty ?? true
+                          isEmpty:
+                              (_dependencies?['inline_policies'] as List?)
+                                  ?.isEmpty ??
+                              true,
+                          child:
+                              (_dependencies?['inline_policies'] as List?)
+                                      ?.isEmpty ??
+                                  true
                               ? null
                               : Column(
-                                  children: (_dependencies!['inline_policies'] as List).map<Widget>((policy) {
-                                    return _buildListItem(
-                                      Icons.description,
-                                      policy.toString(),
-                                    );
-                                  }).toList(),
+                                  children:
+                                      (_dependencies!['inline_policies']
+                                              as List)
+                                          .map<Widget>((policy) {
+                                            return _buildListItem(
+                                              Icons.description,
+                                              policy.toString(),
+                                            );
+                                          })
+                                          .toList(),
                                 ),
                         ),
 
@@ -350,10 +411,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
     );
   }
 
@@ -376,9 +434,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     final isDark = theme.brightness == Brightness.dark;
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           InkWell(
@@ -391,12 +447,18 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isDark 
+                      color: isDark
                           ? AppTheme.primaryBlue.withValues(alpha: 0.2)
                           : Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(icon, size: 20, color: isDark ? AppTheme.primaryBlue : Colors.blue.shade700),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: isDark
+                          ? AppTheme.primaryBlue
+                          : Colors.blue.shade700,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -426,10 +488,12 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                       tooltip: actionLabel,
                       onPressed: onAction,
                       style: IconButton.styleFrom(
-                        backgroundColor: isDark 
+                        backgroundColor: isDark
                             ? AppTheme.primaryBlue.withValues(alpha: 0.2)
                             : Colors.blue.shade50,
-                        foregroundColor: isDark ? AppTheme.primaryBlue : Colors.blue.shade700,
+                        foregroundColor: isDark
+                            ? AppTheme.primaryBlue
+                            : Colors.blue.shade700,
                       ),
                     ),
                   if (hasAction && onAction != null && !isEmpty)
@@ -450,14 +514,20 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isDark 
+                  color: isDark
                       ? theme.cardColor.withValues(alpha: 0.5)
                       : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    Icon(emptyIcon, size: 36, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                    Icon(
+                      emptyIcon,
+                      size: 36,
+                      color: theme.textTheme.bodyMedium?.color?.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       emptyMessage,
@@ -494,19 +564,20 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -519,10 +590,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -570,10 +638,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ],
@@ -587,9 +652,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   Widget _buildEmptyState(IconData icon, String message) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Center(
@@ -599,10 +662,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 message,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
             ],
           ),
@@ -611,7 +671,6 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     );
   }
 }
-
 
 // Attach Policies Dialog
 class AttachPoliciesDialog extends StatefulWidget {
@@ -652,7 +711,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
       final policies = await ApiService.listIAMPolicies(scope: _scopeFilter);
       setState(() {
         _policies = policies;
-        
+
         // Pre-select policies that are already attached (match by name)
         // Also build the current ARNs list
         _currentPolicyArns.clear();
@@ -664,7 +723,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
             _currentPolicyArns.add(policyArn);
           }
         }
-        
+
         _filterPolicies();
       });
     } catch (e) {
@@ -684,7 +743,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
   void _filterPolicies() {
     setState(() {
       _filteredPolicies = _policies.where((policy) {
-        final policyName = (policy['policy_name'] ?? '').toString().toLowerCase();
+        final policyName = (policy['policy_name'] ?? '')
+            .toString()
+            .toLowerCase();
         final policyArn = (policy['policy_arn'] ?? '').toString().toLowerCase();
         final query = _searchQuery.toLowerCase();
         return policyName.contains(query) || policyArn.contains(query);
@@ -750,7 +811,10 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                         ),
                         Text(
                           'Select policies to attach to ${widget.username}',
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
                         ),
                       ],
                     ),
@@ -785,7 +849,10 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Scope: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Scope: ',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(width: 8),
                       SegmentedButton<String>(
                         segments: const [
@@ -818,113 +885,130 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredPolicies.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.policy_outlined, size: 64, color: Colors.grey[300]),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchQuery.isEmpty ? 'No policies found' : 'No matching policies',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.policy_outlined,
+                            size: 64,
+                            color: Colors.grey[300],
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _filteredPolicies.length,
-                          itemBuilder: (context, index) {
-                            final policy = _filteredPolicies[index];
-                            final policyArn = policy['policy_arn']?.toString() ?? '';
-                            final policyName = policy['policy_name']?.toString() ?? '';
-                            final isAWSManaged = policy['is_aws_managed'] == true;
-                            final isSelected = _selectedPolicyArns.contains(policyArn);
-                            final isAlreadyAttached = _attachedPolicyNames.contains(policyName);
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'No policies found'
+                                : 'No matching policies',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredPolicies.length,
+                      itemBuilder: (context, index) {
+                        final policy = _filteredPolicies[index];
+                        final policyArn =
+                            policy['policy_arn']?.toString() ?? '';
+                        final policyName =
+                            policy['policy_name']?.toString() ?? '';
+                        final isAWSManaged = policy['is_aws_managed'] == true;
+                        final isSelected = _selectedPolicyArns.contains(
+                          policyArn,
+                        );
+                        final isAlreadyAttached = _attachedPolicyNames.contains(
+                          policyName,
+                        );
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              color: isSelected ? Colors.blue.shade50 : null,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: isSelected
-                                    ? BorderSide(color: Colors.blue, width: 2)
-                                    : BorderSide.none,
-                              ),
-                              child: CheckboxListTile(
-                                value: isSelected,
-                                onChanged: (value) {
-                                  setState(() {
-                                    if (value == true) {
-                                      _selectedPolicyArns.add(policyArn);
-                                    } else {
-                                      _selectedPolicyArns.remove(policyArn);
-                                    }
-                                  });
-                                },
-                                title: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        policyName,
-                                        style: const TextStyle(fontWeight: FontWeight.w500),
-                                        overflow: TextOverflow.ellipsis,
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: isSelected ? Colors.blue.shade50 : null,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: isSelected
+                                ? BorderSide(color: Colors.blue, width: 2)
+                                : BorderSide.none,
+                          ),
+                          child: CheckboxListTile(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedPolicyArns.add(policyArn);
+                                } else {
+                                  _selectedPolicyArns.remove(policyArn);
+                                }
+                              });
+                            },
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    policyName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                if (isAlreadyAttached)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade100,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'Attached',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.green.shade900,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    if (isAlreadyAttached)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green.shade100,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'Attached',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            color: Colors.green.shade900,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                  ),
+                                if (isAWSManaged) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade100,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'AWS',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.orange.shade900,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    if (isAWSManaged) ...[
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.shade100,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'AWS',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            color: Colors.orange.shade900,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                subtitle: Text(
-                                  policyArn,
-                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                dense: true,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            subtitle: Text(
+                              policyArn,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
                               ),
-                            );
-                          },
-                        ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            dense: true,
+                          ),
+                        );
+                      },
+                    ),
             ),
 
             // Footer
