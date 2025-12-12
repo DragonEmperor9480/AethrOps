@@ -2,6 +2,9 @@ package utils
 
 import (
 	"context"
+	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
@@ -23,6 +26,17 @@ var (
 
 // InitAWSClients initializes AWS SDK clients
 func InitAWSClients() error {
+	// Use custom credentials location (~/.awsmgr instead of ~/.aws)
+	credPath := getAWSMgrCredentialsPath()
+	configPath := getAWSMgrConfigPath()
+
+	log.Printf("Loading AWS credentials from: %s", credPath)
+	log.Printf("Loading AWS config from: %s", configPath)
+
+	// Force AWS SDK to use our custom paths by setting environment variables
+	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", credPath)
+	os.Setenv("AWS_CONFIG_FILE", configPath)
+
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return err
@@ -35,6 +49,24 @@ func InitAWSClients() error {
 	S3Client = s3.NewFromConfig(cfg)
 	STSClient = sts.NewFromConfig(cfg)
 	return nil
+}
+
+// getAWSMgrCredentialsPath returns the path to .awsmgr/credentials
+func getAWSMgrCredentialsPath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(homeDir, ".awsmgr", "credentials")
+}
+
+// getAWSMgrConfigPath returns the path to .awsmgr/config
+func getAWSMgrConfigPath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(homeDir, ".awsmgr", "config")
 }
 
 // GetEC2Client returns the EC2 client
