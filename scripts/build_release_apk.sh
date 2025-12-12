@@ -39,7 +39,69 @@ if [ ! -f "$ANDROID_DIR/app/upload-keystore.jks" ]; then
     exit 1
 fi
 
-echo "📱 Building release APKs..."
+# Check for Android NDK
+if [ -z "$ANDROID_NDK_HOME" ]; then
+    echo "⚠ ANDROID_NDK_HOME not set, attempting to auto-detect..."
+    
+    # Try common NDK locations
+    POSSIBLE_PATHS=(
+        "$HOME/Android/Sdk/ndk"
+        "$ANDROID_HOME/ndk"
+        "$ANDROID_SDK_ROOT/ndk"
+    )
+    
+    for base_path in "${POSSIBLE_PATHS[@]}"; do
+        if [ -d "$base_path" ]; then
+            # Find the latest NDK version
+            NDK_VERSION=$(ls -1 "$base_path" | sort -V | tail -n 1)
+            if [ -n "$NDK_VERSION" ]; then
+                export ANDROID_NDK_HOME="$base_path/$NDK_VERSION"
+                echo "✓ Found NDK: $ANDROID_NDK_HOME"
+                break
+            fi
+        fi
+    done
+    
+    if [ -z "$ANDROID_NDK_HOME" ]; then
+        echo "❌ Error: Could not find Android NDK"
+        echo ""
+        echo "Please install Android NDK or set ANDROID_NDK_HOME manually"
+        exit 1
+    fi
+else
+    echo "✓ Using NDK: $ANDROID_NDK_HOME"
+fi
+
+echo ""
+echo "🔨 Step 1: Building Go backend library for Android..."
+cd "$PROJECT_ROOT/backend_ffi"
+
+# Build for ARM64
+echo "  • Building for ARM64..."
+CGO_ENABLED=1 \
+GOOS=android \
+GOARCH=arm64 \
+CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang \
+go build -buildmode=c-shared -o libbackend.so main.go
+
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to build Go backend for ARM64"
+    exit 1
+fi
+
+echo "  ✓ ARM64 backend compiled"
+
+# Copy to Flutter project
+echo ""
+echo "📦 Step 2: Copying library to Flutter Android project..."
+mkdir -p "$FLUTTER_DIR/android/app/src/main/jniLibs/arm64-v8a/"
+cp libbackend.so "$FLUTTER_DIR/android/app/src/main/jniLibs/arm64-v8a/"
+echo "✓ Library copied to jniLibs"
+
+cd "$PROJECT_ROOT"
+
+echo ""
+echo "📱 Step 3: Building release APKs..."
 echo ""
 
 # Navigate to Flutter directory
@@ -53,7 +115,7 @@ flutter clean
 echo "📦 Getting dependencies..."
 flutter pub get
 
-# Build split APKs
+# Build split APKs (signed)
 echo "🔨 Building split APKs..."
 flutter build apk --split-per-abi --release
 
@@ -86,6 +148,8 @@ ls -lh "$OUTPUT_DIR"
 echo ""
 echo "Checksums:"
 cat checksums-sha256.txt
+echo ""
+echo "✓ APKs are SIGNED with your keystore"
 echo ""
 echo "============================================"
 echo "  Next Steps:"
