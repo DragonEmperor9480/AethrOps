@@ -796,6 +796,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildSection(String title, IconData icon, List<Widget> children) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -810,9 +811,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
                   ),
                 ),
               ],
@@ -828,6 +830,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildDetailRow(String label, dynamic value, {bool copyable = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayValue = value?.toString() ?? 'N/A';
     
     return Padding(
@@ -839,8 +842,8 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
             width: 140,
             child: Text(
               label,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
+              style: TextStyle(
+                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
                 fontSize: 13,
               ),
             ),
@@ -851,15 +854,20 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                 Flexible(
                   child: Text(
                     displayValue,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
+                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
                     ),
                   ),
                 ),
                 if (copyable && displayValue != 'N/A')
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 14),
+                    icon: Icon(
+                      Icons.copy,
+                      size: 14,
+                      color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                    ),
                     onPressed: () => _copyToClipboard(displayValue, label),
                     padding: const EdgeInsets.all(4),
                     constraints: const BoxConstraints(),
@@ -874,6 +882,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   }
 
   Widget _buildSubDetail(String label, dynamic value, {bool copyable = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayValue = value?.toString() ?? 'N/A';
     
     return Padding(
@@ -882,24 +891,29 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
         children: [
           Text(
             '$label: ',
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
+            style: TextStyle(
+              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
               fontSize: 12,
             ),
           ),
           Flexible(
             child: Text(
               displayValue,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
+                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           if (copyable && displayValue != 'N/A')
             IconButton(
-              icon: const Icon(Icons.copy, size: 12),
+              icon: Icon(
+                Icons.copy,
+                size: 12,
+                color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+              ),
               onPressed: () => _copyToClipboard(displayValue, label),
               padding: const EdgeInsets.all(4),
               constraints: const BoxConstraints(),
