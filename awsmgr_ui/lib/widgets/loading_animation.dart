@@ -1,212 +1,337 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/constants.dart';
 
 class LoadingAnimation extends StatefulWidget {
   final String? message;
   final double size;
+  final LoadingStyle style;
+  final bool showQuote;
 
   const LoadingAnimation({
     super.key,
     this.message,
     this.size = 60,
+    this.style = LoadingStyle.orbital,
+    this.showQuote = true,
   });
 
   @override
   State<LoadingAnimation> createState() => _LoadingAnimationState();
 }
 
+enum LoadingStyle {
+  orbital,      // Multiple orbiting rings (default, professional)
+  pulse,        // Pulsing gradient orb
+  dots,         // Bouncing dots
+  wave,         // Wave effect
+}
+
 class _LoadingAnimationState extends State<LoadingAnimation>
     with TickerProviderStateMixin {
-  late AnimationController _spinController;
-  late AnimationController _pulseController;
+  late AnimationController _controller;
+  late AnimationController _secondaryController;
+  late String _currentQuote;
 
   @override
   void initState() {
     super.initState();
     
-    _spinController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     )..repeat();
 
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+    _secondaryController = AnimationController(
+      duration: const Duration(milliseconds: 1600),
       vsync: this,
-    )..repeat(reverse: true);
+    )..repeat();
+
+    // Get random quote on init - either contextual or completely random
+    _currentQuote = widget.message != null 
+        ? AppConstants.getContextualLoadingMessage(widget.message!)
+        : AppConstants.getRandomQuote();
   }
 
   @override
   void dispose() {
-    _spinController.dispose();
-    _pulseController.dispose();
+    _controller.dispose();
+    _secondaryController.dispose();
     super.dispose();
-  }
-
-  String _getFunnyMessage() {
-    if (widget.message == null) return '';
-    
-    final msg = widget.message!.toLowerCase();
-    
-    if (msg.contains('user')) {
-      return 'Summoning IAM wizards...';
-    } else if (msg.contains('group')) {
-      return 'Gathering the squad...';
-    } else if (msg.contains('bucket')) {
-      return 'Diving into your secret buckets...';
-    } else if (msg.contains('object')) {
-      return 'Fishing for your files...';
-    } else if (msg.contains('function')) {
-      return 'Waking up Lambda functions...';
-    } else if (msg.contains('log')) {
-      return 'Reading the tea leaves...';
-    } else {
-      return 'Talking to the cloud...';
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Main spinner with effects
-          AnimatedBuilder(
-            animation: Listenable.merge([_spinController, _pulseController]),
-            builder: (context, child) {
-              return SizedBox(
-                width: widget.size * 1.8,
-                height: widget.size * 1.8,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Pulsing glow background
-                    Container(
-                      width: widget.size * 1.2,
-                      height: widget.size * 1.2,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryBlue.withValues(
-                              alpha: 0.2 + (_pulseController.value * 0.2),
-                            ),
-                            blurRadius: 30,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Outer spinning ring
-                    Transform.rotate(
-                      angle: _spinController.value * 2 * math.pi,
-                      child: CustomPaint(
-                        size: Size(widget.size * 1.3, widget.size * 1.3),
-                        painter: _ModernRingPainter(
-                          color: AppTheme.primaryBlue,
-                          strokeWidth: 3,
-                          progress: _spinController.value,
-                        ),
-                      ),
-                    ),
-                    
-                    // Middle ring (opposite direction)
-                    Transform.rotate(
-                      angle: -_spinController.value * 2.5 * math.pi,
-                      child: CustomPaint(
-                        size: Size(widget.size * 0.9, widget.size * 0.9),
-                        painter: _ModernRingPainter(
-                          color: AppTheme.accentCyan,
-                          strokeWidth: 2.5,
-                          progress: 1 - _spinController.value,
-                        ),
-                      ),
-                    ),
-                    
-                    // Inner ring
-                    Transform.rotate(
-                      angle: _spinController.value * 3 * math.pi,
-                      child: CustomPaint(
-                        size: Size(widget.size * 0.55, widget.size * 0.55),
-                        painter: _ModernRingPainter(
-                          color: const Color(0xFFFF9900),
-                          strokeWidth: 2,
-                          progress: _spinController.value,
-                        ),
-                      ),
-                    ),
-                    
-                    // Center dot with pulse
-                    Transform.scale(
-                      scale: 1.0 + (_pulseController.value * 0.2),
-                      child: Container(
-                        width: widget.size * 0.25,
-                        height: widget.size * 0.25,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppTheme.primaryPurple,
-                              AppTheme.primaryBlue,
-                            ],
-                          ),
-                        ),
-                      ),
+          _buildLoadingIndicator(isDark),
+          if (widget.showQuote) ...[
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _currentQuote,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator(bool isDark) {
+    switch (widget.style) {
+      case LoadingStyle.orbital:
+        return _buildOrbitalLoader(isDark);
+      case LoadingStyle.pulse:
+        return _buildPulseLoader(isDark);
+      case LoadingStyle.dots:
+        return _buildDotsLoader(isDark);
+      case LoadingStyle.wave:
+        return _buildWaveLoader(isDark);
+    }
+  }
+
+  // Professional orbital loader with smooth animations
+  Widget _buildOrbitalLoader(bool isDark) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_controller, _secondaryController]),
+      builder: (context, child) {
+        return SizedBox(
+          width: widget.size * 2.2,
+          height: widget.size * 2.2,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Subtle glow effect
+              Container(
+                width: widget.size * 1.5,
+                height: widget.size * 1.5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppTheme.primaryPurple.withValues(alpha: isDark ? 0.15 : 0.08),
+                      AppTheme.primaryPurple.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Outer ring - clockwise
+              Transform.rotate(
+                angle: _controller.value * 2 * math.pi,
+                child: CustomPaint(
+                  size: Size(widget.size * 1.6, widget.size * 1.6),
+                  painter: _ArcPainter(
+                    color: AppTheme.primaryPurple,
+                    strokeWidth: 3.0,
+                    sweepAngle: math.pi * 0.6,
+                    startAngle: 0,
+                  ),
+                ),
+              ),
+              
+              // Middle ring - counter-clockwise
+              Transform.rotate(
+                angle: -_secondaryController.value * 2 * math.pi,
+                child: CustomPaint(
+                  size: Size(widget.size * 1.15, widget.size * 1.15),
+                  painter: _ArcPainter(
+                    color: AppTheme.primaryBlue,
+                    strokeWidth: 2.5,
+                    sweepAngle: math.pi * 0.5,
+                    startAngle: math.pi * 0.5,
+                  ),
+                ),
+              ),
+              
+              // Inner ring - clockwise (faster)
+              Transform.rotate(
+                angle: _controller.value * 3 * math.pi,
+                child: CustomPaint(
+                  size: Size(widget.size * 0.7, widget.size * 0.7),
+                  painter: _ArcPainter(
+                    color: AppTheme.accentCyan,
+                    strokeWidth: 2.0,
+                    sweepAngle: math.pi * 0.4,
+                    startAngle: math.pi,
+                  ),
+                ),
+              ),
+              
+              // Center gradient orb
+              Container(
+                width: widget.size * 0.28,
+                height: widget.size * 0.28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryPurple,
+                      AppTheme.primaryBlue,
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          // Funny message
-          Text(
-            _getFunnyMessage(),
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+        );
+      },
+    );
+  }
+
+  // Smooth pulsing gradient orb
+  Widget _buildPulseLoader(bool isDark) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final pulse = (math.sin(_controller.value * 2 * math.pi) + 1) / 2;
+        
+        return Container(
+          width: widget.size * (1.0 + pulse * 0.3),
+          height: widget.size * (1.0 + pulse * 0.3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                AppTheme.primaryPurple.withValues(alpha: 0.8),
+                AppTheme.primaryBlue.withValues(alpha: 0.6),
+                AppTheme.accentCyan.withValues(alpha: 0.3),
+              ],
             ),
-            textAlign: TextAlign.center,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.3 * pulse),
+                blurRadius: 30 * pulse,
+                spreadRadius: 10 * pulse,
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          // Animated progress bar
-          AnimatedBuilder(
-            animation: _spinController,
+        );
+      },
+    );
+  }
+
+  // Bouncing dots loader
+  Widget _buildDotsLoader(bool isDark) {
+    return SizedBox(
+      width: widget.size * 1.5,
+      height: widget.size * 0.4,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(3, (index) {
+          return AnimatedBuilder(
+            animation: _controller,
             builder: (context, child) {
-              return SizedBox(
-                width: 120,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: null,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryBlue),
-                    minHeight: 3,
+              final delay = index * 0.15;
+              final value = (_controller.value - delay) % 1.0;
+              final bounce = (math.sin(value * 2 * math.pi)).abs();
+              
+              return Transform.translate(
+                offset: Offset(0, -bounce * 15),
+                child: Container(
+                  width: widget.size * 0.2,
+                  height: widget.size * 0.2,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        [AppTheme.primaryPurple, AppTheme.primaryBlue, AppTheme.accentCyan][index],
+                        [AppTheme.primaryBlue, AppTheme.accentCyan, AppTheme.primaryPurple][index],
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: [AppTheme.primaryPurple, AppTheme.primaryBlue, AppTheme.accentCyan][index]
+                            .withValues(alpha: 0.3),
+                        blurRadius: 5,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                 ),
               );
             },
-          ),
-        ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // Wave effect loader
+  Widget _buildWaveLoader(bool isDark) {
+    return SizedBox(
+      width: widget.size * 1.8,
+      height: widget.size * 0.5,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(5, (index) {
+          return AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              final delay = index * 0.1;
+              final value = (_controller.value - delay) % 1.0;
+              final height = (math.sin(value * 2 * math.pi) + 1) / 2;
+              
+              return Container(
+                width: widget.size * 0.12,
+                height: widget.size * (0.2 + height * 0.3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      AppTheme.primaryPurple,
+                      AppTheme.primaryBlue,
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }),
       ),
     );
   }
 }
 
-class _ModernRingPainter extends CustomPainter {
+// Custom painter for smooth arcs
+class _ArcPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
-  final double progress;
+  final double sweepAngle;
+  final double startAngle;
 
-  _ModernRingPainter({
+  _ArcPainter({
     required this.color,
     required this.strokeWidth,
-    required this.progress,
+    required this.sweepAngle,
+    required this.startAngle,
   });
 
   @override
@@ -214,65 +339,66 @@ class _ModernRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
-    // Draw main arc
     final paint = Paint()
-      ..color = color
+      ..shader = LinearGradient(
+        colors: [
+          color.withValues(alpha: 0.3),
+          color,
+          color,
+          color.withValues(alpha: 0.3),
+        ],
+        stops: const [0.0, 0.3, 0.7, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      math.pi * 1.5,
+      startAngle,
+      sweepAngle,
       false,
       paint,
     );
-
-    // Draw dots at ends for extra flair
-    final dotPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    // Start dot
-    final startAngle = -math.pi / 2;
-    final startX = center.dx + radius * math.cos(startAngle);
-    final startY = center.dy + radius * math.sin(startAngle);
-    canvas.drawCircle(Offset(startX, startY), strokeWidth * 0.8, dotPaint);
-
-    // End dot
-    final endAngle = -math.pi / 2 + (math.pi * 1.5);
-    final endX = center.dx + radius * math.cos(endAngle);
-    final endY = center.dy + radius * math.sin(endAngle);
-    canvas.drawCircle(Offset(endX, endY), strokeWidth * 0.8, dotPaint);
   }
 
   @override
-  bool shouldRepaint(_ModernRingPainter oldDelegate) => false;
+  bool shouldRepaint(_ArcPainter oldDelegate) => false;
 }
 
-// Overlay loading widget
+// Overlay loading widget with blur effect
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
   final String? message;
+  final LoadingStyle style;
 
   const LoadingOverlay({
     super.key,
     required this.isLoading,
     required this.child,
     this.message,
+    this.style = LoadingStyle.orbital,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Stack(
       children: [
         child,
         if (isLoading)
           Container(
-            color: Colors.white.withValues(alpha: 0.95),
-            child: LoadingAnimation(message: message),
+            color: (isDark 
+                ? AppTheme.backgroundDark 
+                : AppTheme.backgroundLight)
+                .withValues(alpha: 0.95),
+            child: LoadingAnimation(
+              message: message,
+              style: style,
+            ),
           ),
       ],
     );

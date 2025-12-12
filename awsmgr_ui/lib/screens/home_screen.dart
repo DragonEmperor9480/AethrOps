@@ -9,6 +9,7 @@ import '../widgets/service_card.dart';
 import '../widgets/floating_particles.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulseAnimation;
   late Animation<double> _rotateAnimation;
-  
+
   String _username = 'User';
   String _greeting = 'Good day';
   String _quote = 'Loading...';
@@ -92,28 +93,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ),
   ];
 
-  final List<String> _cloudQuotes = [
-    "The cloud is just someone else's computer... but way cooler!",
-    "In the cloud, we trust. On-premise, we backup.",
-    "There's no place like 127.0.0.1, but the cloud comes close.",
-    "Keep calm and scale horizontally.",
-    "Infrastructure as code: Because clicking is for mortals.",
-    "May your deployments be smooth and your rollbacks unnecessary.",
-    "Cloud computing: Where virtual becomes reality.",
-    "Automate everything, question nothing... except your bills.",
-    "In the cloud, every day is a deployment day.",
-    "The best time to migrate to cloud was yesterday. The second best time is now.",
-    "Cloud: Because managing your own servers is so 2010.",
-    "Your infrastructure should be cattle, not pets.",
-    "May your uptime be high and your latency low.",
-    "In AWS we trust, all others must bring IAM policies.",
-    "The cloud never sleeps, and neither do DevOps engineers.",
-  ];
-
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -122,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       parent: _fadeController,
       curve: Curves.easeInOut,
     );
-    
+
     _shimmerController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
@@ -140,29 +123,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       duration: const Duration(seconds: 20),
       vsync: this,
     )..repeat();
-    _rotateAnimation = Tween<double>(begin: 0, end: 2 * math.pi).animate(_rotateController);
-    
+    _rotateAnimation = Tween<double>(
+      begin: 0,
+      end: 2 * math.pi,
+    ).animate(_rotateController);
+
     // Set initial greeting and quote immediately
     _greeting = _getGreeting();
     _quote = _getRandomQuote();
-    
+
     // Cycle through funny loading messages
     _cycleLoadingMessages();
-    
+
     // Load user info asynchronously
     _loadUserInfo();
   }
 
   void _cycleLoadingMessages() {
-    final messages = [
-      'Fetching your cloud identity...',
-      'Diving into the AWS matrix...',
-      'Asking the cloud gods for your name...',
-      'Decrypting your digital DNA...',
-      'Scanning the cloud for your existence...',
-      'Retrieving your cosmic credentials...',
-    ];
-    
+    final messages = AppConstants.userLoadingMessages;
     int index = 0;
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 2));
@@ -181,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       final identity = await ApiService.getCallerIdentity();
       final username = identity['username'] ?? 'User';
-      
+
       setState(() {
         _username = username;
         _greeting = _getGreeting();
@@ -213,8 +191,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   String _getRandomQuote() {
-    final random = math.Random();
-    return _cloudQuotes[random.nextInt(_cloudQuotes.length)];
+    return AppConstants.getRandomQuote();
   }
 
   @override
@@ -242,7 +219,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+            side: BorderSide(
+              color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+            ),
           ),
         ),
       );
@@ -278,7 +257,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const begin = Offset(0.0, 0.1);
           const end = Offset.zero;
           const curve = Curves.easeOut;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           return SlideTransition(
             position: animation.drive(tween),
             child: FadeTransition(opacity: animation, child: child),
@@ -311,9 +293,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: _isLoadingUserInfo
                       ? AppTheme.purple400
-                      : _isConnected 
-                          ? AppTheme.successGreen
-                          : AppTheme.errorRed,
+                      : _isConnected
+                      ? AppTheme.successGreen
+                      : AppTheme.errorRed,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
@@ -325,7 +307,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         height: 10,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.onPrimary,
+                          ),
                         ),
                       )
                     else
@@ -339,11 +323,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     const SizedBox(width: 8),
                     Text(
-                      _isLoadingUserInfo 
-                          ? 'Connecting...' 
-                          : _isConnected 
-                              ? 'Connected' 
-                              : 'Disconnected',
+                      _isLoadingUserInfo
+                          ? 'Connecting...'
+                          : _isConnected
+                          ? 'Connected'
+                          : 'Disconnected',
                       style: TextStyle(
                         color: theme.colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -362,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             flexibleSpace: LayoutBuilder(
               builder: (context, constraints) {
                 final isCollapsed = constraints.maxHeight <= 120;
-                
+
                 return FlexibleSpaceBar(
                   titlePadding: EdgeInsets.only(
                     left: 16,
@@ -407,9 +391,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         height: isMobile ? 10 : 12,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            AppTheme.primaryPurple,
-                                          ),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                AppTheme.primaryPurple,
+                                              ),
                                         ),
                                       ),
                                       const SizedBox(width: 6),
@@ -431,14 +416,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 Padding(
                                   padding: const EdgeInsets.only(left: 4.0),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 2.0),
+                                        padding: const EdgeInsets.only(
+                                          top: 2.0,
+                                        ),
                                         child: Icon(
                                           Icons.format_quote,
                                           size: isMobile ? 9 : 12,
-                                          color: theme.textTheme.bodyMedium?.color,
+                                          color:
+                                              theme.textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
@@ -449,7 +438,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             fontSize: isMobile ? 8 : 11,
                                             fontWeight: FontWeight.w600,
                                             fontStyle: FontStyle.italic,
-                                            color: theme.textTheme.bodyLarge?.color,
+                                            color: theme
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.color,
                                             letterSpacing: 0.2,
                                             height: 1.3,
                                           ),
@@ -467,38 +459,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     },
                   ),
                   background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppTheme.primaryPurple.withValues(alpha: 0.1),
-                          AppTheme.primaryBlue.withValues(alpha: 0.1),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Floating particles
-                  const FloatingParticles(
-                    count: 15,
-                    color: AppTheme.primaryPurple,
-                  ),
-                  // Shimmer effect
-                  AnimatedBuilder(
-                    animation: _shimmerController,
-                    builder: (context, child) {
-                      return CustomPaint(
-                        painter: ShimmerPainter(
-                          animation: _shimmerController.value,
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppTheme.primaryPurple.withValues(alpha: 0.1),
+                              AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            ],
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                      // Floating particles
+                      const FloatingParticles(
+                        count: 15,
+                        color: AppTheme.primaryPurple,
+                      ),
+                      // Shimmer effect
+                      AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, child) {
+                          return CustomPaint(
+                            painter: ShimmerPainter(
+                              animation: _shimmerController.value,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
                 );
               },
             ),
@@ -540,11 +532,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       final crossAxisCount = constraints.maxWidth > 900
                           ? 4
                           : constraints.maxWidth > 600
-                              ? 3
-                              : 2;
-                      
+                          ? 3
+                          : 2;
+
                       // Adjust aspect ratio based on screen size
-                      final aspectRatio = constraints.maxWidth > 600 ? 1.15 : 1.0;
+                      final aspectRatio = constraints.maxWidth > 600
+                          ? 1.15
+                          : 1.0;
 
                       return GridView.builder(
                         shrinkWrap: true,
@@ -559,15 +553,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         itemBuilder: (context, index) {
                           final service = _mainServices[index];
                           return TweenAnimationBuilder<double>(
-                            duration: Duration(milliseconds: 300 + (index * 100)),
+                            duration: Duration(
+                              milliseconds: 300 + (index * 100),
+                            ),
                             tween: Tween(begin: 0.0, end: 1.0),
                             builder: (context, value, child) {
                               return Transform.scale(
                                 scale: value,
-                                child: Opacity(
-                                  opacity: value,
-                                  child: child,
-                                ),
+                                child: Opacity(opacity: value, child: child),
                               );
                             },
                             child: ServiceCard(
@@ -600,7 +593,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         });
                       },
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
                         side: BorderSide(
                           color: AppTheme.primaryPurple.withValues(alpha: 0.3),
                           width: 1.5,
@@ -610,11 +606,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       icon: Icon(
-                        _showAllServices ? Icons.expand_less : Icons.expand_more,
+                        _showAllServices
+                            ? Icons.expand_less
+                            : Icons.expand_more,
                         color: AppTheme.primaryPurple,
                       ),
                       label: Text(
-                        _showAllServices ? 'Show Less Services' : 'Show All Services',
+                        _showAllServices
+                            ? 'Show Less Services'
+                            : 'Show All Services',
                         style: TextStyle(
                           color: AppTheme.primaryPurple,
                           fontWeight: FontWeight.w600,
@@ -661,9 +661,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                      color: AppTheme.primaryPurple.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -685,21 +690,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               final crossAxisCount = constraints.maxWidth > 900
                                   ? 4
                                   : constraints.maxWidth > 600
-                                      ? 3
-                                      : 2;
-                              
+                                  ? 3
+                                  : 2;
+
                               // Adjust aspect ratio based on screen size
-                              final aspectRatio = constraints.maxWidth > 600 ? 1.15 : 1.0;
+                              final aspectRatio = constraints.maxWidth > 600
+                                  ? 1.15
+                                  : 1.0;
 
                               return GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                  childAspectRatio: aspectRatio,
-                                ),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                      childAspectRatio: aspectRatio,
+                                    ),
                                 itemCount: _additionalServices.length,
                                 itemBuilder: (context, index) {
                                   final service = _additionalServices[index];
@@ -768,11 +776,7 @@ class ShimmerPainter extends CustomPainter {
           AppTheme.primaryPurple.withValues(alpha: 0.1),
           Colors.transparent,
         ],
-        stops: [
-          animation - 0.3,
-          animation,
-          animation + 0.3,
-        ],
+        stops: [animation - 0.3, animation, animation + 0.3],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
@@ -799,16 +803,16 @@ class CirclesPainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final radius = 50.0 + (i * 30);
       final opacity = 0.15 - (i * 0.03);
-      
+
       paint.color = AppTheme.primaryBlue.withValues(alpha: opacity);
-      
+
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(rotation + (i * 0.5));
       canvas.translate(-center.dx, -center.dy);
-      
+
       canvas.drawCircle(center, radius, paint);
-      
+
       canvas.restore();
     }
   }
