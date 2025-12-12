@@ -155,12 +155,20 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final username = widget.user['username'] ?? '';
     final userId = widget.user['user_id'] ?? '';
     final createDate = widget.user['create_date'] ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: Text(username), elevation: 0),
+      appBar: AppBar(
+        title: Text(username),
+        elevation: 0,
+        backgroundColor: isDark
+            ? AppTheme.cardBackgroundDark
+            : AppTheme.cardBackground,
+      ),
       body: _loading
           ? const LoadingAnimation(message: 'Loading user details...')
           : SingleChildScrollView(
@@ -170,52 +178,88 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   // User Header
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade600],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppTheme.primaryPurple, AppTheme.purple600],
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
+                        // Avatar with glow
                         Container(
-                          width: 80,
-                          height: 80,
+                          width: 88,
+                          height: 88,
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: BorderRadius.circular(44),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                blurRadius: 16,
+                                spreadRadius: 2,
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.person,
-                            size: 48,
-                            color: Colors.blue.shade600,
+                          child: const Icon(
+                            Icons.person_rounded,
+                            size: 52,
+                            color: AppTheme.purple600,
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // Username
                         Text(
                           username,
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                         const SizedBox(height: 8),
+                        // Badge
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: 16,
+                            vertical: 8,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'IAM User',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 12,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 1,
                             ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified_user_rounded,
+                                size: 16,
+                                color: Colors.white.withValues(alpha: 0.95),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'IAM User',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -467,16 +511,21 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppTheme.textPrimaryDark
+                                : AppTheme.textPrimary,
                           ),
                         ),
                         Text(
                           '$count ${count == 1 ? 'item' : 'items'}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: theme.textTheme.bodyMedium?.color,
+                            color: isDark
+                                ? AppTheme.textSecondaryDark
+                                : AppTheme.textSecondary,
                           ),
                         ),
                       ],
@@ -489,11 +538,11 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                       onPressed: onAction,
                       style: IconButton.styleFrom(
                         backgroundColor: isDark
-                            ? AppTheme.primaryBlue.withValues(alpha: 0.2)
-                            : Colors.blue.shade50,
+                            ? AppTheme.primaryPurple.withValues(alpha: 0.2)
+                            : AppTheme.purple100,
                         foregroundColor: isDark
-                            ? AppTheme.primaryBlue
-                            : Colors.blue.shade700,
+                            ? AppTheme.primaryPurple
+                            : AppTheme.purple700,
                       ),
                     ),
                   if (hasAction && onAction != null && !isEmpty)
@@ -501,7 +550,9 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   if (!isEmpty)
                     Icon(
                       isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: theme.textTheme.bodyMedium?.color,
+                      color: isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondary,
                     ),
                 ],
               ),
@@ -544,7 +595,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                         icon: Icon(actionIcon ?? Icons.add, size: 16),
                         label: Text(actionLabel ?? 'Add'),
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.blue,
+                          foregroundColor: AppTheme.primaryPurple,
                         ),
                       ),
                   ],
@@ -562,13 +613,20 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
   }
 
   Widget _buildInfoCard(List<Widget> children) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: children),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? AppTheme.purple600.withValues(alpha: 0.2)
+              : AppTheme.purple200,
+          width: 1.5,
+        ),
       ),
+      child: Column(children: children),
     );
   }
 
@@ -578,11 +636,25 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     String value, {
     Color? valueColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.primaryPurple.withValues(alpha: 0.15)
+                  : AppTheme.purple100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isDark ? AppTheme.primaryPurple : AppTheme.purple700,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -590,15 +662,19 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                  ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   value,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: valueColor,
+                    color: valueColor ??
+                        (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary),
                   ),
                 ),
               ],
@@ -609,39 +685,37 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     );
   }
 
-  Widget _buildListItem(IconData icon, String title, {String? subtitle}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+  Widget _buildListItem(IconData icon, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppTheme.cardBackgroundDark
+            : AppTheme.purple50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark
+              ? AppTheme.purple600.withValues(alpha: 0.2)
+              : AppTheme.purple200.withValues(alpha: 0.5),
+        ),
+      ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 20, color: Colors.blue.shade700),
+          Icon(
+            icon,
+            size: 18,
+            color: isDark ? AppTheme.primaryPurple : AppTheme.purple700,
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ],
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+              ),
             ),
           ),
         ],
@@ -770,7 +844,10 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Dialog(
+      backgroundColor: isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 700,
@@ -781,7 +858,12 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.primaryPurple.withValues(alpha: isDark ? 0.3 : 0.15),
+                    AppTheme.purple600.withValues(alpha: isDark ? 0.2 : 0.1),
+                  ],
+                ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -792,28 +874,29 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: AppTheme.primaryPurple,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.policy, color: Colors.white),
+                    child: const Icon(Icons.policy_rounded, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Attach Policies',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
                           ),
                         ),
                         Text(
                           'Select policies to attach to ${widget.username}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
                           ),
                         ),
                       ],
@@ -822,6 +905,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
+                    color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
                   ),
                 ],
               ),
@@ -865,13 +949,21 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                           setState(() => _scopeFilter = selected.first);
                           _loadPolicies();
                         },
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return AppTheme.primaryPurple;
+                            }
+                            return null;
+                          }),
+                        ),
                       ),
                       const Spacer(),
                       Text(
                         '${_selectedPolicyArns.length} selected',
                         style: TextStyle(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -892,14 +984,18 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                           Icon(
                             Icons.policy_outlined,
                             size: 64,
-                            color: Colors.grey[300],
+                            color: isDark 
+                                ? AppTheme.purple600.withValues(alpha: 0.3)
+                                : AppTheme.purple200,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             _searchQuery.isEmpty
                                 ? 'No policies found'
                                 : 'No matching policies',
-                            style: TextStyle(color: Colors.grey[600]),
+                            style: TextStyle(
+                              color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                            ),
                           ),
                         ],
                       ),
@@ -923,12 +1019,24 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
-                          color: isSelected ? Colors.blue.shade50 : null,
+                          elevation: 0,
+                          color: isSelected 
+                              ? (isDark 
+                                  ? AppTheme.primaryPurple.withValues(alpha: 0.15)
+                                  : AppTheme.purple50)
+                              : (isDark ? AppTheme.cardBackgroundDark : null),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: isSelected
-                                ? BorderSide(color: Colors.blue, width: 2)
-                                : BorderSide.none,
+                                ? BorderSide(
+                                    color: AppTheme.primaryPurple,
+                                    width: 2,
+                                  )
+                                : BorderSide(
+                                    color: isDark
+                                        ? AppTheme.purple600.withValues(alpha: 0.2)
+                                        : Colors.grey.shade200,
+                                  ),
                           ),
                           child: CheckboxListTile(
                             value: isSelected,
@@ -956,18 +1064,23 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                                 if (isAlreadyAttached)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
+                                      horizontal: 8,
+                                      vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.green.shade100,
+                                      color: AppTheme.successGreen.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: AppTheme.successGreen.withValues(alpha: 0.3),
+                                      ),
                                     ),
                                     child: Text(
                                       'Attached',
                                       style: TextStyle(
-                                        fontSize: 9,
-                                        color: Colors.green.shade900,
+                                        fontSize: 10,
+                                        color: isDark 
+                                            ? AppTheme.successGreen.withValues(alpha: 0.9)
+                                            : AppTheme.successGreen,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -976,18 +1089,23 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                                   const SizedBox(width: 4),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
+                                      horizontal: 8,
+                                      vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.orange.shade100,
+                                      color: AppTheme.warningAmber.withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: AppTheme.warningAmber.withValues(alpha: 0.4),
+                                      ),
                                     ),
                                     child: Text(
                                       'AWS',
                                       style: TextStyle(
-                                        fontSize: 9,
-                                        color: Colors.orange.shade900,
+                                        fontSize: 10,
+                                        color: isDark
+                                            ? AppTheme.warningAmber
+                                            : Colors.orange.shade900,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -999,7 +1117,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                               policyArn,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey[600],
+                                color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1015,8 +1133,16 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                color: isDark 
+                    ? AppTheme.backgroundDark
+                    : AppTheme.purple50.withValues(alpha: 0.3),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? AppTheme.purple600.withValues(alpha: 0.2)
+                        : AppTheme.purple200,
+                  ),
+                ),
               ),
               child: Row(
                 children: [
