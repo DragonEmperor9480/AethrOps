@@ -31,11 +31,11 @@ class _AWSConfigDialogState extends State<AWSConfigDialog> {
         _secretKeyController.text,
         _regionController.text,
       );
-      
+
       if (mounted) {
         // Close dialog and navigate to splash screen to reload backend
         Navigator.of(context).pop(true);
-        
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => SplashScreen(
@@ -101,8 +101,11 @@ class _AWSConfigDialogState extends State<AWSConfigDialog> {
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureSecret ? Icons.visibility : Icons.visibility_off),
-                  onPressed: () => setState(() => _obscureSecret = !_obscureSecret),
+                  icon: Icon(
+                    _obscureSecret ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscureSecret = !_obscureSecret),
                 ),
               ),
             ),
@@ -130,7 +133,7 @@ class _AWSConfigDialogState extends State<AWSConfigDialog> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your credentials are stored securely in ~/.aws/credentials',
+                      'Your credentials are stored securely in ~/.awsmgr/credentials',
                       style: TextStyle(fontSize: 12, color: Colors.blue),
                     ),
                   ),

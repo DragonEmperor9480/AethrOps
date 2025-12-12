@@ -19,7 +19,7 @@ func SetDataDirectory(dir string) {
 }
 
 // GetConfigDirectory returns the directory for storing config files
-// Uses dataDir if set (mobile), otherwise uses ~/.aws (desktop)
+// Uses dataDir if set (mobile), otherwise uses ~/.awsmgr (desktop)
 func GetConfigDirectory() (string, error) {
 	if dataDir != "" {
 		// Use provided data directory (for mobile)
@@ -36,11 +36,11 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	awsDir := filepath.Join(homeDir, ".aws")
-	if err := os.MkdirAll(awsDir, 0700); err != nil {
+	awsmgrDir := filepath.Join(homeDir, ".awsmgr")
+	if err := os.MkdirAll(awsmgrDir, 0700); err != nil {
 		return "", err
 	}
-	return awsDir, nil
+	return awsmgrDir, nil
 }
 
 // InitDB initializes the database connection

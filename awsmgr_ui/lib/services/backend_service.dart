@@ -15,10 +15,10 @@ typedef StopBackendDart = int Function();
 typedef SetDataDirectoryNative = Int32 Function(Pointer<Utf8>);
 typedef SetDataDirectoryDart = int Function(Pointer<Utf8>);
 
-typedef SetAWSCredentialsNative = Int32 Function(
-    Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>);
-typedef SetAWSCredentialsDart = int Function(
-    Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>);
+typedef SetAWSCredentialsNative =
+    Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>);
+typedef SetAWSCredentialsDart =
+    int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>);
 
 class BackendService {
   static Process? _process;
@@ -67,8 +67,10 @@ class BackendService {
     debugPrint('App data directory: ${appDir.path}');
 
     // Set data directory
-    final setDataDir = _lib!.lookupFunction<SetDataDirectoryNative,
-        SetDataDirectoryDart>('SetDataDirectory');
+    final setDataDir = _lib!
+        .lookupFunction<SetDataDirectoryNative, SetDataDirectoryDart>(
+          'SetDataDirectory',
+        );
     final dirPtr = appDir.path.toNativeUtf8();
     setDataDir(dirPtr);
     calloc.free(dirPtr);
@@ -113,8 +115,11 @@ class BackendService {
   static String _getBackendPath() {
     // Get the executable directory
     final exePath = Platform.resolvedExecutable;
-    final exeDir = exePath.substring(0, exePath.lastIndexOf(Platform.pathSeparator));
-    
+    final exeDir = exePath.substring(
+      0,
+      exePath.lastIndexOf(Platform.pathSeparator),
+    );
+
     if (Platform.isWindows) {
       return '$exeDir${Platform.pathSeparator}awsmgr_backend.exe';
     } else if (Platform.isMacOS) {
@@ -155,34 +160,56 @@ class BackendService {
     String secretKey,
     String region,
   ) async {
-    if (_lib == null) {
-      debugPrint('⚠ FFI not available, skipping credential setup');
-      return false;
+    // Try FFI first (for mobile)
+    if (_lib != null) {
+      try {
+        final setCredentials = _lib!
+            .lookupFunction<SetAWSCredentialsNative, SetAWSCredentialsDart>(
+              'SetAWSCredentials',
+            );
+
+        final accessKeyPtr = accessKey.toNativeUtf8();
+        final secretKeyPtr = secretKey.toNativeUtf8();
+        final regionPtr = region.toNativeUtf8();
+
+        final result = setCredentials(accessKeyPtr, secretKeyPtr, regionPtr);
+
+        calloc.free(accessKeyPtr);
+        calloc.free(secretKeyPtr);
+        calloc.free(regionPtr);
+
+        if (result == 0) {
+          debugPrint('✓ AWS credentials set via FFI');
+          return true;
+        } else {
+          debugPrint('❌ Failed to set AWS credentials via FFI (code: $result)');
+          return false;
+        }
+      } catch (e) {
+        debugPrint('❌ Error setting credentials via FFI: $e');
+        return false;
+      }
     }
 
+    // Use HTTP API for desktop
     try {
-      final setCredentials = _lib!.lookupFunction<SetAWSCredentialsNative,
-          SetAWSCredentialsDart>('SetAWSCredentials');
+      debugPrint('Setting AWS credentials via HTTP API...');
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/aws/config'),
+        headers: {'Content-Type': 'application/json'},
+        body:
+            '{"access_key_id":"$accessKey","secret_access_key":"$secretKey","region":"$region"}',
+      );
 
-      final accessKeyPtr = accessKey.toNativeUtf8();
-      final secretKeyPtr = secretKey.toNativeUtf8();
-      final regionPtr = region.toNativeUtf8();
-
-      final result = setCredentials(accessKeyPtr, secretKeyPtr, regionPtr);
-
-      calloc.free(accessKeyPtr);
-      calloc.free(secretKeyPtr);
-      calloc.free(regionPtr);
-
-      if (result == 0) {
-        debugPrint('✓ AWS credentials set');
+      if (response.statusCode == 200) {
+        debugPrint('✓ AWS credentials configured via API');
         return true;
       } else {
-        debugPrint('❌ Failed to set AWS credentials (code: $result)');
+        debugPrint('❌ Failed to configure AWS credentials: ${response.body}');
         return false;
       }
     } catch (e) {
-      debugPrint('❌ Error setting credentials: $e');
+      debugPrint('❌ Error configuring credentials via API: $e');
       return false;
     }
   }
