@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import '../services/api_service.dart';
 import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';

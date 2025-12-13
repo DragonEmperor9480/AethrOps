@@ -80,7 +80,7 @@ class _EC2ScreenState extends State<EC2Screen> {
   List<EC2Instance> _instances = [];
   List<EC2Instance> _filteredInstances = [];
   bool _loading = false;
-  bool _operationInProgress = false;
+  final bool _operationInProgress = false;
   String _filterState = 'all';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
