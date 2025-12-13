@@ -576,7 +576,7 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
+      child: SizedBox(
         width: 700,
         height: 600,
         child: Column(
@@ -909,7 +909,7 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
+      child: SizedBox(
         width: 600,
         height: 600,
         child: Column(

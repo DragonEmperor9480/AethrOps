@@ -26,7 +26,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  List<int> _searchMatches = [];
+  final List<int> _searchMatches = [];
   int _currentMatchIndex = -1;
 
   @override

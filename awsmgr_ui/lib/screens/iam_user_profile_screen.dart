@@ -849,7 +849,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
     return Dialog(
       backgroundColor: isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
+      child: SizedBox(
         width: 700,
         height: 600,
         child: Column(

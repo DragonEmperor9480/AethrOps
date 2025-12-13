@@ -164,7 +164,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     final parts = _breadcrumbs;
     if (index < 0 || index >= parts.length) return;
     
-    final newPath = parts.sublist(0, index + 1).join('/') + '/';
+    final newPath = '${parts.sublist(0, index + 1).join('/')}/';
     setState(() => _currentPrefix = newPath);
     _loadItems();
   }
