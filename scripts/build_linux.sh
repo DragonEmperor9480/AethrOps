@@ -77,6 +77,9 @@ cp ../backend/awsmgr_backend build/linux/x64/release/bundle/
 chmod +x build/linux/x64/release/bundle/awsmgr_backend
 echo "✓ Backend copied to bundle"
 
+# Rename binary to aws-manager
+mv build/linux/x64/release/bundle/awsmgr build/linux/x64/release/bundle/aws-manager
+
 cd ..
 
 echo ""
@@ -87,4 +90,5 @@ echo "App location: awsmgr_ui/build/linux/x64/release/bundle/"
 echo ""
 echo "To run:"
 echo "  cd awsmgr_ui/build/linux/x64/release/bundle/"
-echo "  ./awsmgr"
+echo "  ./aws-manager"
+

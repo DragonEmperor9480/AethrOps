@@ -57,6 +57,9 @@ echo Step 3: Copying backend to Flutter build...
 copy ..\backend\awsmgr_backend.exe build\windows\x64\runner\Release\
 echo Done: Backend copied to bundle
 
+REM Rename executable to aws-manager.exe
+ren build\windows\x64\runner\Release\awsmgr.exe aws-manager.exe
+
 cd ..
 
 echo.
@@ -96,7 +99,7 @@ if "%ISCC_PATH%"=="" (
     echo.
     echo For now, creating a ZIP file instead...
     
-    set ZIP_NAME=awsmgr-%VERSION%-windows-x64.zip
+    set ZIP_NAME=aws-manager-%VERSION%-windows-x64.zip
     if exist "%RELEASE_DIR%\%ZIP_NAME%" del "%RELEASE_DIR%\%ZIP_NAME%"
     powershell -Command "Compress-Archive -Path 'awsmgr_ui\build\windows\x64\runner\Release\*' -DestinationPath '%RELEASE_DIR%\%ZIP_NAME%' -Force"
     
@@ -115,7 +118,7 @@ if %errorlevel% neq 0 (
     echo Failed to create installer!
     echo Creating ZIP as fallback...
     
-    set ZIP_NAME=awsmgr-%VERSION%-windows-x64.zip
+    set ZIP_NAME=aws-manager-%VERSION%-windows-x64.zip
     if exist "%RELEASE_DIR%\%ZIP_NAME%" del "%RELEASE_DIR%\%ZIP_NAME%"
     powershell -Command "Compress-Archive -Path 'awsmgr_ui\build\windows\x64\runner\Release\*' -DestinationPath '%RELEASE_DIR%\%ZIP_NAME%' -Force"
     
@@ -133,8 +136,8 @@ echo ==========================================
 echo.
 echo Build outputs in: release\windows\
 echo.
-if exist "%RELEASE_DIR%\awsmgr-setup-%VERSION%.exe" (
-    echo   Installer: awsmgr-setup-%VERSION%.exe
+if exist "%RELEASE_DIR%\aws-manager-setup-%VERSION%.exe" (
+    echo   Installer: aws-manager-setup-%VERSION%.exe
     echo.
     echo Users can run the installer to:
     echo   - Install to Program Files
@@ -142,8 +145,8 @@ if exist "%RELEASE_DIR%\awsmgr-setup-%VERSION%.exe" (
     echo   - Create Desktop shortcut (optional)
     echo   - Add uninstaller to Control Panel
 )
-if exist "%RELEASE_DIR%\awsmgr-%VERSION%-windows-x64.zip" (
-    echo   Portable: awsmgr-%VERSION%-windows-x64.zip
+if exist "%RELEASE_DIR%\aws-manager-%VERSION%-windows-x64.zip" (
+    echo   Portable: aws-manager-%VERSION%-windows-x64.zip
 )
 echo.
 pause

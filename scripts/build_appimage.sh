@@ -43,9 +43,10 @@ if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
     VERSION="Preview Beta 1"
 fi
 
-APP_NAME="AWS_Manager"
-APPIMAGE_NAME="AWS_Manager-${VERSION}-x86_64.AppImage"
-APPDIR="$PROJECT_ROOT/build/appimage/AWS_Manager.AppDir"
+APP_NAME="aws-manager"
+APPIMAGE_NAME="aws-manager-${VERSION}-x86_64.AppImage"
+APPDIR="$PROJECT_ROOT/build/appimage/aws-manager.AppDir"
+RELEASE_DIR="$PROJECT_ROOT/release/linux"
 
 echo "App: $APP_NAME"
 echo "Version: $VERSION"
@@ -108,7 +109,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Run the Flutter app
-exec "$APPDIR/awsmgr" "$@"
+exec "$APPDIR/aws-manager" "$@"
 EOF
 chmod +x "$APPDIR/AppRun"
 
@@ -118,13 +119,13 @@ cat > "$APPDIR/awsmgr.desktop" << EOF
 [Desktop Entry]
 Name=AWS Manager
 Comment=AWS Resource Management Tool
-Exec=awsmgr
-Icon=awsmgr
+Exec=aws-manager
+Icon=aws-manager
 Terminal=false
 Type=Application
 Categories=Development;Utility;
 Keywords=aws;cloud;management;iam;s3;lambda;
-StartupWMClass=awsmgr
+StartupWMClass=aws-manager
 X-AppImage-Version=$VERSION
 EOF
 
@@ -134,10 +135,10 @@ ICON_CREATED=false
 
 # Try to find existing icon
 if [ -f "awsmgr_ui/assets/icon.png" ]; then
-    cp "awsmgr_ui/assets/icon.png" "$APPDIR/awsmgr.png"
+    cp "awsmgr_ui/assets/icon.png" "$APPDIR/aws-manager.png"
     ICON_CREATED=true
 elif [ -f "awsmgr_ui/linux/awsmgr.png" ]; then
-    cp "awsmgr_ui/linux/awsmgr.png" "$APPDIR/awsmgr.png"
+    cp "awsmgr_ui/linux/awsmgr.png" "$APPDIR/aws-manager.png"
     ICON_CREATED=true
 fi
 
@@ -145,21 +146,26 @@ fi
 if [ "$ICON_CREATED" = false ]; then
     echo "Note: No icon found, creating placeholder..."
     # Create a simple 256x256 PNG with ImageMagick if available
-    if command -v convert &> /dev/null; then
+    if command -v magick &> /dev/null; then
+        magick -size 256x256 xc:transparent \
+                -fill '#6B46C1' -draw 'circle 128,128 128,20' \
+                -fill white -pointsize 80 -gravity center -annotate +0+0 'AWS' \
+                "$APPDIR/aws-manager.png"
+    elif command -v convert &> /dev/null; then
         convert -size 256x256 xc:transparent \
                 -fill '#6B46C1' -draw 'circle 128,128 128,20' \
                 -fill white -pointsize 80 -gravity center -annotate +0+0 'AWS' \
-                "$APPDIR/awsmgr.png"
+                "$APPDIR/aws-manager.png"
     else
         echo "⚠️  ImageMagick not found. AppImage will use default icon."
-        echo "   Install ImageMagick or add icon.png to awsmgr_ui/assets/"
+        echo "   Install ImageMagick (magick or convert) or add icon.png to awsmgr_ui/assets/"
         # Create a minimal 1x1 transparent PNG as fallback
-        echo -n "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > "$APPDIR/awsmgr.png"
+        echo -n "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > "$APPDIR/aws-manager.png"
     fi
 fi
 
 # Create .DirIcon symlink (required for AppImage)
-ln -sf awsmgr.png "$APPDIR/.DirIcon"
+ln -sf aws-manager.png "$APPDIR/.DirIcon"
 
 # Download appimagetool if not present
 APPIMAGETOOL="$PROJECT_ROOT/build/appimage/appimagetool-x86_64.AppImage"
@@ -183,7 +189,8 @@ cd "$PROJECT_ROOT/build/appimage"
 export ARCH=x86_64
 
 # Build AppImage
-"$APPIMAGETOOL" --no-appstream "AWS_Manager.AppDir" "$APPIMAGE_NAME"
+# Build AppImage (using extract-and-run to avoid FUSE dependency)
+"$APPIMAGETOOL" --appimage-extract-and-run --no-appstream "aws-manager.AppDir" "$APPIMAGE_NAME"
 
 if [ $? -ne 0 ]; then
     echo "❌ Failed to build AppImage"
@@ -196,18 +203,24 @@ chmod +x "$APPIMAGE_NAME"
 # Get file size
 SIZE=$(du -h "$APPIMAGE_NAME" | cut -f1)
 
+# Create release directory
+mkdir -p "$RELEASE_DIR"
+
+# Move AppImage to release directory
+mv "$APPIMAGE_NAME" "$RELEASE_DIR/"
+
 echo ""
 echo "=========================================="
 echo "✓ AppImage Build Complete!"
 echo "=========================================="
-echo "AppImage: $PROJECT_ROOT/build/appimage/$APPIMAGE_NAME"
-echo "Size: $SIZE"
+echo "AppImage: $RELEASE_DIR/$APPIMAGE_NAME"
+echo "Size: $(du -h "$RELEASE_DIR/$APPIMAGE_NAME" | cut -f1)"
 echo ""
 echo "To run:"
-echo "  ./$APPIMAGE_NAME"
+echo "  $RELEASE_DIR/$APPIMAGE_NAME"
 echo ""
 echo "To install (optional):"
-echo "  mv $APPIMAGE_NAME ~/.local/bin/awsmgr"
+echo "  mv $RELEASE_DIR/$APPIMAGE_NAME ~/.local/bin/awsmgr"
 echo "  # Or move to /usr/local/bin for system-wide installation"
 echo ""
 echo "The AppImage is portable and can be:"

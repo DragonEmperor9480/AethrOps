@@ -39,15 +39,22 @@ fi
 
 # Final fallback
 if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-    VERSION="Preview Beta 1"
+    VERSION="0.1.0-preview-beta-1"
+fi
+
+# Sanitize version for Debian (replace spaces, ensure starts with digit)
+VERSION=$(echo "$VERSION" | tr ' ' '-' | tr '_' '-')
+if [[ ! "$VERSION" =~ ^[0-9] ]]; then
+    VERSION="0.0.0-$VERSION"
 fi
 
 echo "Version: $VERSION"
 
-PACKAGE_NAME="awsmgr"
+PACKAGE_NAME="aws-manager"
 ARCH="amd64"
 DEB_DIR="$PROJECT_ROOT/build/debian"
 PACKAGE_DIR="$DEB_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}"
+RELEASE_DIR="$PROJECT_ROOT/release/linux"
 
 echo "Package: $PACKAGE_NAME"
 echo "Version: $VERSION"
@@ -263,23 +270,27 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Move to release directory
+mkdir -p "$RELEASE_DIR"
+mv "${PACKAGE_NAME}_${VERSION}_${ARCH}.deb" "$RELEASE_DIR/"
+
 # Verify the package
 echo ""
 echo "Step 5: Verifying package..."
-dpkg-deb --info "${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
+dpkg-deb --info "$RELEASE_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
 echo ""
-dpkg-deb --contents "${PACKAGE_NAME}_${VERSION}_${ARCH}.deb" | head -20
+dpkg-deb --contents "$RELEASE_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb" | head -20
 echo "... (showing first 20 files)"
 
 echo ""
 echo "=========================================="
 echo "✓ Debian Package Build Complete!"
 echo "=========================================="
-echo "Package: $DEB_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
-echo "Size: $(du -h "$DEB_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb" | cut -f1)"
+echo "Package: $RELEASE_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
+echo "Size: $(du -h "$RELEASE_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb" | cut -f1)"
 echo ""
 echo "To install:"
-echo "  sudo dpkg -i $DEB_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
+echo "  sudo dpkg -i $RELEASE_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
 echo "  sudo apt-get install -f  # Install dependencies if needed"
 echo ""
 echo "To uninstall:"
