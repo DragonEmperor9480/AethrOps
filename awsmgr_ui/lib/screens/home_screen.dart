@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'iam_screen.dart';
 import 's3_screen.dart';
 import 'settings_screen.dart';
@@ -9,6 +10,8 @@ import '../widgets/service_card.dart';
 import '../widgets/floating_particles.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/email_config_service.dart';
+import '../services/aws_credentials_service.dart';
 import '../utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -22,11 +25,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _showAllServices = false;
   late AnimationController _fadeController;
   late AnimationController _shimmerController;
-  late AnimationController _pulseController;
-  late AnimationController _rotateController;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _rotateAnimation;
+
 
   String _username = 'User';
   String _greeting = 'Good day';
@@ -97,6 +97,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
+    // Check for missing configurations after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkMissingConfigurations();
+    });
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -111,22 +116,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
     )..repeat();
 
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
 
-    _rotateController = AnimationController(
-      duration: const Duration(seconds: 20),
-      vsync: this,
-    )..repeat();
-    _rotateAnimation = Tween<double>(
-      begin: 0,
-      end: 2 * math.pi,
-    ).animate(_rotateController);
 
     // Set initial greeting and quote immediately
     _greeting = _getGreeting();
@@ -198,9 +188,108 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void dispose() {
     _fadeController.dispose();
     _shimmerController.dispose();
-    _pulseController.dispose();
-    _rotateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkMissingConfigurations() async {
+    // Only check if we have credentials (meaning user is "logged in")
+    if (!await AWSCredentialsService.hasCredentials()) return;
+
+    // Check if user has opted out of this prompt
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('hide_setup_prompt') == true) return;
+
+    final missingItems = <String>[];
+
+    // Check Email
+    if (!await EmailConfigService.hasEmailConfig()) {
+      missingItems.add('Email Notifications');
+    }
+
+    // Check MFA
+    try {
+      final mfaDevice = await ApiService.getMFADevice();
+      if (mfaDevice['configured'] != true) {
+        missingItems.add('MFA Device');
+      }
+    } catch (e) {
+      // If error (e.g. backend down), assume missing or just ignore
+      debugPrint('Error checking MFA status: $e');
+    }
+
+    if (missingItems.isNotEmpty && mounted) {
+      _showConfigurationPrompt(missingItems);
+    }
+  }
+
+  void _showConfigurationPrompt(List<String> missingItems) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.build_circle_outlined, color: AppTheme.primaryPurple),
+            const SizedBox(width: 10),
+            const Text('Complete Setup'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('To get the most out of AWS Manager, please configure:'),
+            const SizedBox(height: 16),
+            ...missingItems.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.circle, size: 8, color: AppTheme.warningAmber),
+                    const SizedBox(width: 10),
+                    Text(
+                      item,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('hide_setup_prompt', true);
+              navigator.pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.textSecondary,
+            ),
+            child: const Text("Don't ask again"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Remind Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryPurple,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Configure Now'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToService(String route, bool comingSoon) {
