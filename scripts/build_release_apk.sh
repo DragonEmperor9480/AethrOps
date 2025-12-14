@@ -73,30 +73,57 @@ else
 fi
 
 echo ""
-echo "🔨 Step 1: Building Go backend library for Android..."
+# Define architectures to build
+ARCHS=("arm64-v8a" "armeabi-v7a" "x86_64")
+
+echo ""
+echo "🔨 Step 1: Building Go backend library for multiple architectures..."
 cd "$PROJECT_ROOT/backend_ffi"
 
-# Build for ARM64
-echo "  • Building for ARM64..."
-CGO_ENABLED=1 \
-GOOS=android \
-GOARCH=arm64 \
-CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang \
-go build -buildmode=c-shared -o libbackend.so main.go
+for arch in "${ARCHS[@]}"; do
+    echo "  • Building for $arch..."
+    
+    if [ "$arch" == "arm64-v8a" ]; then
+        GO_ARCH="arm64"
+        GO_ARM=""
+        CC_COMPILER="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+    elif [ "$arch" == "armeabi-v7a" ]; then
+        GO_ARCH="arm"
+        GO_ARM="7"
+        CC_COMPILER="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+    elif [ "$arch" == "x86_64" ]; then
+        GO_ARCH="amd64"
+        GO_ARM=""
+        CC_COMPILER="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang"
+    fi
 
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to build Go backend for ARM64"
-    exit 1
-fi
+    CGO_ENABLED=1 \
+    GOOS=android \
+    GOARCH=$GO_ARCH \
+    GOARM=$GO_ARM \
+    CC=$CC_COMPILER \
+    go build -buildmode=c-shared -o libbackend_$arch.so main.go
 
-echo "  ✓ ARM64 backend compiled"
+    if [ $? -ne 0 ]; then
+        echo "❌ Failed to build Go backend for $arch"
+        exit 1
+    fi
+done
+
+echo "  ✓ Go backend compiled for all architectures"
 
 # Copy to Flutter project
 echo ""
-echo "📦 Step 2: Copying library to Flutter Android project..."
-mkdir -p "$FLUTTER_DIR/android/app/src/main/jniLibs/arm64-v8a/"
-cp libbackend.so "$FLUTTER_DIR/android/app/src/main/jniLibs/arm64-v8a/"
-echo "✓ Library copied to jniLibs"
+echo "📦 Step 2: Copying libraries to Flutter Android project..."
+
+for arch in "${ARCHS[@]}"; do
+    mkdir -p "$FLUTTER_DIR/android/app/src/main/jniLibs/$arch/"
+    cp libbackend_$arch.so "$FLUTTER_DIR/android/app/src/main/jniLibs/$arch/libbackend.so"
+    # Clean up
+    rm libbackend_$arch.so
+done
+
+echo "✓ Libraries copied to jniLibs"
 
 cd "$PROJECT_ROOT"
 
