@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 FLUTTER_DIR="$PROJECT_ROOT/awsmgr_ui"
 ANDROID_DIR="$FLUTTER_DIR/android"
-OUTPUT_DIR="$PROJECT_ROOT/release"
+OUTPUT_DIR="$PROJECT_ROOT/release/android"
 VERSION="preview-beta-1"
 
 echo "============================================"
@@ -155,9 +155,9 @@ echo "📁 Copying APKs to release directory..."
 
 APK_DIR="$FLUTTER_DIR/build/app/outputs/flutter-apk"
 
-cp "$APK_DIR/app-arm64-v8a-release.apk" "$OUTPUT_DIR/awsmgr-$VERSION-arm64-v8a.apk"
-cp "$APK_DIR/app-armeabi-v7a-release.apk" "$OUTPUT_DIR/awsmgr-$VERSION-armeabi-v7a.apk"
-cp "$APK_DIR/app-x86_64-release.apk" "$OUTPUT_DIR/awsmgr-$VERSION-x86_64.apk"
+cp "$APK_DIR/app-arm64-v8a-release.apk" "$OUTPUT_DIR/aws-manager-$VERSION-arm64-v8a.apk"
+cp "$APK_DIR/app-armeabi-v7a-release.apk" "$OUTPUT_DIR/aws-manager-$VERSION-armeabi-v7a.apk"
+cp "$APK_DIR/app-x86_64-release.apk" "$OUTPUT_DIR/aws-manager-$VERSION-x86_64.apk"
 
 # Generate checksums
 echo "🔒 Generating checksums..."

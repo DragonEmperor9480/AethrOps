@@ -40,6 +40,9 @@ if [ $? -ne 0 ]; then
 fi
 echo "✓ Flutter app built"
 
+# Rename binary to aws-manager
+mv awsmgr_ui/build/linux/x64/release/bundle/awsmgr awsmgr_ui/build/linux/x64/release/bundle/aws-manager
+
 # Step 3: Copy backend to bundle
 echo ""
 echo "Step 3: Bundling backend with application..."
@@ -70,7 +73,7 @@ cat > "$BIN_DIR/$BINARY_NAME" << 'EOF'
 #!/bin/bash
 # AWS Manager Launcher
 cd "$HOME/.local/share/aws-manager"
-./awsmgr "$@"
+./aws-manager "$@"
 EOF
 
 chmod +x "$BIN_DIR/$BINARY_NAME"

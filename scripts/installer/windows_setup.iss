@@ -6,7 +6,7 @@
 #define MyAppNumericVersion "0.1.0"
 #define MyAppPublisher "DragonEmperor9480"
 #define MyAppURL "https://github.com/DragonEmperor9480/aws-manager"
-#define MyAppExeName "awsmgr.exe"
+#define MyAppExeName "aws-manager.exe"
 #define MyAppDescription "AWS Resource Management Tool"
 
 [Setup]
@@ -24,7 +24,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 ; Output settings
 OutputDir=..\..\release\windows
-OutputBaseFilename=awsmgr-setup-{#MyAppVersion}
+OutputBaseFilename=aws-manager-setup-{#MyAppVersion}
 ; Installer settings
 SetupIconFile=..\..\awsmgr_ui\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
