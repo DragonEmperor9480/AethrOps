@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../services/email_config_service.dart';
 import '../services/aws_credentials_service.dart';
+import '../services/backend_service.dart';
 import '../utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -292,6 +293,51 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Future<bool> _onWillPop() async {
+    // Show exit confirmation dialog
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.exit_to_app_rounded,
+              color: AppTheme.primaryPurple,
+            ),
+            const SizedBox(width: 12),
+            const Text('Exit AWS Manager?'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to exit? The backend service will be stopped.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Exit'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorRed,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldExit == true) {
+      // Stop the backend before exiting
+      BackendService.stop();
+      return true;
+    }
+
+    return false;
+  }
+
   void _navigateToService(String route, bool comingSoon) {
     if (comingSoon) {
       final theme = Theme.of(context);
@@ -362,7 +408,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
@@ -827,6 +883,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
+    ),
     );
   }
 }
