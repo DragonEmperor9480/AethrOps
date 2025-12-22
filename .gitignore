@@ -36,3 +36,6 @@ build/
 *.db-shm
 *.db-wal
 .awsmgr/
+
+#Releases
+release/*
