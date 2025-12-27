@@ -42,10 +42,13 @@ class AmiOption {
   final String description;
   final String architecture;
 
+  final String? assetPath;
+
   const AmiOption({
     required this.name,
     required this.imageId,
     required this.description,
     required this.architecture,
+    this.assetPath,
   });
 }

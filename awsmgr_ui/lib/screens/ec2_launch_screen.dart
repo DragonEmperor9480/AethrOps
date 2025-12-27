@@ -39,6 +39,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       description:
           'Amazon Linux 2023 AMI 2023.3.20240131.0 x86_64 HVM kernel-6.1',
       architecture: 'x86_64',
+      assetPath: 'assets/ami-assets/Amazon_Web_Services_Logo.svg.png',
     ),
     const AmiOption(
       name: 'Ubuntu Server 22.04 LTS',
@@ -46,6 +47,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       description:
           'Canonical, Ubuntu, 22.04 LTS, amd64 jammy image build on 2023-12-07',
       architecture: 'x86_64',
+      assetPath: 'assets/ami-assets/Logo-ubuntu_cof-orange-hex.svg.png',
     ),
   ];
 
@@ -232,12 +234,31 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
-                                        Icons.computer, // Placeholder for SVG
-                                        color: isSelected
-                                            ? primaryColor
-                                            : Colors.grey,
-                                        size: 32,
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.05),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ami.assetPath != null
+                                            ? Image.asset(
+                                                ami.assetPath!,
+                                                fit: BoxFit.contain,
+                                              )
+                                            : Icon(
+                                                Icons.computer,
+                                                color: isSelected ? primaryColor : Colors.grey,
+                                                size: 24,
+                                              ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
