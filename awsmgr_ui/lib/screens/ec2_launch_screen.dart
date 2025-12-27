@@ -204,7 +204,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 140,
+                      height: 220,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: _amiOptions.length,
@@ -215,7 +215,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                           return GestureDetector(
                             onTap: () => setState(() => _selectedAmi = ami),
                             child: Container(
-                              width: 280,
+                              width: 180,
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isSelected
@@ -230,59 +230,63 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(8),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.05),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
                                         ),
-                                        child: ami.assetPath != null
-                                            ? Image.asset(
-                                                ami.assetPath!,
-                                                fit: BoxFit.contain,
-                                              )
-                                            : Icon(
-                                                Icons.computer,
-                                                color: isSelected ? primaryColor : Colors.grey,
-                                                size: 24,
-                                              ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          ami.name,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
+                                      ],
+                                    ),
+                                    child: ami.assetPath != null
+                                        ? Image.asset(
+                                            ami.assetPath!,
+                                            fit: BoxFit.contain,
+                                          )
+                                        : Icon(
+                                            Icons.computer,
+                                            color: isSelected
+                                                ? primaryColor
+                                                : Colors.grey,
+                                            size: 28,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 12),
                                   Text(
-                                    ami.description,
+                                    ami.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                    textAlign: TextAlign.center,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
                                   ),
-                                  const Spacer(),
+                                  const SizedBox(height: 4),
+                                  Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        ami.description,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 4,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall?.copyWith(fontSize: 10),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
                                   Chip(
                                     label: Text(ami.architecture),
                                     labelStyle: const TextStyle(fontSize: 10),
