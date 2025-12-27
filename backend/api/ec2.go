@@ -521,3 +521,103 @@ func ListSecurityGroups(c *gin.Context) {
 		"count":           len(groups),
 	})
 }
+
+// ListKeyPairs returns all key pairs
+func ListKeyPairs(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeKeyPairsInput{}
+	result, err := client.DescribeKeyPairs(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list key pairs: " + err.Error()})
+		return
+	}
+
+	var keyPairs []map[string]string
+	for _, kp := range result.KeyPairs {
+		keyPairs = append(keyPairs, map[string]string{
+			"key_name":        aws.ToString(kp.KeyName),
+			"key_pair_id":     aws.ToString(kp.KeyPairId),
+			"key_fingerprint": aws.ToString(kp.KeyFingerprint),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"key_pairs": keyPairs,
+		"count":     len(keyPairs),
+	})
+}
+
+// ListSubnets returns all subnets
+func ListSubnets(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeSubnetsInput{}
+	result, err := client.DescribeSubnets(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list subnets: " + err.Error()})
+		return
+	}
+
+	var subnets []map[string]string
+	for _, sn := range result.Subnets {
+		name := ""
+		for _, tag := range sn.Tags {
+			if aws.ToString(tag.Key) == "Name" {
+				name = aws.ToString(tag.Value)
+				break
+			}
+		}
+
+		subnets = append(subnets, map[string]string{
+			"subnet_id":         aws.ToString(sn.SubnetId),
+			"vpc_id":            aws.ToString(sn.VpcId),
+			"cidr_block":        aws.ToString(sn.CidrBlock),
+			"availability_zone": aws.ToString(sn.AvailabilityZone),
+			"name":              name,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"subnets": subnets,
+		"count":   len(subnets),
+	})
+}
+
+// ListVPCs returns all VPCs
+func ListVPCs(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeVpcsInput{}
+	result, err := client.DescribeVpcs(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list VPCs: " + err.Error()})
+		return
+	}
+
+	var vpcs []map[string]string
+	for _, vpc := range result.Vpcs {
+		name := ""
+		for _, tag := range vpc.Tags {
+			if aws.ToString(tag.Key) == "Name" {
+				name = aws.ToString(tag.Value)
+				break
+			}
+		}
+
+		vpcs = append(vpcs, map[string]string{
+			"vpc_id":     aws.ToString(vpc.VpcId),
+			"cidr_block": aws.ToString(vpc.CidrBlock),
+			"state":      string(vpc.State),
+			"name":       name,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"vpcs":  vpcs,
+		"count": len(vpcs),
+	})
+}
