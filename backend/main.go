@@ -8,6 +8,7 @@ import (
 	"github.com/DragonEmperor9480/aws_cli_manager/backend/api"
 	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
 	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
@@ -101,6 +102,12 @@ func main() {
 	r.HandleFunc("/api/cloudwatch/lambda/{function}/logs", api.StreamLambdaLogs).Methods("GET")
 
 	// EC2 Instances
+	// Gin router for EC2 Launch
+	gin.SetMode(gin.ReleaseMode)
+	ginRouter := gin.New()
+	ginRouter.POST("/api/ec2/instances", api.LaunchEC2Instance)
+	r.Handle("/api/ec2/instances", ginRouter).Methods("POST")
+
 	r.HandleFunc("/api/ec2/instances", api.ListEC2Instances).Methods("GET")
 	r.HandleFunc("/api/ec2/instances/{instance_id}", api.GetEC2Instance).Methods("GET")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/start", api.StartEC2Instance).Methods("POST")

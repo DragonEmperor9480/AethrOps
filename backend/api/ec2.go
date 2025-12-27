@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 
+	ec2models "github.com/DragonEmperor9480/aws_cli_manager/models/ec2"
 	"github.com/DragonEmperor9480/aws_cli_manager/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
@@ -393,5 +396,99 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 		"instances": instances,
 		"count":     len(instances),
 		"state":     state,
+	})
+}
+
+// LaunchEC2Instance launches a new EC2 instance
+func LaunchEC2Instance(c *gin.Context) {
+	var req ec2models.LaunchInstanceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validation
+	if req.ImageID == "" || req.InstanceType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "image_id and instance_type are required"})
+		return
+	}
+
+	if req.MinCount < 1 {
+		req.MinCount = 1
+	}
+	if req.MaxCount < 1 {
+		req.MaxCount = 1
+	}
+
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.RunInstancesInput{
+		ImageId:      aws.String(req.ImageID),
+		InstanceType: types.InstanceType(req.InstanceType),
+		MinCount:     aws.Int32(req.MinCount),
+		MaxCount:     aws.Int32(req.MaxCount),
+	}
+
+	if req.KeyName != "" {
+		input.KeyName = aws.String(req.KeyName)
+	}
+
+	if req.SubnetID != "" {
+		input.SubnetId = aws.String(req.SubnetID)
+	}
+
+	if len(req.SecurityGroupIDs) > 0 {
+		input.SecurityGroupIds = req.SecurityGroupIDs
+	}
+
+	// Handle UserData (Base64 encode)
+	if req.UserData != "" {
+		encoded := base64.StdEncoding.EncodeToString([]byte(req.UserData))
+		input.UserData = aws.String(encoded)
+	}
+
+	// Handle Tags using TagSpecifications (atomic tagging)
+	if len(req.Tags) > 0 {
+		var awsTags []types.Tag
+		for k, v := range req.Tags {
+			awsTags = append(awsTags, types.Tag{
+				Key:   aws.String(k),
+				Value: aws.String(v),
+			})
+		}
+
+		input.TagSpecifications = []types.TagSpecification{
+			{
+				ResourceType: types.ResourceTypeInstance,
+				Tags:         awsTags,
+			},
+			{
+				ResourceType: types.ResourceTypeVolume, // Also tag volumes
+				Tags:         awsTags,
+			},
+		}
+	}
+
+	result, err := client.RunInstances(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to launch instance: " + err.Error()})
+		return
+	}
+
+	if len(result.Instances) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No instances returned from launch request"})
+		return
+	}
+
+	// Return details of the first launched instance
+	instance := result.Instances[0]
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Instance launched successfully",
+		"instance_id":    aws.ToString(instance.InstanceId),
+		"launch_time":    aws.ToTime(instance.LaunchTime).Format("2006-01-02 15:04:05"),
+		"private_ip":     aws.ToString(instance.PrivateIpAddress),
+		"state":          string(instance.State.Name),
+		"instance_count": len(result.Instances),
 	})
 }
