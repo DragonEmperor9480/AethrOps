@@ -598,7 +598,7 @@ func ListVPCs(c *gin.Context) {
 		return
 	}
 
-	var vpcs []map[string]string
+	var vpcs []map[string]interface{}
 	for _, vpc := range result.Vpcs {
 		name := ""
 		for _, tag := range vpc.Tags {
@@ -608,11 +608,12 @@ func ListVPCs(c *gin.Context) {
 			}
 		}
 
-		vpcs = append(vpcs, map[string]string{
+		vpcs = append(vpcs, map[string]interface{}{
 			"vpc_id":     aws.ToString(vpc.VpcId),
 			"cidr_block": aws.ToString(vpc.CidrBlock),
 			"state":      string(vpc.State),
 			"name":       name,
+			"is_default": vpc.IsDefault,
 		})
 	}
 
