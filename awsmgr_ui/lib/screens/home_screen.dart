@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'iam_screen.dart';
@@ -415,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         
         final shouldPop = await _onWillPop();
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(
