@@ -482,6 +482,7 @@ func LaunchEC2Instance(c *gin.Context) {
 	}
 
 	// Return details of the first launched instance
+	// Return details of the first launched instance
 	instance := result.Instances[0]
 	c.JSON(http.StatusOK, gin.H{
 		"message":        "Instance launched successfully",
@@ -490,5 +491,33 @@ func LaunchEC2Instance(c *gin.Context) {
 		"private_ip":     aws.ToString(instance.PrivateIpAddress),
 		"state":          string(instance.State.Name),
 		"instance_count": len(result.Instances),
+	})
+}
+
+// ListSecurityGroups returns all security groups
+func ListSecurityGroups(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeSecurityGroupsInput{}
+	result, err := client.DescribeSecurityGroups(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list security groups: " + err.Error()})
+		return
+	}
+
+	var groups []map[string]string
+	for _, sg := range result.SecurityGroups {
+		groups = append(groups, map[string]string{
+			"group_id":    aws.ToString(sg.GroupId),
+			"group_name":  aws.ToString(sg.GroupName),
+			"description": aws.ToString(sg.Description),
+			"vpc_id":      aws.ToString(sg.VpcId),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"security_groups": groups,
+		"count":           len(groups),
 	})
 }

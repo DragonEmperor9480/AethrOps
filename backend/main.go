@@ -106,7 +106,9 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	ginRouter := gin.New()
 	ginRouter.POST("/api/ec2/instances", api.LaunchEC2Instance)
+	ginRouter.GET("/api/ec2/security-groups", api.ListSecurityGroups)
 	r.Handle("/api/ec2/instances", ginRouter).Methods("POST")
+	r.Handle("/api/ec2/security-groups", ginRouter).Methods("GET")
 
 	r.HandleFunc("/api/ec2/instances", api.ListEC2Instances).Methods("GET")
 	r.HandleFunc("/api/ec2/instances/{instance_id}", api.GetEC2Instance).Methods("GET")
