@@ -83,10 +83,7 @@ class _SpeedDialMenuState extends State<SpeedDialMenu>
         if (_isExpanded)
           ...List.generate(
             widget.items.length,
-            (index) => _buildAnimatedMenuItem(
-              widget.items[index],
-              index,
-            ),
+            (index) => _buildAnimatedMenuItem(widget.items[index], index),
           ),
         // Main FAB
         FloatingActionButton(
@@ -97,9 +94,7 @@ class _SpeedDialMenuState extends State<SpeedDialMenu>
           child: AnimatedRotation(
             turns: _isExpanded ? 0.125 : 0,
             duration: const Duration(milliseconds: 250),
-            child: Icon(
-              _isExpanded ? widget.openIcon : widget.closedIcon,
-            ),
+            child: Icon(_isExpanded ? widget.openIcon : widget.closedIcon),
           ),
         ),
       ],
@@ -126,9 +121,12 @@ class _SpeedDialMenuState extends State<SpeedDialMenu>
               Material(
                 color: Colors.transparent,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -140,9 +138,10 @@ class _SpeedDialMenuState extends State<SpeedDialMenu>
                   ),
                   child: Text(
                     item.label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                 ),

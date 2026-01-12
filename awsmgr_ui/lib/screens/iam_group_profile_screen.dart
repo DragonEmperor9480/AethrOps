@@ -585,7 +585,7 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: AppTheme.successGreen.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -596,7 +596,7 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: AppTheme.successGreen,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.policy, color: Colors.white),
@@ -606,16 +606,20 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Attach Policies',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                         Text(
                           'Select policies to attach to ${widget.groupname}',
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          ),
                         ),
                       ],
                     ),
@@ -709,11 +713,11 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8),
-                              color: isSelected ? Colors.green.shade50 : null,
+                              color: isSelected ? AppTheme.successGreen.withValues(alpha: 0.1) : null,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 side: isSelected
-                                    ? BorderSide(color: Colors.green, width: 2)
+                                    ? BorderSide(color: AppTheme.successGreen, width: 2)
                                     : BorderSide.none,
                               ),
                               child: CheckboxListTile(
@@ -744,14 +748,14 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.shade100,
+                                          color: AppTheme.successGreen.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
                                           'Attached',
                                           style: TextStyle(
                                             fontSize: 9,
-                                            color: Colors.green.shade900,
+                                            color: AppTheme.successGreen,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -764,14 +768,14 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.orange.shade100,
+                                          color: AppTheme.warningAmber.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
                                           'AWS',
                                           style: TextStyle(
                                             fontSize: 9,
-                                            color: Colors.orange.shade900,
+                                            color: AppTheme.warningAmber,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -796,8 +800,8 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                color: Theme.of(context).cardColor,
+                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
               ),
               child: Row(
                 children: [
@@ -918,7 +922,7 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: AppTheme.successGreen.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -929,7 +933,7 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: AppTheme.successGreen,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.person_add, color: Colors.white),
@@ -939,16 +943,20 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Add Users to Group',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                         Text(
                           'Select users to add to ${widget.groupname}',
-                          style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          ),
                         ),
                       ],
                     ),
@@ -1025,11 +1033,11 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8),
-                              color: isSelected ? Colors.green.shade50 : null,
+                              color: isSelected ? AppTheme.successGreen.withValues(alpha: 0.1) : null,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 side: isSelected
-                                    ? BorderSide(color: Colors.green, width: 2)
+                                    ? BorderSide(color: AppTheme.successGreen, width: 2)
                                     : BorderSide.none,
                               ),
                               child: CheckboxListTile(
@@ -1054,10 +1062,10 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
                                 secondary: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
+                                    color: AppTheme.iamColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(Icons.person, size: 20, color: Colors.blue.shade700),
+                                  child: Icon(Icons.person, size: 20, color: AppTheme.iamColor),
                                 ),
                                 dense: true,
                               ),
@@ -1070,8 +1078,8 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                color: Theme.of(context).cardColor,
+                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
               ),
               child: Row(
                 children: [
