@@ -28,7 +28,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
   String? _selectedKeyPair;
   String? _selectedVpc;
   String? _selectedSubnet;
-  List<String> _selectedSecurityGroups = [];
+  final List<String> _selectedSecurityGroups = [];
   String _userData = '';
 
   // Hardcoded AMIs
@@ -311,7 +311,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: _instanceType,
+                      initialValue: _instanceType,
                       decoration: InputDecoration(
                         labelText: 'Instance Type',
                         border: const OutlineInputBorder(),
@@ -341,7 +341,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: _selectedKeyPair,
+                      initialValue: _selectedKeyPair,
                       decoration: InputDecoration(
                         labelText: 'Key Pair name',
                         helperText:
@@ -388,7 +388,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                           children: [
                             // VPC
                             DropdownButtonFormField<String>(
-                              value: _selectedVpc,
+                              initialValue: _selectedVpc,
                               isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'VPC',
@@ -418,7 +418,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
 
                             // Subnet
                             DropdownButtonFormField<String?>(
-                              value: _selectedSubnet,
+                              initialValue: _selectedSubnet,
                               isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Subnet',
