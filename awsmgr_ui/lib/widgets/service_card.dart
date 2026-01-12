@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ServiceCard extends StatefulWidget {
   final String title;
   final String description;
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAsset;
   final Color color;
   final VoidCallback onTap;
   final int? count;
@@ -12,11 +14,15 @@ class ServiceCard extends StatefulWidget {
     super.key,
     required this.title,
     required this.description,
-    required this.icon,
+    this.icon,
+    this.svgAsset,
     required this.color,
     required this.onTap,
     this.count,
-  });
+  }) : assert(
+         icon != null || svgAsset != null,
+         'Either icon or svgAsset must be provided',
+       );
 
   @override
   State<ServiceCard> createState() => _ServiceCardState();
@@ -52,9 +58,11 @@ class _ServiceCardState extends State<ServiceCard> {
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _isHovered 
+              color: _isHovered
                   ? widget.color.withValues(alpha: 0.3)
-                  : (isDark ? const Color(0xFF2D2D3A) : const Color(0xFFE5E7EB)),
+                  : (isDark
+                        ? const Color(0xFF2D2D3A)
+                        : const Color(0xFFE5E7EB)),
               width: 1.5,
             ),
           ),
@@ -78,11 +86,17 @@ class _ServiceCardState extends State<ServiceCard> {
                             color: widget.color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
-                            widget.icon,
-                            size: 24,
-                            color: widget.color,
-                          ),
+                          child: widget.svgAsset != null
+                              ? SvgPicture.asset(
+                                  widget.svgAsset!,
+                                  width: 24,
+                                  height: 24,
+                                )
+                              : Icon(
+                                  widget.icon!,
+                                  size: 24,
+                                  color: widget.color,
+                                ),
                         ),
                         if (widget.count != null)
                           Container(

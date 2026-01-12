@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ListHeaderWithSearch extends StatefulWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAsset;
   final Color iconBackgroundColor;
   final Color iconColor;
   final TextEditingController? searchController;
@@ -17,7 +19,8 @@ class ListHeaderWithSearch extends StatefulWidget {
     super.key,
     required this.title,
     required this.subtitle,
-    required this.icon,
+    this.icon,
+    this.svgAsset,
     required this.iconBackgroundColor,
     required this.iconColor,
     this.searchController,
@@ -26,7 +29,10 @@ class ListHeaderWithSearch extends StatefulWidget {
     this.showSearch = true,
     this.headerBackgroundColor,
     this.actionWidget,
-  });
+  }) : assert(
+         icon != null || svgAsset != null,
+         'Either icon or svgAsset must be provided',
+       );
 
   @override
   State<ListHeaderWithSearch> createState() => _ListHeaderWithSearchState();
@@ -75,14 +81,15 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: widget.headerBackgroundColor ?? 
-          (isDark 
-            ? widget.iconColor.withValues(alpha: 0.15) 
-            : widget.iconColor.withValues(alpha: 0.1)),
+        color:
+            widget.headerBackgroundColor ??
+            (isDark
+                ? widget.iconColor.withValues(alpha: 0.15)
+                : widget.iconColor.withValues(alpha: 0.1)),
         border: Border(
           bottom: BorderSide(
             color: widget.iconColor.withValues(alpha: 0.1),
@@ -100,7 +107,13 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                   color: widget.iconBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(widget.icon, color: widget.iconColor, size: 22),
+                child: widget.svgAsset != null
+                    ? SvgPicture.asset(
+                        widget.svgAsset!,
+                        width: 22,
+                        height: 22,
+                      )
+                    : Icon(widget.icon!, color: widget.iconColor, size: 22),
               ),
               const SizedBox(width: 14),
               Column(
@@ -125,7 +138,9 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                 ],
               ),
               const SizedBox(width: 12),
-              if (_searchExpanded && widget.showSearch && widget.searchController != null)
+              if (_searchExpanded &&
+                  widget.showSearch &&
+                  widget.searchController != null)
                 Expanded(
                   child: SizeTransition(
                     sizeFactor: _searchAnimation,
@@ -141,32 +156,43 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                         decoration: InputDecoration(
                           hintText: widget.searchHint,
                           prefixIcon: Icon(
-                            Icons.search, 
-                            color: isDark ? Colors.grey.shade600 : Colors.grey.shade400, 
+                            Icons.search,
+                            color: isDark
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade400,
                             size: 20,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                              color: isDark
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade300,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                              color: isDark
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade300,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.iconColor, width: 1.5),
+                            borderSide: BorderSide(
+                              color: widget.iconColor,
+                              width: 1.5,
+                            ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 10,
                           ),
                           hintStyle: TextStyle(
-                            color: isDark ? Colors.grey.shade600 : Colors.grey.shade400, 
+                            color: isDark
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade400,
                             fontSize: 14,
                           ),
                           filled: true,

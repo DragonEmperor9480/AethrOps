@@ -43,28 +43,28 @@ class _HomeScreenState extends State<HomeScreen>
     ServiceInfo(
       title: 'IAM',
       description: 'Control access to AWS resources',
-      icon: Icons.security,
+      svgAsset: 'assets/icons/Arch_AWS-Identity-and-Access-Management_32.svg',
       color: AppTheme.iamColor,
       route: '/iam',
     ),
     ServiceInfo(
       title: 'S3',
       description: 'Scalable cloud storage',
-      icon: Icons.cloud_queue,
+      svgAsset: 'assets/icons/Arch_Amazon-Simple-Storage-Service_32.svg',
       color: AppTheme.s3Color,
       route: '/s3',
     ),
     ServiceInfo(
       title: 'EC2',
       description: 'Virtual servers in the cloud',
-      icon: Icons.developer_board,
+      svgAsset: 'assets/icons/Res_Amazon-EC2_Instances_48.svg',
       color: AppTheme.ec2Color,
       route: '/ec2',
     ),
     ServiceInfo(
       title: 'CloudWatch',
       description: 'Monitor resources & logs',
-      icon: Icons.insights,
+      svgAsset: 'assets/icons/amazon_cloudwatch_logo_icon_168662.svg',
       color: AppTheme.cloudwatchColor,
       route: '/cloudwatch',
     ),
@@ -349,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> onWindowClose() async {
     // Show the exit dialog
     final shouldExit = await _onWillPop();
-    
+
     if (shouldExit) {
       // Allow window to close
       await windowManager.destroy();
@@ -737,6 +737,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 title: service.title,
                                 description: service.description,
                                 icon: service.icon,
+                                svgAsset: service.svgAsset,
                                 color: service.color,
                                 onTap: () => _navigateToService(
                                   service.route,
@@ -889,6 +890,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           ? 'Coming Soon'
                                           : service.description,
                                       icon: service.icon,
+                                      svgAsset: service.svgAsset,
                                       color: service.color,
                                       onTap: () => _navigateToService(
                                         service.route,
@@ -918,7 +920,8 @@ class _HomeScreenState extends State<HomeScreen>
 class ServiceInfo {
   final String title;
   final String description;
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAsset;
   final Color color;
   final String route;
   final bool comingSoon;
@@ -926,11 +929,15 @@ class ServiceInfo {
   ServiceInfo({
     required this.title,
     required this.description,
-    required this.icon,
+    this.icon,
+    this.svgAsset,
     required this.color,
     required this.route,
     this.comingSoon = false,
-  });
+  }) : assert(
+         icon != null || svgAsset != null,
+         'Either icon or svgAsset must be provided',
+       );
 }
 
 class ShimmerPainter extends CustomPainter {

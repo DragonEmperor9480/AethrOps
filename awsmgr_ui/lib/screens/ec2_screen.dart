@@ -215,7 +215,7 @@ class _EC2ScreenState extends State<EC2Screen> {
                   _searchController.text.isNotEmpty || _filterState != 'all'
                   ? '${_filteredInstances.length} instances (filtered)'
                   : '${_instances.length} instances',
-              icon: Icons.developer_board,
+              svgAsset: 'assets/icons/Res_Amazon-EC2_Instances_48.svg',
               iconBackgroundColor: AppTheme.primaryPurple.withValues(
                 alpha: 0.15,
               ),

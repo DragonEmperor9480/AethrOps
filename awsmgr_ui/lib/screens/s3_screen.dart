@@ -18,10 +18,7 @@ class BucketInfo {
   final String name;
   final String creationDate;
 
-  BucketInfo({
-    required this.name,
-    required this.creationDate,
-  });
+  BucketInfo({required this.name, required this.creationDate});
 }
 
 class _S3ScreenState extends State<S3Screen> {
@@ -52,8 +49,8 @@ class _S3ScreenState extends State<S3Screen> {
       _filteredBuckets = query.isEmpty
           ? _buckets
           : _buckets
-              .where((bucket) => bucket.name.toLowerCase().contains(query))
-              .toList();
+                .where((bucket) => bucket.name.toLowerCase().contains(query))
+                .toList();
     });
   }
 
@@ -72,15 +69,12 @@ class _S3ScreenState extends State<S3Screen> {
               final date = parts[0];
               final time = parts[1];
               final name = parts.sublist(2).join(' ');
-              return BucketInfo(
-                name: name,
-                creationDate: '$date $time',
-              );
+              return BucketInfo(name: name, creationDate: '$date $time');
             }
             return BucketInfo(name: line.trim(), creationDate: 'Unknown');
           })
           .toList();
-      
+
       setState(() {
         _buckets = bucketList;
         _filteredBuckets = bucketList;
@@ -145,7 +139,9 @@ class _S3ScreenState extends State<S3Screen> {
               decoration: InputDecoration(
                 labelText: 'Bucket Name',
                 hintText: 'my-unique-bucket-name',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 prefixIcon: const Icon(Icons.storage),
                 helperText: 'Must be globally unique and DNS-compliant',
               ),
@@ -252,10 +248,7 @@ class _S3ScreenState extends State<S3Screen> {
       message: 'Processing...',
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('S3 Management'),
-          elevation: 0,
-        ),
+        appBar: AppBar(title: const Text('S3 Management'), elevation: 0),
         floatingActionButton: SpeedDialMenu(
           closedIcon: Icons.menu,
           openIcon: Icons.close,
@@ -280,127 +273,148 @@ class _S3ScreenState extends State<S3Screen> {
             ListHeaderWithSearch(
               title: 'S3 Buckets',
               subtitle: '${_filteredBuckets.length} buckets',
-              icon: Icons.storage,
-              iconBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.15),
+              svgAsset:
+                  'assets/icons/Arch_Amazon-Simple-Storage-Service_32.svg',
+              iconBackgroundColor: AppTheme.primaryPurple.withValues(
+                alpha: 0.15,
+              ),
               iconColor: AppTheme.primaryPurple,
               searchController: _searchController,
               searchFocusNode: _searchFocusNode,
               searchHint: 'Search buckets by name...',
-              headerBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.08),
+              headerBackgroundColor: AppTheme.primaryPurple.withValues(
+                alpha: 0.08,
+              ),
             ),
             Expanded(
               child: _loading
                   ? const LoadingAnimation(message: 'Loading buckets')
                   : _filteredBuckets.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.storage_outlined,
-                                  size: 80, color: Colors.grey[300]),
-                              const SizedBox(height: 16),
-                              Text(
-                                _buckets.isEmpty ? 'No buckets found' : 'No matching buckets',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _buckets.isEmpty ? 'Create your first S3 bucket' : 'Try a different search term',
-                                style: TextStyle(color: Colors.grey[500]),
-                              ),
-                              if (_buckets.isEmpty) ...[
-                                const SizedBox(height: 24),
-                                ElevatedButton.icon(
-                                  onPressed: _createBucket,
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Create Bucket'),
-                                ),
-                              ],
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.storage_outlined,
+                            size: 80,
+                            color: Colors.grey[300],
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredBuckets.length,
-                          itemBuilder: (context, index) {
-                            final bucket = _filteredBuckets[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: InkWell(
-                                onTap: () => _viewBucketObjects(bucket.name),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            ShaderMask(
-                                              shaderCallback: (bounds) => const LinearGradient(
+                          const SizedBox(height: 16),
+                          Text(
+                            _buckets.isEmpty
+                                ? 'No buckets found'
+                                : 'No matching buckets',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _buckets.isEmpty
+                                ? 'Create your first S3 bucket'
+                                : 'Try a different search term',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                          if (_buckets.isEmpty) ...[
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: _createBucket,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Create Bucket'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredBuckets.length,
+                      itemBuilder: (context, index) {
+                        final bucket = _filteredBuckets[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: () => _viewBucketObjects(bucket.name),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ShaderMask(
+                                          shaderCallback: (bounds) =>
+                                              const LinearGradient(
                                                 colors: [
                                                   Color(0xFF6366F1),
                                                   Color(0xFF8B5CF6),
                                                   Color(0xFFA855F7),
                                                 ],
                                               ).createShader(bounds),
-                                              child: Text(
-                                                bucket.name,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w900,
-                                                  fontSize: 20,
-                                                  color: Colors.white,
-                                                  letterSpacing: -0.5,
-                                                ),
-                                              ),
+                                          child: Text(
+                                            bucket.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 20,
+                                              color: Colors.white,
+                                              letterSpacing: -0.5,
                                             ),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              children: [
-                                                Icon(Icons.calendar_today,
-                                                    size: 12, color: Colors.grey[600]),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  bucket.creationDate,
-                                                  style: TextStyle(
-                                                    color: Colors.grey[600],
-                                                    fontSize: 11,
-                                                  ),
-                                                ),
-                                              ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.calendar_today,
+                                              size: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              bucket.creationDate,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 11,
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        color: AppTheme.errorRed,
-                                        tooltip: 'Delete bucket',
-                                        onPressed: () => _deleteBucket(bucket.name),
-                                        style: IconButton.styleFrom(
-                                          backgroundColor: AppTheme.errorRed.withValues(alpha: 0.1),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Icon(Icons.chevron_right, color: Colors.grey[400]),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: AppTheme.errorRed,
+                                    tooltip: 'Delete bucket',
+                                    onPressed: () => _deleteBucket(bucket.name),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: AppTheme.errorRed
+                                          .withValues(alpha: 0.1),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.grey[400],
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -408,7 +422,6 @@ class _S3ScreenState extends State<S3Screen> {
     );
   }
 }
-
 
 class BucketObjectsScreen extends StatefulWidget {
   final String bucketName;
@@ -424,11 +437,7 @@ class S3Object {
   final String lastModified;
   final int size;
 
-  S3Object({
-    required this.key,
-    required this.lastModified,
-    required this.size,
-  });
+  S3Object({required this.key, required this.lastModified, required this.size});
 
   String get extension {
     final parts = key.split('.');
@@ -563,7 +572,7 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
           })
           .whereType<S3Object>()
           .toList();
-      
+
       setState(() => _objects = objectList);
     } catch (e) {
       _showError('Failed to load objects: $e');
@@ -619,21 +628,24 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
   Future<void> _downloadObject(S3Object object) async {
     print('===== _downloadObject called for: ${object.key} =====');
     setState(() => _downloadingKey = object.key);
-    
+
     try {
       // Request storage permission first
       final hasPermission = await DownloadService.requestStoragePermission();
-      
+
       if (!hasPermission) {
         _showError(DownloadService.getPermissionDeniedMessage());
         setState(() => _downloadingKey = null);
         return;
       }
-      
-      final bytes = await ApiService.downloadS3Object(widget.bucketName, object.key);
-      
+
+      final bytes = await ApiService.downloadS3Object(
+        widget.bucketName,
+        object.key,
+      );
+
       final fileName = object.key.split('/').last;
-      
+
       // Save file using DownloadService
       final result = await DownloadService.saveToDownloads(
         bytes: bytes,
@@ -675,7 +687,9 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
             decoration: BoxDecoration(
               color: AppTheme.primaryPurple.withValues(alpha: 0.1),
               border: Border(
-                bottom: BorderSide(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+                bottom: BorderSide(
+                  color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                ),
               ),
             ),
             child: Row(
@@ -686,7 +700,10 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
                     color: AppTheme.primaryPurple.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.folder_open, color: AppTheme.primaryPurple),
+                  child: const Icon(
+                    Icons.folder_open,
+                    color: AppTheme.primaryPurple,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -702,7 +719,10 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
                       ),
                       const Text(
                         'Files and folders in this bucket',
-                        style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -736,116 +756,128 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
             child: _loading
                 ? const LoadingAnimation(message: 'Loading objects')
                 : _objects.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.folder_open_outlined,
-                                size: 80, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No objects found',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'This bucket is empty',
-                              style: TextStyle(color: Colors.grey[500]),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.folder_open_outlined,
+                          size: 80,
+                          color: Colors.grey[300],
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _objects.length,
-                        itemBuilder: (context, index) {
-                          final object = _objects[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
+                        const SizedBox(height: 16),
+                        Text(
+                          'No objects found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'This bucket is empty',
+                          style: TextStyle(color: Colors.grey[500]),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _objects.length,
+                    itemBuilder: (context, index) {
+                      final object = _objects[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          leading: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: object.iconColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(16),
-                              leading: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: object.iconColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  object.icon,
-                                  color: object.iconColor,
-                                  size: 28,
-                                ),
-                              ),
-                              title: Text(
-                                object.key,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Icon(
+                              object.icon,
+                              color: object.iconColor,
+                              size: 28,
+                            ),
+                          ),
+                          title: Text(
+                            object.key,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 6),
+                              Row(
                                 children: [
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.storage,
-                                          size: 12, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        object.formattedSize,
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
+                                  Icon(
+                                    Icons.storage,
+                                    size: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    object.formattedSize,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      object.lastModified,
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
                                       ),
-                                      const SizedBox(width: 16),
-                                      Icon(Icons.access_time,
-                                          size: 12, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          object.lastModified,
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ],
                               ),
-                              trailing: _downloadingKey == object.key
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : IconButton(
-                                      icon: const Icon(Icons.download),
-                                      color: AppTheme.primaryPurple,
-                                      tooltip: 'Download',
-                                      onPressed: () => _downloadObject(object),
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.1),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
+                            ],
+                          ),
+                          trailing: _downloadingKey == object.key
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : IconButton(
+                                  icon: const Icon(Icons.download),
+                                  color: AppTheme.primaryPurple,
+                                  tooltip: 'Download',
+                                  onPressed: () => _downloadObject(object),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryPurple
+                                        .withValues(alpha: 0.1),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                            ),
-                          );
-                        },
-                      ),
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
