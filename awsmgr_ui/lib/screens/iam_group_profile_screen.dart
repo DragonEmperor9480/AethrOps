@@ -16,6 +16,8 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   Map<String, dynamic>? _dependencies;
   List<dynamic> _policies = [];
   bool _loading = true;
+  bool _usersExpanded = false;
+  bool _policiesExpanded = false;
 
   @override
   void initState() {
@@ -194,18 +196,6 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
       appBar: AppBar(
         title: Text(groupname),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            tooltip: 'Add Users',
-            onPressed: () => _showAddUsersDialog(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.policy),
-            tooltip: 'Attach Policies',
-            onPressed: () => _showAttachPoliciesDialog(),
-          ),
-        ],
       ),
       body: _loading
           ? const LoadingAnimation(message: 'Loading group details...')
@@ -297,47 +287,50 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                         const SizedBox(height: 24),
 
                         // Users Section
-                        _buildSectionTitle('Members (${users.length})'),
-                        const SizedBox(height: 12),
-                        if (users.isEmpty)
-                          _buildEmptyState(
-                            Icons.person_outlined,
-                            'No users in this group',
-                          )
-                        else
-                          _buildInfoCard(
-                            users.map<Widget>((username) {
-                              return _buildListItem(
-                                Icons.person,
-                                username,
-                              );
+                        _buildCollapsibleSection(
+                          title: 'Members',
+                          count: users.length,
+                          icon: Icons.people,
+                          isExpanded: _usersExpanded,
+                          onToggle: () => setState(() => _usersExpanded = !_usersExpanded),
+                          emptyIcon: Icons.person_outlined,
+                          emptyMessage: 'No users in this group',
+                          isEmpty: users.isEmpty,
+                          hasAction: true,
+                          actionIcon: Icons.person_add,
+                          actionLabel: 'Add',
+                          onAction: _showAddUsersDialog,
+                          child: Column(
+                            children: users.map<Widget>((username) {
+                              return _buildListItem(Icons.person, username);
                             }).toList(),
                           ),
+                        ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         // Attached Policies Section
-                        _buildSectionTitle(
-                          'Attached Policies (${_policies.length})',
-                        ),
-                        const SizedBox(height: 12),
-                        if (_policies.isEmpty)
-                          _buildEmptyState(
-                            Icons.policy_outlined,
-                            'No policies attached',
-                          )
-                        else
-                          _buildInfoCard(
-                            _policies.map<Widget>((policy) {
+                        _buildCollapsibleSection(
+                          title: 'Attached Policies',
+                          count: _policies.length,
+                          icon: Icons.policy,
+                          isExpanded: _policiesExpanded,
+                          onToggle: () => setState(() => _policiesExpanded = !_policiesExpanded),
+                          emptyIcon: Icons.policy_outlined,
+                          emptyMessage: 'No policies attached',
+                          isEmpty: _policies.isEmpty,
+                          hasAction: true,
+                          actionIcon: Icons.add,
+                          actionLabel: 'Attach',
+                          onAction: _showAttachPoliciesDialog,
+                          child: Column(
+                            children: _policies.map<Widget>((policy) {
                               final policyName = policy['policy_name']?.toString() ?? '';
                               final policyArn = policy['policy_arn']?.toString() ?? '';
-                              return _buildListItem(
-                                Icons.policy,
-                                policyName,
-                                subtitle: policyArn,
-                              );
+                              return _buildListItem(Icons.policy, policyName, subtitle: policyArn);
                             }).toList(),
                           ),
+                        ),
 
                         const SizedBox(height: 24),
                       ],
@@ -483,6 +476,157 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleSection({
+    required String title,
+    required int count,
+    required IconData icon,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required IconData emptyIcon,
+    required String emptyMessage,
+    required bool isEmpty,
+    Widget? child,
+    bool hasAction = false,
+    IconData? actionIcon,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: isEmpty ? null : onToggle,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppTheme.successGreen.withValues(alpha: 0.2)
+                          : AppTheme.successGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: AppTheme.successGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppTheme.textPrimaryDark
+                                : AppTheme.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          '$count ${count == 1 ? 'item' : 'items'}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppTheme.textSecondaryDark
+                                : AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasAction && onAction != null && !isEmpty)
+                    IconButton(
+                      icon: Icon(actionIcon ?? Icons.add, size: 18),
+                      tooltip: actionLabel,
+                      onPressed: onAction,
+                      style: IconButton.styleFrom(
+                        backgroundColor: isDark
+                            ? AppTheme.primaryPurple.withValues(alpha: 0.2)
+                            : AppTheme.purple100,
+                        foregroundColor: isDark
+                            ? AppTheme.primaryPurple
+                            : AppTheme.purple700,
+                      ),
+                    ),
+                  if (hasAction && onAction != null && !isEmpty)
+                    const SizedBox(width: 8),
+                  if (!isEmpty)
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: isDark
+                          ? AppTheme.textSecondaryDark
+                          : AppTheme.textSecondary,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? theme.cardColor.withValues(alpha: 0.5)
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      emptyIcon,
+                      size: 36,
+                      color: theme.textTheme.bodyMedium?.color?.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      emptyMessage,
+                      style: TextStyle(
+                        color: theme.textTheme.bodyMedium?.color,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (hasAction && onAction != null)
+                      const SizedBox(height: 12),
+                    if (hasAction && onAction != null)
+                      TextButton.icon(
+                        onPressed: onAction,
+                        icon: Icon(actionIcon ?? Icons.add, size: 16),
+                        label: Text(actionLabel ?? 'Add'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryPurple,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            )
+          else if (isExpanded && child != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: child,
+            ),
+        ],
       ),
     );
   }
