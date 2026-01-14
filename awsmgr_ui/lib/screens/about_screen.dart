@@ -67,10 +67,7 @@ class _AboutScreenState extends State<AboutScreen>
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
     try {
-      if (!await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      )) {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         // If external app mode fails, try platform default
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
@@ -153,7 +150,7 @@ class _AboutScreenState extends State<AboutScreen>
         color: theme.cardColor.withValues(alpha: 0.95),
         boxShadow: [
           BoxShadow(
-            color: isDark 
+            color: isDark
                 ? Colors.black.withValues(alpha: 0.3)
                 : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
@@ -307,7 +304,7 @@ class _AboutScreenState extends State<AboutScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: isDark 
+                color: isDark
                     ? Colors.black.withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
@@ -362,7 +359,11 @@ class _AboutScreenState extends State<AboutScreen>
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.computer, size: 16, color: theme.textTheme.bodyMedium?.color),
+                  Icon(
+                    Icons.computer,
+                    size: 16,
+                    color: theme.textTheme.bodyMedium?.color,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     _osName,
@@ -463,7 +464,7 @@ class _AboutScreenState extends State<AboutScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: isDark 
+                    color: isDark
                         ? Colors.black.withValues(alpha: 0.3)
                         : Colors.black.withValues(alpha: 0.03),
                     blurRadius: 8,
@@ -601,7 +602,8 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 8),
           InkWell(
-            onTap: () => _launchURL('https://www.linkedin.com/in/amarjeet-aryan/'),
+            onTap: () =>
+                _launchURL('https://www.linkedin.com/in/amarjeet-aryan/'),
             borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -642,7 +644,7 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            '© 2025 AWS Manager',
+            '© 2025-2026 AWS Manager',
             style: TextStyle(
               fontSize: 13,
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
