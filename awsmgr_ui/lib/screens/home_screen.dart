@@ -27,10 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with TickerProviderStateMixin, WindowListener {
-  bool _showAllServices = false;
-  late AnimationController _fadeController;
   late AnimationController _shimmerController;
-  late Animation<double> _fadeAnimation;
 
   String _username = 'User';
   String _greeting = 'Good day';
@@ -70,32 +67,7 @@ class _HomeScreenState extends State<HomeScreen>
     ),
   ];
 
-  final List<ServiceInfo> _additionalServices = [
-    ServiceInfo(
-      title: 'Lambda',
-      description: 'Run code without servers',
-      icon: Icons.offline_bolt,
-      color: AppTheme.lambdaColor,
-      route: '/lambda',
-      comingSoon: true,
-    ),
-    ServiceInfo(
-      title: 'RDS',
-      description: 'Relational Database',
-      icon: Icons.storage_rounded,
-      color: AppTheme.rdsColor,
-      route: '/rds',
-      comingSoon: true,
-    ),
-    ServiceInfo(
-      title: 'VPC',
-      description: 'Isolated cloud networks',
-      icon: Icons.hub,
-      color: AppTheme.vpcColor,
-      route: '/vpc',
-      comingSoon: true,
-    ),
-  ];
+
 
   @override
   void initState() {
@@ -106,14 +78,6 @@ class _HomeScreenState extends State<HomeScreen>
       _checkMissingConfigurations();
     });
 
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    );
 
     _shimmerController = AnimationController(
       duration: const Duration(seconds: 3),
@@ -197,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen>
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
     }
-    _fadeController.dispose();
     _shimmerController.dispose();
     super.dispose();
   }
@@ -749,162 +712,8 @@ class _HomeScreenState extends State<HomeScreen>
                         );
                       },
                     ),
-                    const SizedBox(height: 28),
-                    // Show All Services Button with enhanced design
-                    Center(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _showAllServices = !_showAllServices;
-                            if (_showAllServices) {
-                              _fadeController.forward();
-                            } else {
-                              _fadeController.reverse();
-                            }
-                          });
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 14,
-                          ),
-                          side: BorderSide(
-                            color: AppTheme.primaryPurple.withValues(
-                              alpha: 0.3,
-                            ),
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        icon: Icon(
-                          _showAllServices
-                              ? Icons.expand_less
-                              : Icons.expand_more,
-                          color: AppTheme.primaryPurple,
-                        ),
-                        label: Text(
-                          _showAllServices
-                              ? 'Show Less Services'
-                              : 'Show All Services',
-                          style: TextStyle(
-                            color: AppTheme.primaryPurple,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
 
-                    if (_showAllServices) ...[
-                      const SizedBox(height: 36),
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(
-                                    color: AppTheme.primaryPurple,
-                                    width: 3,
-                                  ),
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 16),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.apps_outlined,
-                                      color: AppTheme.primaryPurple,
-                                      size: 22,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'Additional Services',
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryPurple
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'Coming Soon',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppTheme.primaryPurple,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final crossAxisCount =
-                                    constraints.maxWidth > 900
-                                    ? 4
-                                    : constraints.maxWidth > 600
-                                    ? 3
-                                    : 2;
 
-                                // Adjust aspect ratio based on screen size
-                                final aspectRatio = constraints.maxWidth > 600
-                                    ? 1.15
-                                    : 1.0;
-
-                                return GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: crossAxisCount,
-                                        crossAxisSpacing: 16,
-                                        mainAxisSpacing: 16,
-                                        childAspectRatio: aspectRatio,
-                                      ),
-                                  itemCount: _additionalServices.length,
-                                  itemBuilder: (context, index) {
-                                    final service = _additionalServices[index];
-                                    return ServiceCard(
-                                      title: service.title,
-                                      description: service.comingSoon
-                                          ? 'Coming Soon'
-                                          : service.description,
-                                      icon: service.icon,
-                                      svgAsset: service.svgAsset,
-                                      color: service.color,
-                                      onTap: () => _navigateToService(
-                                        service.route,
-                                        service.comingSoon,
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 32),
                   ],
                 ),
