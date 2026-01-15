@@ -395,3 +395,24 @@ Please do not reply to this email.
 
 	return nil
 }
+
+// SendTestEmail sends a verification email to check SMTP configuration
+func SendTestEmail(config *EmailConfig, recipient string) error {
+	if config == nil {
+		return fmt.Errorf("email configuration is required")
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", fmt.Sprintf("%s <%s>", config.SenderName, config.SenderEmail))
+	m.SetHeader("To", recipient)
+	m.SetHeader("Subject", "AWS Manager - Test Email")
+	m.SetBody("text/plain", "This is a test email from AWS Manager to verify your SMTP settings.\n\nIf you are reading this, your configuration is correct! ✅")
+
+	d := gomail.NewDialer(config.SMTPHost, config.SMTPPort, config.SenderEmail, config.SenderPass)
+
+	if err := d.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %v", err)
+	}
+
+	return nil
+}

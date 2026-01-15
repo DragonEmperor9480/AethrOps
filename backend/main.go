@@ -137,6 +137,7 @@ func main() {
 	// Email Configuration
 	r.HandleFunc("/api/email/config", api.GetEmailConfig).Methods("GET")
 	r.HandleFunc("/api/email/config", api.SaveEmailConfig).Methods("POST")
+	r.HandleFunc("/api/email/test", api.SendTestEmail).Methods("POST")
 	r.HandleFunc("/api/email/config", api.DeleteEmailConfig).Methods("DELETE")
 
 	// Health

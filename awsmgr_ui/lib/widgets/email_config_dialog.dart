@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/email_config_service.dart';
+import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 
 class EmailConfigDialog extends StatefulWidget {
   const EmailConfigDialog({super.key});
@@ -16,7 +18,8 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
   final _senderPassController = TextEditingController();
   final _senderNameController = TextEditingController(text: 'AWS Manager');
   bool _obscurePassword = true;
-  bool _loading = false;
+  bool _isSaveLoading = false;
+  bool _isTestLoading = false;
 
   @override
   void initState() {
@@ -40,7 +43,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
   Future<void> _saveConfig() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _loading = true);
+    setState(() => _isSaveLoading = true);
     try {
       await EmailConfigService.saveEmailConfig(
         smtpHost: _smtpHostController.text.trim(),
@@ -63,7 +66,49 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
         );
       }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _isSaveLoading = false);
+      }
+    }
+  }
+
+  Future<void> _testEmail() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isTestLoading = true);
+    try {
+      await ApiService.sendTestEmail(
+        smtpHost: _smtpHostController.text.trim(),
+        smtpPort: int.parse(_smtpPortController.text.trim()),
+        senderEmail: _senderEmailController.text.trim(),
+        senderPass: _senderPassController.text,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Test email sent successfully! Check your inbox.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Test failed: ${e.toString().replaceAll("Exception: ", "")}',
+            ),
+            backgroundColor: AppTheme.errorRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isTestLoading = false);
+      }
     }
   }
 
@@ -98,8 +143,10 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade400, Colors.blue.shade600],
+                gradient: const LinearGradient(
+                  colors: [AppTheme.primaryPurple, AppTheme.purple700],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
@@ -157,8 +204,16 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                           labelText: 'SMTP Host *',
                           hintText: 'smtp.gmail.com',
                           prefixIcon: const Icon(Icons.dns),
+                          prefixIconColor: AppTheme.primaryPurple,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -176,8 +231,16 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                           labelText: 'SMTP Port *',
                           hintText: '587',
                           prefixIcon: const Icon(Icons.settings_ethernet),
+                          prefixIconColor: AppTheme.primaryPurple,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -200,8 +263,16 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                           labelText: 'Sender Email *',
                           hintText: 'your-email@gmail.com',
                           prefixIcon: const Icon(Icons.email),
+                          prefixIconColor: AppTheme.primaryPurple,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         keyboardType: TextInputType.emailAddress,
@@ -224,18 +295,29 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                           labelText: 'App Password *',
                           hintText: 'Enter app password',
                           prefixIcon: const Icon(Icons.lock),
+                          prefixIconColor: AppTheme.primaryPurple,
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility
                                   : Icons.visibility_off,
+                              color: AppTheme.primaryPurple,
                             ),
                             onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
                             },
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -253,8 +335,16 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                           labelText: 'Sender Name *',
                           hintText: 'AWS Manager',
                           prefixIcon: const Icon(Icons.person),
+                          prefixIconColor: AppTheme.primaryPurple,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -274,32 +364,72 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.shade50
+                    : AppTheme.cardBackgroundDark,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.light
+                        ? Colors.grey.shade200
+                        : AppTheme.borderColorDark,
+                  ),
+                ),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
+                      ),
                       child: const Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: _loading ? null : _saveConfig,
-                      icon: _loading
+                    child: OutlinedButton.icon(
+                      onPressed: (_isTestLoading || _isSaveLoading)
+                          ? null
+                          : _testEmail,
+                      icon: _isTestLoading
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.primaryPurple,
+                              ),
+                            )
+                          : const Icon(Icons.send, size: 18),
+                      label: Text(_isTestLoading ? 'Sending...' : 'Test Email'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryPurple,
+                        side: const BorderSide(color: AppTheme.primaryPurple),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: (_isTestLoading || _isSaveLoading)
+                          ? null
+                          : _saveConfig,
+                      icon: _isSaveLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Icon(Icons.save, size: 18),
-                      label: Text(_loading ? 'Saving...' : 'Save Configuration'),
+                      label: Text(_isSaveLoading ? 'Saving...' : 'Save'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppTheme.primaryPurple,
                         foregroundColor: Colors.white,
                       ),
                     ),
@@ -331,8 +461,8 @@ class EmailConfigHelpDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.orange.shade600],
+                gradient: const LinearGradient(
+                  colors: [AppTheme.purple400, AppTheme.purple600],
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
@@ -368,25 +498,20 @@ class EmailConfigHelpDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSection(
-                      'Gmail Setup',
-                      Icons.mail,
-                      Colors.red,
-                      [
-                        '1. Go to your Google Account settings',
-                        '2. Navigate to Security → 2-Step Verification',
-                        '3. Scroll down to "App passwords"',
-                        '4. Select "Mail" and your device',
-                        '5. Copy the 16-character password',
-                        '6. Use this password in the "App Password" field',
-                      ],
-                    ),
+                    _buildSection('Gmail Setup', Icons.mail, Colors.red, [
+                      '1. Go to your Google Account settings',
+                      '2. Navigate to Security → 2-Step Verification',
+                      '3. Scroll down to "App passwords"',
+                      '4. Select "Mail" and your device',
+                      '5. Copy the 16-character password',
+                      '6. Use this password in the "App Password" field',
+                    ]),
                     const SizedBox(height: 24),
 
                     _buildSection(
                       'Common SMTP Settings',
                       Icons.settings,
-                      Colors.blue,
+                      AppTheme.primaryBlue,
                       [
                         'Gmail: smtp.gmail.com:587',
                         'Outlook: smtp-mail.outlook.com:587',
@@ -399,7 +524,7 @@ class EmailConfigHelpDialog extends StatelessWidget {
                     _buildSection(
                       'Security Tips',
                       Icons.security,
-                      Colors.green,
+                      AppTheme.successGreen,
                       [
                         '✓ Always use App Passwords, never your main password',
                         '✓ Enable 2-Factor Authentication on your email',
@@ -413,13 +538,13 @@ class EmailConfigHelpDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
+                        color: AppTheme.warningAmber.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.shade200),
+                        border: Border.all(color: AppTheme.warningAmber),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info, color: Colors.amber.shade900),
+                          const Icon(Icons.info, color: Colors.orange),
                           const SizedBox(width: 12),
                           const Expanded(
                             child: Text(
@@ -452,7 +577,12 @@ class EmailConfigHelpDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, IconData icon, Color color, List<String> items) {
+  Widget _buildSection(
+    String title,
+    IconData icon,
+    Color color,
+    List<String> items,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -469,10 +599,7 @@ class EmailConfigHelpDialog extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),

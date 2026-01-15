@@ -195,6 +195,29 @@ class ApiService {
     }
   }
 
+  static Future<void> sendTestEmail({
+    required String smtpHost,
+    required int smtpPort,
+    required String senderEmail,
+    required String senderPass,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/email/test'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'smtp_host': smtpHost,
+        'smtp_port': smtpPort,
+        'sender_email': senderEmail,
+        'sender_pass': senderPass,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final error = json.decode(response.body);
+      throw Exception(error['error'] ?? 'Failed to send test email');
+    }
+  }
+
   static Future<void> deleteEmailConfig() async {
     final response = await http.delete(Uri.parse('$baseUrl/email/config'));
     if (response.statusCode != 200) {
