@@ -3,12 +3,12 @@
         "version": ""
     },
     "linux": {
-        "version": "Preview Beta 1"
+        "version": "Preview Beta 2"
     },
     "windows": {
-        "version": "Preview Beta 1"
+        "version": "Preview Beta 2"
     },
     "android": {
-        "version": "Preview Beta 1"
+        "version": "Preview Beta 2"
     }
 }
