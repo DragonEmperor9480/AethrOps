@@ -143,8 +143,30 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Instance launched: ${result['instance_id']}'),
+            content: Row(
+              children: [
+                const Icon(Icons.rocket_launch_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Instance is booting up...',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'ID: ${result['instance_id']}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: AppTheme.successGreen,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         Navigator.pop(context); // Return to previous screen
@@ -723,8 +745,13 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                           foregroundColor: Colors.black, // Dark text on orange
                         ),
                         child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.black,
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.black,
+                                  strokeWidth: 3,
+                                ),
                               )
                             : const Text(
                                 'Launch Instance',
