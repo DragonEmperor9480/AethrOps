@@ -597,66 +597,80 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                             // Security Groups (Simple Multi-select Dialog Trigger)
                             InkWell(
                               onTap: () async {
-                                // TODO: Implement cleaner multi-select
-                                // For now, let's just use the first available one or a simple dialog
-                                // Simulating basic selection logic:
                                 final availableSgs = _securityGroups
                                     .where((sg) => sg['vpc_id'] == _selectedVpc)
                                     .toList();
 
-                                // Creating a simple dialog
                                 await showDialog(
                                   context: context,
                                   builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text(
-                                        'Select Security Groups',
-                                      ),
-                                      content: SizedBox(
-                                        width: double.maxFinite,
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: availableSgs.length,
-                                          itemBuilder: (context, index) {
-                                            final sg = availableSgs[index];
-                                            final id = sg['group_id'];
-                                            final isSelected =
-                                                _selectedSecurityGroups
-                                                    .contains(id);
-                                            return CheckboxListTile(
-                                              title: Text(sg['group_name']),
-                                              subtitle: Text(id),
-                                              value: isSelected,
-                                              onChanged: (bool? value) {
-                                                setState(() {
-                                                  if (value == true) {
-                                                    _selectedSecurityGroups.add(
-                                                      id,
-                                                    );
-                                                  } else {
-                                                    _selectedSecurityGroups
-                                                        .remove(id);
-                                                  }
-                                                });
-                                                Navigator.pop(
-                                                  context,
-                                                ); // Close for now (simple toggle)
-                                                // Ideally we stay open, but state management in dialog needs StatefulBuilder
-                                              },
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('Done'),
-                                        ),
-                                      ],
+                                    return StatefulBuilder(
+                                      builder: (context, setDialogState) {
+                                        return AlertDialog(
+                                          title: const Text(
+                                            'Select Security Groups',
+                                          ),
+                                          content: SizedBox(
+                                            width: double.maxFinite,
+                                            child: availableSgs.isEmpty
+                                                ? const Padding(
+                                                    padding: EdgeInsets.all(
+                                                      16.0,
+                                                    ),
+                                                    child: Text(
+                                                      'No security groups found for this VPC.',
+                                                      style: TextStyle(
+                                                        fontStyle:
+                                                            FontStyle.italic,
+                                                      ),
+                                                    ),
+                                                  )
+                                                : ListView.builder(
+                                                    shrinkWrap: true,
+                                                    itemCount:
+                                                        availableSgs.length,
+                                                    itemBuilder: (context, index) {
+                                                      final sg =
+                                                          availableSgs[index];
+                                                      final id = sg['group_id'];
+                                                      final isSelected =
+                                                          _selectedSecurityGroups
+                                                              .contains(id);
+                                                      return CheckboxListTile(
+                                                        title: Text(
+                                                          sg['group_name'],
+                                                        ),
+                                                        subtitle: Text(id),
+                                                        value: isSelected,
+                                                        onChanged: (bool? value) {
+                                                          setDialogState(() {
+                                                            if (value == true) {
+                                                              _selectedSecurityGroups
+                                                                  .add(id);
+                                                            } else {
+                                                              _selectedSecurityGroups
+                                                                  .remove(id);
+                                                            }
+                                                          });
+                                                        },
+                                                      );
+                                                    },
+                                                  ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: const Text('Done'),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     );
                                   },
                                 );
+                                // Update parent UI to show correct count
+                                setState(() {});
                               },
                               child: InputDecorator(
                                 decoration: const InputDecoration(
