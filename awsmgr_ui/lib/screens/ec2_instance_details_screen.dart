@@ -248,8 +248,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
               Container(
                 width: 40,
                 height: 4,
+
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -335,7 +336,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
         label,
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: isDangerous ? AppTheme.errorRed : AppTheme.textPrimary,
+          color: isDangerous
+              ? AppTheme.errorRed
+              : Theme.of(context).textTheme.bodyLarge?.color,
         ),
       ),
       onTap: onTap,
