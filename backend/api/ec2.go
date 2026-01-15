@@ -423,6 +423,23 @@ func LaunchEC2Instance(c *gin.Context) {
 	client := utils.GetEC2Client()
 	ctx := context.TODO()
 
+	// If storage size is requested, we need the RootDeviceName from the image
+	var rootDeviceName string
+	if req.VolumeSize > 0 {
+		imageOutput, err := client.DescribeImages(ctx, &ec2.DescribeImagesInput{
+			ImageIds: []string{req.ImageID},
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to describe image: " + err.Error()})
+			return
+		}
+		if len(imageOutput.Images) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Image not found"})
+			return
+		}
+		rootDeviceName = aws.ToString(imageOutput.Images[0].RootDeviceName)
+	}
+
 	input := &ec2.RunInstancesInput{
 		ImageId:      aws.String(req.ImageID),
 		InstanceType: types.InstanceType(req.InstanceType),
@@ -466,6 +483,24 @@ func LaunchEC2Instance(c *gin.Context) {
 			{
 				ResourceType: types.ResourceTypeVolume, // Also tag volumes
 				Tags:         awsTags,
+			},
+		}
+	}
+
+	// Handle Storage Size (Root Volume)
+	if req.VolumeSize > 0 && rootDeviceName != "" {
+		volumeType := types.VolumeTypeGp3
+		if req.VolumeType != "" {
+			volumeType = types.VolumeType(req.VolumeType)
+		}
+
+		input.BlockDeviceMappings = []types.BlockDeviceMapping{
+			{
+				DeviceName: aws.String(rootDeviceName),
+				Ebs: &types.EbsBlockDevice{
+					VolumeSize: aws.Int32(req.VolumeSize),
+					VolumeType: volumeType,
+				},
 			},
 		}
 	}

@@ -29,7 +29,10 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
   String? _selectedVpc;
   String? _selectedSubnet;
   final List<String> _selectedSecurityGroups = [];
+
   String _userData = '';
+  int _storageSize = 8; // Default 8 GB
+  String _volumeType = 'gp3';
 
   // Hardcoded AMIs
   final List<AmiOption> _amiOptions = [
@@ -127,8 +130,10 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         securityGroupIds: _selectedSecurityGroups.isNotEmpty
             ? _selectedSecurityGroups
             : null,
-        userData: _userData.isNotEmpty ? _userData : null,
-        tags: _instanceName.isNotEmpty ? {'Name': _instanceName} : null,
+        userData: _userData,
+        tags: {'Name': _instanceName.isEmpty ? 'New-Instance' : _instanceName},
+        volumeSize: _storageSize,
+        volumeType: _volumeType,
         minCount: 1,
         maxCount: 1,
       );
@@ -280,9 +285,10 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                         textAlign: TextAlign.center,
                                         maxLines: 4,
                                         overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall?.copyWith(fontSize: 10),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(fontSize: 10),
                                       ),
                                     ),
                                   ),
@@ -370,7 +376,144 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // === 4. Network Settings ===
+                    // === 4. Configure Storage ===
+                    Text(
+                      'Configure Storage',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: Theme.of(context).dividerColor),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.storage, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Root Volume',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Size (GiB)',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.labelMedium,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextFormField(
+                                        initialValue: _storageSize.toString(),
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          suffixText: 'GiB',
+                                          helperText:
+                                              'Free tier eligible up to 30 GiB',
+                                        ),
+                                        onChanged: (val) {
+                                          final size = int.tryParse(val);
+                                          if (size != null) {
+                                            setState(() => _storageSize = size);
+                                          }
+                                        },
+                                        validator: (val) {
+                                          final size = int.tryParse(val ?? '');
+                                          if (size == null || size < 8) {
+                                            return 'Min 8 GiB';
+                                          }
+                                          if (size > 16384) {
+                                            return 'Max 16 TiB';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Volume Type',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.labelMedium,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      DropdownButtonFormField<String>(
+                                        value: _volumeType,
+                                        isExpanded: true,
+                                        decoration: const InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          helperText: ' ', // Maintain alignment
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical:
+                                                16, // Match height of TextFormField
+                                          ),
+                                        ),
+                                        items:
+                                            [
+                                                  'gp3',
+                                                  'gp2',
+                                                  'io1',
+                                                  'io2',
+                                                  'sc1',
+                                                  'st1',
+                                                  'standard',
+                                                ]
+                                                .map(
+                                                  (type) => DropdownMenuItem(
+                                                    value: type,
+                                                    child: Text(
+                                                      type,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                        onChanged: (val) {
+                                          if (val != null) {
+                                            setState(() => _volumeType = val);
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // === 5. Network Settings ===
                     Text(
                       'Network Settings',
                       style: Theme.of(context).textTheme.titleLarge,

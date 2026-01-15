@@ -11,4 +11,6 @@ type LaunchInstanceRequest struct {
 	SubnetID         string            `json:"subnet_id,omitempty"`
 	Tags             map[string]string `json:"tags,omitempty"`
 	UserData         string            `json:"user_data,omitempty"`
+	VolumeSize       int32             `json:"volume_size,omitempty"`
+	VolumeType       string            `json:"volume_type,omitempty"`
 }
