@@ -2050,7 +2050,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Please configure email settings first'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppTheme.warningAmber,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             action: SnackBarAction(
               label: 'Settings',
               textColor: Colors.white,
@@ -2068,27 +2070,41 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.email, color: Colors.blue),
-            SizedBox(width: 8),
-            Text('Send Credentials'),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.email_rounded, color: AppTheme.primaryPurple),
+            ),
+            const SizedBox(width: 12),
+            const Text('Send Credentials'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Send credentials for ${credential['username']} via email'),
+            Text(
+              'Send credentials for ${credential['username']} via email',
+              style: TextStyle(color: Colors.grey[700]),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Recipient Email',
                 hintText: 'user@example.com',
-                prefixIcon: const Icon(Icons.email),
+                prefixIcon: const Icon(Icons.alternate_email_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  borderSide: BorderSide(color: AppTheme.primaryPurple, width: 2),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -2099,6 +2115,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -2107,6 +2124,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 Navigator.pop(context, emailController.text.trim());
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: const Text('Next'),
           ),
         ],
@@ -2122,8 +2144,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber, color: Colors.orange),
-            SizedBox(width: 8),
+            Icon(Icons.warning_amber_rounded, color: AppTheme.warningAmber),
+            SizedBox(width: 12),
             Text('Confirm Email'),
           ],
         ),
@@ -2136,13 +2158,13 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: AppTheme.primaryPurple.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.email, color: Colors.blue),
+                  const Icon(Icons.email_outlined, color: AppTheme.primaryPurple),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -2156,40 +2178,22 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info, color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Credentials will be sent to this email address',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
             child: const Text('Cancel'),
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.send),
+            icon: const Icon(Icons.send_rounded, size: 18),
             label: const Text('Send'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: AppTheme.successGreen,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
         ],
@@ -2212,13 +2216,14 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle, color: Colors.white),
+                const Icon(Icons.check_circle_rounded, color: Colors.white),
                 const SizedBox(width: 8),
                 Text('Credentials sent to $email'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.successGreen,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
@@ -2227,8 +2232,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send email: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.errorRed,
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
@@ -2257,17 +2263,121 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     Clipboard.setData(ClipboardData(text: content));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
+      SnackBar(
+        content: const Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
+            Icon(Icons.check_circle_rounded, color: Colors.white),
             SizedBox(width: 8),
-            Text('Credentials copied to clipboard!'),
+            Text('All credentials copied to clipboard!'),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: AppTheme.successGreen,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
+    );
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text('$label copied to clipboard'),
+          ],
+        ),
+        backgroundColor: Colors.black87,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  Widget _buildCredentialField({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required bool isPassword,
+    VoidCallback? onCopy,
+    VoidCallback? onToggleVisibility,
+    bool isVisible = true,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    isVisible ? value : '•' * 20,
+                    style: TextStyle(
+                      fontFamily: isPassword ? 'monospace' : null,
+                      fontSize: 15,
+                      letterSpacing: (isPassword && !isVisible) ? 1 : 0,
+                      fontWeight: isPassword ? FontWeight.w500 : FontWeight.w400,
+                      color: Colors.grey[900],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 24,
+                color: Colors.grey.shade300,
+              ),
+              if (isPassword && onToggleVisibility != null)
+                IconButton(
+                  icon: Icon(
+                    isVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 18,
+                    color: Colors.grey[600],
+                  ),
+                  tooltip: isVisible ? 'Hide' : 'Show',
+                  onPressed: onToggleVisibility,
+                  splashRadius: 20,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 48),
+                ),
+              if (isPassword)
+                 Container(
+                  width: 1,
+                  height: 24,
+                  color: Colors.grey.shade300,
+                ),
+              IconButton(
+                icon: Icon(Icons.copy_rounded, size: 18, color: Colors.grey[600]),
+                tooltip: 'Copy $label',
+                onPressed: onCopy,
+                splashRadius: 20,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 48),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -2286,50 +2396,94 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
       child: Container(
-        width: 600,
+        width: 550,
         constraints: const BoxConstraints(maxHeight: 700),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.orange.shade600],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.key, color: Colors.white),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successGreen.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: AppTheme.successGreen,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'User Created Successfully',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warningAmber.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.warningAmber.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Save These Credentials!',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 20,
+                          color: Colors.orange[800],
                         ),
-                        Text(
-                          'This is the only time you can view these passwords',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'These credentials will not be available again. Please copy or download them now.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: Colors.orange[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -2337,273 +2491,127 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 ],
               ),
             ),
-
-            // Warning banner
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: Colors.orange.shade50,
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade700),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Make sure to save these credentials securely. You won\'t be able to retrieve them later.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.orange.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            
+            const Divider(height: 1),
 
             // Credentials list
             Flexible(
-              child: ListView.builder(
+              child: ListView.separated(
                 shrinkWrap: true,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 itemCount: credsWithPasswords.length,
+                separatorBuilder: (context, index) => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Divider(),
+                ),
                 itemBuilder: (context, index) {
                   final cred = credsWithPasswords[index];
                   final username = cred['username'] ?? '';
                   final password = cred['password'] ?? '';
                   final isVisible = _visiblePasswords.contains(index);
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Username
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.person,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Username:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  username,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 18),
-                                onPressed: () {
-                                  Clipboard.setData(
-                                    ClipboardData(text: username),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Username copied!'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy username',
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 24),
-
-                          // Password
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.lock,
-                                size: 18,
-                                color: Colors.orange,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Password:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    isVisible ? password : '•' * 12,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontFamily: isVisible
-                                          ? 'monospace'
-                                          : null,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: isVisible ? 1 : 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: Icon(
-                                  isVisible
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  size: 18,
-                                ),
-                                onPressed: () =>
-                                    _togglePasswordVisibility(index),
-                                tooltip: isVisible
-                                    ? 'Hide password'
-                                    : 'Show password',
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 18),
-                                onPressed: () {
-                                  Clipboard.setData(
-                                    ClipboardData(text: password),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Password copied!'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy password',
-                              ),
-                            ],
-                          ),
-                        ],
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildCredentialField(
+                        context: context,
+                        label: 'Username',
+                        value: username,
+                        isPassword: false,
+                        onCopy: () => _copyToClipboard(username, 'Username'),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      _buildCredentialField(
+                        context: context,
+                        label: 'Console Password',
+                        value: password,
+                        isPassword: true,
+                        isVisible: isVisible,
+                        onToggleVisibility: () => _togglePasswordVisibility(index),
+                        onCopy: () => _copyToClipboard(password, 'Password'),
+                      ),
+                    ],
                   );
                 },
               ),
             ),
 
-            // Footer
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
-              ),
+            const Divider(height: 1),
+
+            // Footer Buttons
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // Send via Email buttons (one per credential)
-                  if (credsWithPasswords.length == 1) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _sending
-                            ? null
-                            : () => _sendViaEmail(credsWithPasswords[0]),
-                        icon: _sending
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.email),
-                        label: Text(_sending ? 'Sending...' : 'Send via Email'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          foregroundColor: Colors.blue,
-                          side: const BorderSide(color: Colors.blue),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ] else ...[
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: credsWithPasswords.map((cred) {
-                        return OutlinedButton.icon(
-                          onPressed: _sending
-                              ? null
-                              : () => _sendViaEmail(cred),
-                          icon: const Icon(Icons.email, size: 16),
-                          label: Text(
-                            'Email ${cred['username']}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            foregroundColor: Colors.blue,
-                            side: const BorderSide(color: Colors.blue),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _downloadCredentials,
-                          icon: const Icon(Icons.download),
-                          label: const Text('Copy All'),
+                          icon: const Icon(Icons.copy_all_rounded, size: 18),
+                          label: const Text('Copy All Credentials'),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            foregroundColor: AppTheme.textPrimary,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.check),
-                          label: const Text('I\'ve Saved Them'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: OutlinedButton.icon(
+                          onPressed: _sending
+                              ? null
+                              : () async {
+                                  for (var cred in credsWithPasswords) {
+                                    await _sendViaEmail(cred);
+                                  }
+                                },
+                           icon: _sending
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.email_outlined, size: 18),
+                          label: Text(_sending ? 'Sending...' : 'Email Credentials'),
+                           style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            foregroundColor: AppTheme.primaryPurple,
+                            side: const BorderSide(color: AppTheme.primaryPurple),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
