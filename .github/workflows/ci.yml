@@ -1,0 +1,33 @@
+name:"Test Build"
+on:
+    push:
+        branches:
+            - preview-beta-2
+
+jobs:
+    build:
+        name: Demo Build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Set up Java
+              uses: actions/setup-java@v4
+              with:
+                java-version: '17'
+                distribution: 'oracle'
+            - name: Set up Flutter
+              uses: subosito/flutter-action@v3
+              with:
+                channel: 'stable'            
+            - name: Install Dependencies
+              working-directory: awsmgr_ui
+              run: flutter pub get
+            - name: Build App
+              working-directory: awsmgr_ui
+              run: flutter build apk --release
+            - name: Upload APK
+              uses: actions/upload-artifact@v4
+              with:
+                name: app-release.apk
+                path: awsmgr_ui/build/app/outputs/flutter-apk/app-release.apk               
