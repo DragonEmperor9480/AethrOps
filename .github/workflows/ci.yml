@@ -41,6 +41,34 @@ jobs:
               with:
                 name: aws_manager-windows-build
                 path: awsmgr_ui/build/windows/x64/runner/Release/
+
+
+            - name: Notify Telegram (Success)
+              if: success()
+              run: |
+                MESSAGE="GitHub Actions Build SUCCESS for Windows
+                Repo: ${{ github.repository }}
+                Branch: ${{ github.ref_name }}
+                Job: SUCCESS
+                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                --data-urlencode text="$MESSAGE"
+
+            - name: Notify Telegram (Failure)
+              if: failure()
+              run: |
+                MESSAGE="GitHub Actions Build FAILED for Windows
+                Repo: ${{ github.repository }}
+                Branch: ${{ github.ref_name }}
+                Job: FAILURE
+                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                --data-urlencode text="$MESSAGE"
+
     
     android:
         name: Flutter Android Build
@@ -148,6 +176,31 @@ jobs:
               with:
                 name: aws-manager-android-release
                 path: release/android/
+            
+            - name: Notify Telegram (Success)
+              if: success()
+              run: |
+                MESSAGE="GitHub Actions Build SUCCESS for Android
+                Repo: ${{ github.repository }}
+                Branch: ${{ github.ref_name }}
+                Job: SUCCESS
+                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                --data-urlencode text="$MESSAGE"
+            - name: Notify Telegram (Failure)
+              if: failure()
+              run: |
+                MESSAGE="GitHub Actions Build FAILED for Android
+                Repo: ${{ github.repository }}
+                Branch: ${{ github.ref_name }}
+                Job: FAILURE
+                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                --data-urlencode text="$MESSAGE"
 
     linux:
         name: Flutter Linux Build
@@ -199,4 +252,31 @@ jobs:
               with:
                 name: aws_manager-linux-build
                 path: awsmgr_ui/build/linux/x64/release/bundle/
+
+            - name: Notify Telegram (Success)
+              if: success()
+              run: |
+                MESSAGE="GitHub Actions Build SUCCESS for Linux
+                Repo: ${{ github.repository }}
+                Branch: ${{ github.ref_name }}
+                Job: SUCCESS
+                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                --data-urlencode text="$MESSAGE"
+
+            - name: Notify Telegram (Failure)
+              if: failure()
+              run: |
+                MESSAGE="GitHub Actions Build FAILED for Linux
+                Repo: ${{ github.repository }}
+                Branch: ${{ github.ref_name }}
+                Job: FAILURE
+                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                --data-urlencode text="$MESSAGE"
+
 
