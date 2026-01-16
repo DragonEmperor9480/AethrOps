@@ -45,16 +45,20 @@ jobs:
 
             - name: Notify Telegram (Success)
               if: success()
-              shell: bash
               run: |
-                MESSAGE="GitHub Actions Build SUCCESS for Windows
-                Repo: ${{ github.repository }}
-                Branch: ${{ github.ref_name }}
-                Job: SUCCESS
-                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                MESSAGE="*Build Success for Windows*
+
+                *Project:* [${{ github.repository }}](https://github.com/${{ github.repository }})
+                *Branch:* \`${{ github.ref_name }}\`
+                *Platform:* Windows
+                *Status:* SUCCESS
+
+                [View CI Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
                 curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
                 -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                -d parse_mode=MarkdownV2 \
+                -d disable_web_page_preview=true \
                 --data-urlencode text="$MESSAGE"
 
             - name: Notify Telegram (Failure)
@@ -182,15 +186,21 @@ jobs:
             - name: Notify Telegram (Success)
               if: success()
               run: |
-                MESSAGE="GitHub Actions Build SUCCESS for Android
-                Repo: ${{ github.repository }}
-                Branch: ${{ github.ref_name }}
-                Job: SUCCESS
-                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                MESSAGE="*Build Success for Android*
+
+                *Project:* [${{ github.repository }}](https://github.com/${{ github.repository }})
+                *Branch:* \`${{ github.ref_name }}\`
+                *Platform:* Android
+                *Status:* SUCCESS
+
+                [View CI Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
                 curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
                 -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                -d parse_mode=MarkdownV2 \
+                -d disable_web_page_preview=true \
                 --data-urlencode text="$MESSAGE"
+                
             - name: Notify Telegram (Failure)
               if: failure()
               run: |
@@ -258,14 +268,19 @@ jobs:
             - name: Notify Telegram (Success)
               if: success()
               run: |
-                MESSAGE="GitHub Actions Build SUCCESS for Linux
-                Repo: ${{ github.repository }}
-                Branch: ${{ github.ref_name }}
-                Job: SUCCESS
-                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                MESSAGE="*Build Success for Linux*
+
+                *Project:* [${{ github.repository }}](https://github.com/${{ github.repository }})
+                *Branch:* \`${{ github.ref_name }}\`
+                *Platform:* Linux
+                *Status:* SUCCESS
+
+                [View CI Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
                 curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
                 -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                -d parse_mode=MarkdownV2 \
+                -d disable_web_page_preview=true \
                 --data-urlencode text="$MESSAGE"
 
             - name: Notify Telegram (Failure)
