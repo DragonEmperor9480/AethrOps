@@ -45,6 +45,7 @@ jobs:
 
             - name: Notify Telegram (Success)
               if: success()
+              shell: bash
               run: |
                 MESSAGE="GitHub Actions Build SUCCESS for Windows
                 Repo: ${{ github.repository }}
@@ -58,6 +59,7 @@ jobs:
 
             - name: Notify Telegram (Failure)
               if: failure()
+              shell: bash
               run: |
                 MESSAGE="GitHub Actions Build FAILED for Windows
                 Repo: ${{ github.repository }}
