@@ -1,40 +1,113 @@
-name: "Test Build for windows"
+name: "Flutter Multi-Platform Build"
+
 on:
     push:
         branches:
             - github-actions
 
+
 jobs:
-    build:
+    windows:
         name: Flutter Windows Build
         runs-on: windows-latest
+
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-            - name: Set up Java
+            
+            - name: Setup Java
               uses: actions/setup-java@v4
               with:
                 java-version: '17'
                 distribution: 'oracle'
-            - name: Set up Flutter
+            - name: Setup Flutter
               uses: subosito/flutter-action@v2
               with:
-                channel: 'stable'            
+                channel: 'stable'
+            
             - name: Enable Windows Desktop
               run: flutter config --enable-windows-desktop
+
             - name: Install Dependencies
               working-directory: awsmgr_ui
               run: flutter pub get
-            - name: Build App
+
+            - name: Build Windows App
               working-directory: awsmgr_ui
-              run: flutter build windows
+              run: flutter build windows --release
+
             - name: Upload Windows Build
               uses: actions/upload-artifact@v4
               with:
-                name: awsmgr-windows-build
+                name: aws_manager-windows-build
                 path: awsmgr_ui/build/windows/x64/runner/Release/
-            
+    
+    android:
+        name: Flutter Android Build
+        runs-on: ubuntu-latest
 
-            
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                java-version: '17'
+                distribution: 'oracle'
+
+            - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                channel: 'stable'
+            
+            - name: Install Dependencies
+              working-directory: awsmgr_ui
+              run: flutter pub get
+
+            - name: Build Android App
+              working-directory: awsmgr_ui
+              run: flutter build apk --release
+
+            - name: Upload APK
+              uses: actions/upload-artifact@v4
+              with:
+                name: aws_manager-android-build
+                path: awsmgr_ui/build/app/outputs/flutter-apk/app-release.apk
+
+    linux:
+        name: Flutter Linux Build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                java-version: '17'
+                distribution: 'oracle'
+
+            - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                channel: 'stable'
+    
+            - run: flutter config --enable-linux-desktop
+            
+            - name: Install Dependencies
+              working-directory: awsmgr_ui
+              run: flutter pub get
+
+            - name: Build Linux App
+              working-directory: awsmgr_ui
+              run: flutter build linux --release
+
+
+            - name: Upload Linux Build
+              uses: actions/upload-artifact@v4
+              with:
+                name: aws_manager-linux-build
+                path: awsmgr_ui/build/linux/x64/release/bundle/
 
