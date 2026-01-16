@@ -60,20 +60,84 @@ jobs:
               uses: subosito/flutter-action@v2
               with:
                 channel: 'stable'
+
+            - name: Set up Go
+              uses: actions/setup-go@v5
+              with:
+                go-version: '1.22'
+
+            - name: Install Android NDK
+              uses: nttld/setup-ndk@v1
+              with:
+                ndk-version: 'r26d'
             
-            - name: Install Dependencies
-              working-directory: awsmgr_ui
-              run: flutter pub get
+            - name: Restore keystore
+              run: |
+                echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > awsmgr_ui/android/app/upload-keystore.jks
 
-            - name: Build Android App
-              working-directory: awsmgr_ui
-              run: flutter build apk --release
+            - name: Restore key.properties
+              run: |
+                echo "${{ secrets.KEY_PROPERTIES }}" > awsmgr_ui/android/key.properties
 
-            - name: Upload APK
+            - name: Build Go Backend(FFI)
+              run: |
+                  set -e
+                  cd backend_ffi
+
+                  ARCHS=("arm64-v8a" "armeabi-v7a" "x86_64")
+
+                  for arch in "${ARCHS[@]}"; do
+                    if [ "$arch" = "arm64-v8a" ]; then
+                      GOARCH=arm64
+                      CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+                    elif [ "$arch" = "armeabi-v7a" ]; then
+                      GOARCH=arm
+                      GOARM=7
+                      CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang
+                    else
+                      GOARCH=amd64
+                      CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang
+                    fi
+
+                    CGO_ENABLED=1 GOOS=android GOARCH=$GOARCH GOARM=${GOARM:-} CC=$CC \
+                      go build -buildmode=c-shared -o libbackend_$arch.so main.go
+                  done
+            
+            - name: Copy native libraries
+              run: |
+                for arch in arm64-v8a armeabi-v7a x86_64; do
+                  mkdir -p awsmgr_ui/android/app/src/main/jniLibs/$arch
+                  mv backend_ffi/libbackend_$arch.so \
+                     awsmgr_ui/android/app/src/main/jniLibs/$arch/libbackend.so
+                done
+
+            - name: Accept Android licenses
+              run: yes | flutter doctor --android-licenses
+
+            - name: Build signed APKs
+              working-directory: awsmgr_ui
+              run: |
+                flutter clean
+                flutter pub get
+                flutter build apk --split-per-abi --release
+
+            - name: Prepare release artifacts
+              run: |
+                mkdir -p release/android
+                cd awsmgr_ui/build/app/outputs/flutter-apk
+
+                cp app-arm64-v8a-release.apk ../../../../release/android/aws-manager-preview-beta-1-arm64-v8a.apk
+                cp app-armeabi-v7a-release.apk ../../../../release/android/aws-manager-preview-beta-1-armeabi-v7a.apk
+                cp app-x86_64-release.apk ../../../../release/android/aws-manager-preview-beta-1-x86_64.apk
+
+                cd ../../../../release/android
+                sha256sum *.apk > checksums-sha256.txt
+
+            - name: Upload APKs
               uses: actions/upload-artifact@v4
               with:
-                name: aws_manager-android-build
-                path: awsmgr_ui/build/app/outputs/flutter-apk/app-release.apk
+                name: aws-manager-android-release
+                path: release/android/
 
     linux:
         name: Flutter Linux Build
