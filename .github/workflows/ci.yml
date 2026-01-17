@@ -28,19 +28,15 @@ jobs:
             - name: Enable Windows Desktop
               run: flutter config --enable-windows-desktop
 
-            - name: Install Dependencies
-              working-directory: awsmgr_ui
-              run: flutter pub get
-
-            - name: Build Windows App
-              working-directory: awsmgr_ui
-              run: flutter build windows --release
+            - name: Start Building exe
+              run: |
+                call scripts\build_windows.bat
 
             - name: Upload Windows Build
               uses: actions/upload-artifact@v4
               with:
                 name: aws_manager-windows-build
-                path: awsmgr_ui/build/windows/x64/runner/Release/
+                path: release/windows/
     
     android:
         name: Flutter Android Build
