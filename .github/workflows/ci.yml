@@ -41,41 +41,6 @@ jobs:
               with:
                 name: aws_manager-windows-build
                 path: awsmgr_ui/build/windows/x64/runner/Release/
-
-
-            - name: Notify Telegram (Success)
-              if: success()
-              shell: bash
-              run: |
-                MESSAGE="<b>Build Success for Windows</b> 
-
-                <b>Project:</b> <a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>
-                <b>Branch:</b> <code>${{ github.ref_name }}</code>
-                <b>Platform:</b> Windows
-                <b>Status:</b> SUCCESS
-
-                🔗 <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View CI Run</a>"
-
-                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-                -d parse_mode=HTML \
-                -d disable_web_page_preview=true \
-                --data-urlencode text="$MESSAGE"
-
-            - name: Notify Telegram (Failure)
-              if: failure()
-              shell: bash
-              run: |
-                MESSAGE="GitHub Actions Build FAILED for Windows
-                Repo: ${{ github.repository }}
-                Branch: ${{ github.ref_name }}
-                Job: FAILURE
-                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-                --data-urlencode text="$MESSAGE"
-
     
     android:
         name: Flutter Android Build
@@ -183,38 +148,6 @@ jobs:
               with:
                 name: aws-manager-android-release
                 path: release/android/
-            
-            - name: Notify Telegram (Success)
-              if: success()
-              shell: bash
-              run: |
-                MESSAGE="<b>Build Success for Android</b> 
-
-                <b>Project:</b> <a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>
-                <b>Branch:</b> <code>${{ github.ref_name }}</code>
-                <b>Platform:</b> Android
-                <b>Status:</b> SUCCESS
-
-                🔗 <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View CI Run</a>"
-
-                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-                -d parse_mode=HTML \
-                -d disable_web_page_preview=true \
-                --data-urlencode text="$MESSAGE"
-                
-            - name: Notify Telegram (Failure)
-              if: failure()
-              run: |
-                MESSAGE="GitHub Actions Build FAILED for Android
-                Repo: ${{ github.repository }}
-                Branch: ${{ github.ref_name }}
-                Job: FAILURE
-                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-                --data-urlencode text="$MESSAGE"
 
     linux:
         name: Flutter Linux Build
@@ -266,37 +199,36 @@ jobs:
               with:
                 name: aws_manager-linux-build
                 path: awsmgr_ui/build/linux/x64/release/bundle/
+    
+    notify:
+      name: Send CI Summary
+      runs-on: ubuntu-latest
+      needs: [android, linux, windows]
+      if: always()
+      steps:
+        - name: Send Telegram summary
+          shell: bash
+          run: |
+            WINDOWS="${{ needs.windows.result }}"
+            ANDROID="${{ needs.android.result }}"
+            LINUX="${{ needs.linux.result }}"
 
-            - name: Notify Telegram (Success)
-              if: success()
-              shell: bash
-              run: |
-                MESSAGE="<b>Build Success for Linux</b> 
+            MESSAGE="<b>CI Build Summary</b>
 
-                <b>Project:</b> <a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>
-                <b>Branch:</b> <code>${{ github.ref_name }}</code>
-                <b>Platform:</b> Linux
-                <b>Status:</b> SUCCESS
+            Windows: ${WINDOWS}
+            Android: ${ANDROID}
+            Linux: ${LINUX}
 
-                🔗 <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View CI Run</a>"
+            <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View CI Run</a>"
 
-                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-                -d parse_mode=HTML \
-                -d disable_web_page_preview=true \
-                --data-urlencode text="$MESSAGE"
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d parse_mode=HTML \
+            -d disable_web_page_preview=true \
+            --data-urlencode text="$MESSAGE"
 
-            - name: Notify Telegram (Failure)
-              if: failure()
-              run: |
-                MESSAGE="GitHub Actions Build FAILED for Linux
-                Repo: ${{ github.repository }}
-                Branch: ${{ github.ref_name }}
-                Job: FAILURE
-                Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      
+      
 
-                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-                -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-                --data-urlencode text="$MESSAGE"
-
+        
 
