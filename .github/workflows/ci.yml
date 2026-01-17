@@ -232,24 +232,13 @@ jobs:
             Exec=aws-manager
             Icon=aws-manager
             Type=Application
-            Categories=Development;Utility;
+            Categories=Development;
             EOF
-            chmod +x build/appimage/aws-manager.AppDir/AppRun
-
-        - name: Create desktop file
-          run: |
-            cat > build/appimage/aws-manager.AppDir/awsmgr.desktop << EOF
-            [Desktop Entry]
-            Name=AWS Manager
-            Exec=aws-manager
-            Icon=aws-manager
-            Type=Application
-            Categories=Development;Utility;
-            EOF
+            chmod +x build/appimage/aws-manager.AppDir/awsmgr.desktop
 
         - name: Setup icon
           run: |
-            cp awsmgr_ui/assets/icon.png build/appimage/aws-manager.AppDir/aws-manager.png || true
+            cp awsmgr_ui/linux/icon.png build/appimage/aws-manager.AppDir/aws-manager.png
             ln -sf aws-manager.png build/appimage/aws-manager.AppDir/.DirIcon
 
         - name: Download appimagetool
