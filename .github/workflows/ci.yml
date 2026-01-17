@@ -28,7 +28,13 @@ jobs:
             - name: Enable Windows Desktop
               run: flutter config --enable-windows-desktop
 
-            - name: Start Building exe
+            - name: Install Inno Setup
+              shell: pwsh
+              run: |
+                choco install innosetup --yes --no-progress
+
+            - name: Start Building 
+              shell: cmd
               run: |
                 call scripts\build_windows.bat
 
