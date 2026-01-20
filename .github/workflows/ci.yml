@@ -320,7 +320,7 @@ jobs:
         - name: Download Windows Artifacts
           uses: actions/download-artifact@v4
           with:
-            name: aws-manager-windows-build
+            name: aws_manager-windows-build
             path: release/windows
         
         - name: Download Linux Artifacts
