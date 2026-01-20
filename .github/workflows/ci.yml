@@ -348,6 +348,9 @@ jobs:
         RELEASE_NAME: "AWS Manager CI Test"
 
       steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
         - name: Download Android Artifacts
           uses: actions/download-artifact@v4
           with:
