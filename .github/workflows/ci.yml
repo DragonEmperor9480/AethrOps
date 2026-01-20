@@ -380,6 +380,53 @@ jobs:
               release/windows/*.exe
               release/linux/*.AppImage  
 
+    linkedin_post:
+      name: Post Release to LinkedIn
+      runs-on: ubuntu-latest
+      needs: release
+      if: success()
+
+      steps:
+        - name: Post to LinkedIn
+          shell: bash
+          run: |
+            ORG_URN="urn:li:organization:${{ secrets.LINKEDIN_ORG_ID }}"
+
+            MESSAGE=$(cat <<EOF
+            <b>AWS Manager – Test CI POST</b>
+
+            We’ve just shipped a new multi-platform release of <b>AWS Manager</b> 
+
+            Android (APK – all architectures)
+            Windows (Installer)
+            Linux (AppImage)
+
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">Download Release</a>
+
+            #AWS #DevOps #Flutter #GoLang #OpenSource
+            EOF
+            )
+
+            curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+              -H "Authorization: Bearer ${{ secrets.LINKEDIN_ACCESS_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"author\": \"${ORG_URN}\",
+                \"lifecycleState\": \"PUBLISHED\",
+                \"specificContent\": {
+                  \"com.linkedin.ugc.ShareContent\": {
+                    \"shareCommentary\": {
+                      \"text\": \"AWS Manager new release is live!\\n\\nDownload: https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}\"
+                    },
+                    \"shareMediaCategory\": \"NONE\"
+                  }
+                },
+                \"visibility\": {
+                  \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"
+                }
+              }"
+
+
 
         
 
