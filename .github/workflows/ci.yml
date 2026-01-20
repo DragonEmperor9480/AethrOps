@@ -320,7 +320,7 @@ jobs:
         - name: Download Windows Artifacts
           uses: actions/download-artifact@v4
           with:
-            name: aws-manager-windows-release
+            name: aws-manager-windows-build
             path: release/windows
         
         - name: Download Linux Artifacts
@@ -329,16 +329,15 @@ jobs:
             name: aws-manager-linux-appimage
             path: release/linux
           
-        - name: Create Release
-          uses: actions/create-release@v4
+        - name: Create GitHub Release
+          uses: softprops/action-gh-release@v2
           with:
             tag_name: ${{ env.RELEASE_TAG }}
-            release_name: ${{ env.RELEASE_NAME }}
+            name: ${{ env.RELEASE_NAME }}
             files: |
               release/android/*.apk
               release/windows/*.exe
-              release/linux/*.AppImage
-          
+              release/linux/*.AppImage  
 
 
         
