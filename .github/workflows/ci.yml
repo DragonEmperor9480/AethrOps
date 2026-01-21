@@ -390,10 +390,10 @@ jobs:
         - name: Post to LinkedIn
           shell: bash
           run: |
-            ORG_URN="urn:li:organization:${{ secrets.LINKEDIN_ORG_ID }}"
+            AUTHOR_URN="${{ secrets.LINKEDIN_AUTHOR_URN }}"
 
             MESSAGE=$(cat <<EOF
-            AWS Manager – New Release 🚀
+            AWS Manager – CI TEST
 
             Android (APK – all architectures)
             Windows (Installer)
@@ -411,7 +411,7 @@ jobs:
               -H "X-Restli-Protocol-Version: 2.0.0" \
               -H "Content-Type: application/json" \
               -d "$(jq -n \
-                --arg author "$ORG_URN" \
+                --arg author "$AUTHOR_URN" \
                 --arg text "$MESSAGE" \
                 '{
                   author: $author,
