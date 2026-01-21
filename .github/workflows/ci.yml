@@ -423,6 +423,6 @@ jobs:
                     }
                   },
                   visibility: {
-                    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+                    "com.linkedin.ugc.MemberNetworkVisibility": "CONNECTIONS"
                   }
                 }')"
