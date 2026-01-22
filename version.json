@@ -10,5 +10,11 @@
     },
     "android": {
         "version": "Preview Beta 2"
+    },
+    "macos": {
+        "version": ""
+    },
+    "website": {
+        "version": "Preview Beta 2"
     }
 }
