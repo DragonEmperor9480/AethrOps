@@ -498,11 +498,11 @@ jobs:
           run: |
             cd terminal-aws-commander
 
-            git config user.name "github-actions"
-            git config user.email "github-actions@github.com"
+            git config user.name "DragonEmperor9480"
+            git config user.email "amruteshnaregal1234@gmail.com"
 
             git add src/data/version.json
-            git commit -m "chore: add $RELEASE_VERSION release"
+            git commit -m "github-actions: chore: add $RELEASE_VERSION release"
             git push
 
 
