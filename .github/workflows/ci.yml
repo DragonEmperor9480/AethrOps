@@ -23,7 +23,7 @@ jobs:
 
                 MESSAGE="<b>🚀 CI Build Started</b>
 
-                  <b>Project:</b> <a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>
+                <b>Project:</b> <a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>
                 <b>Branch:</b> <code>${{ github.ref_name }}</code>
                 <b>Commit:</b> <code>${SHORT_SHA}</code>
                 <b>Triggered by:</b> ${{ github.actor }}
@@ -344,9 +344,8 @@ jobs:
       if: success()
 
       env:
-        RELEASE_TAG: CI-TEST
-        RELEASE_NAME: "AWS Manager CI Test"
-
+        RELEASE_TAG: preview-beta-2
+        RELEASE_NAME: "AWS Manager Preview Beta 2(CI TEST)"
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4
