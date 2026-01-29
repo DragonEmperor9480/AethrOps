@@ -404,7 +404,11 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                               ),
                             )
                           : const Icon(Icons.send, size: 18),
-                      label: Text(_isTestLoading ? 'Sending...' : 'Test Email'),
+                      label: Text(
+                        _isTestLoading ? 'Sending...' : 'Test',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.primaryPurple,
                         side: const BorderSide(color: AppTheme.primaryPurple),
