@@ -18,7 +18,7 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
       'image': 'assets/how_to_get_access_credentials/1_aws_console_homepage',
       'title': 'Step 1: Open AWS Console',
       'description':
-          'Sign in to the AWS Management Console using your AWS account credentials.',
+          'Sign in to the AethrOps Console using your AWS account credentials.',
     },
     {
       'image':

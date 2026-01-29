@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/ec2_launch_request.dart';
 import '../services/ec2_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class Ec2LaunchScreen extends StatefulWidget {
   const Ec2LaunchScreen({super.key});
@@ -100,11 +101,10 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
     } catch (e) {
       setState(() => _isLoadingData = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load AWS resources: $e'),
-            backgroundColor: AppTheme.errorRed,
-          ),
+        ToastUtils.show(
+          context,
+          'Failed to load AWS resources: $e',
+          isError: true,
         );
       }
     }
@@ -113,9 +113,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
   Future<void> _launchInstance() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAmi == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please select an AMI')));
+      ToastUtils.show(context, 'Please select an AMI', isError: true);
       return;
     }
 
@@ -141,44 +139,16 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       final result = await Ec2Service.launchInstance(request);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.rocket_launch_rounded, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Instance is booting up...',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'ID: ${result['instance_id']}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppTheme.successGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ToastUtils.show(
+          context,
+          'Instance is booting up... ID: ${result['instance_id']}',
+          isError: false,
         );
         Navigator.pop(context); // Return to previous screen
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppTheme.errorRed,
-          ),
-        );
+        ToastUtils.show(context, 'Error: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

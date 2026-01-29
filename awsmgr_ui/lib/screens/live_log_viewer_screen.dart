@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../services/cloudwatch_service.dart';
-import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class LiveLogViewerScreen extends StatefulWidget {
   final String functionName;
 
-  const LiveLogViewerScreen({
-    super.key,
-    required this.functionName,
-  });
+  const LiveLogViewerScreen({super.key, required this.functionName});
 
   @override
   State<LiveLogViewerScreen> createState() => _LiveLogViewerScreenState();
@@ -49,7 +46,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
       final currentScroll = _scrollController.position.pixels;
-      
+
       // Enable auto-scroll if user scrolls to bottom
       if (currentScroll >= maxScroll - 50) {
         if (!_autoScroll) {
@@ -69,38 +66,34 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
   }
 
   void _startStreaming() {
-    _logSubscription = CloudWatchService.streamLambdaLogs(widget.functionName).listen(
-      (logEntry) {
-        if (!_isPaused) {
-          setState(() {
-            _logs.add(logEntry);
-            _updateSearchMatches();
-          });
-          
-          if (_autoScroll && _scrollController.hasClients) {
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                );
+    _logSubscription = CloudWatchService.streamLambdaLogs(widget.functionName)
+        .listen(
+          (logEntry) {
+            if (!_isPaused) {
+              setState(() {
+                _logs.add(logEntry);
+                _updateSearchMatches();
+              });
+
+              if (_autoScroll && _scrollController.hasClients) {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (_scrollController.hasClients) {
+                    _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                });
               }
-            });
-          }
-        }
-      },
-      onError: (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Stream error: $error'),
-              backgroundColor: AppTheme.errorRed,
-            ),
-          );
-        }
-      },
-    );
+            }
+          },
+          onError: (error) {
+            if (mounted) {
+              ToastUtils.show(context, 'Stream error: $error', isError: true);
+            }
+          },
+        );
   }
 
   void _togglePause() {
@@ -143,7 +136,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     final oldMatchCount = _searchMatches.length;
     _searchMatches.clear();
     final query = _searchQuery.toLowerCase();
-    
+
     for (int i = 0; i < _logs.length; i++) {
       if (_logs[i].message.toLowerCase().contains(query)) {
         _searchMatches.add(i);
@@ -156,7 +149,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
         if (_currentMatchIndex == -1 || oldMatchCount == 0) {
           _currentMatchIndex = 0;
           _scrollToMatch();
-        } 
+        }
         // If current index is out of bounds, adjust it
         else if (_currentMatchIndex >= _searchMatches.length) {
           _currentMatchIndex = _searchMatches.length - 1;
@@ -170,7 +163,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
   void _nextMatch() {
     if (_searchMatches.isEmpty) return;
-    
+
     setState(() {
       _currentMatchIndex = (_currentMatchIndex + 1) % _searchMatches.length;
       _scrollToMatch();
@@ -179,7 +172,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
   void _prevMatch() {
     if (_searchMatches.isEmpty) return;
-    
+
     setState(() {
       _currentMatchIndex--;
       if (_currentMatchIndex < 0) {
@@ -193,29 +186,31 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     if (_currentMatchIndex < 0 || _currentMatchIndex >= _searchMatches.length) {
       return;
     }
-    
+
     if (!_scrollController.hasClients) return;
-    
+
     final matchLine = _searchMatches[_currentMatchIndex];
-    
+
     // Disable auto-scroll when searching
     _autoScroll = false;
-    
+
     // Calculate scroll position to center the match (like TUI does)
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    
+
     final viewportHeight = _scrollController.position.viewportDimension;
-    final estimatedLineHeight = 40.0; // Conservative estimate for variable height logs
-    
+    final estimatedLineHeight =
+        40.0; // Conservative estimate for variable height logs
+
     // Center the match in viewport
-    final targetPosition = (matchLine * estimatedLineHeight) - (viewportHeight / 2);
-    
+    final targetPosition =
+        (matchLine * estimatedLineHeight) - (viewportHeight / 2);
+
     // Clamp to valid range
     final maxScroll = _scrollController.position.maxScrollExtent;
     final minScroll = _scrollController.position.minScrollExtent;
     final clampedPosition = targetPosition.clamp(minScroll, maxScroll);
-    
+
     // Scroll to position
     _scrollController.animateTo(
       clampedPosition,
@@ -277,11 +272,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
         children: [
           if (_isSearchMode) _buildSearchBar(),
           _buildStatusBar(),
-          Expanded(
-            child: _logs.isEmpty
-                ? _buildEmptyState()
-                : _buildLogList(),
-          ),
+          Expanded(child: _logs.isEmpty ? _buildEmptyState() : _buildLogList()),
         ],
       ),
     );
@@ -300,7 +291,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search logs...',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
                 border: InputBorder.none,
                 suffixText: _searchMatches.isNotEmpty
                     ? '${_currentMatchIndex + 1}/${_searchMatches.length}'
@@ -418,9 +411,11 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
       itemCount: _logs.length,
       itemBuilder: (context, index) {
         final log = _logs[index];
-        final isMatch = _searchQuery.isNotEmpty &&
+        final isMatch =
+            _searchQuery.isNotEmpty &&
             log.message.toLowerCase().contains(_searchQuery.toLowerCase());
-        final isCurrentMatch = isMatch &&
+        final isCurrentMatch =
+            isMatch &&
             _searchMatches.isNotEmpty &&
             _currentMatchIndex >= 0 &&
             _currentMatchIndex < _searchMatches.length &&
@@ -432,8 +427,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
           color: isCurrentMatch
               ? Colors.yellow.shade700
               : isMatch
-                  ? Colors.yellow.shade900.withValues(alpha: 0.3)
-                  : Colors.transparent,
+              ? Colors.yellow.shade900.withValues(alpha: 0.3)
+              : Colors.transparent,
           child: _buildLogContent(log, isMatch, isCurrentMatch),
         );
       },
@@ -443,7 +438,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
   Widget _buildLogContent(LogEntry log, bool isMatch, bool isCurrentMatch) {
     // Try to detect and parse JSON
     final jsonData = _tryParseJson(log.message);
-    
+
     if (jsonData != null) {
       // It's JSON, render with syntax highlighting
       return _buildJsonLog(jsonData, log.color, isMatch, isCurrentMatch);
@@ -467,29 +462,28 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     // Try to find JSON in the text - look for { or [ anywhere in the line
     final jsonStartIndex = text.indexOf('{');
     final arrayStartIndex = text.indexOf('[');
-    
+
     int startIndex = -1;
     if (jsonStartIndex != -1 && arrayStartIndex != -1) {
-      startIndex = jsonStartIndex < arrayStartIndex ? jsonStartIndex : arrayStartIndex;
+      startIndex = jsonStartIndex < arrayStartIndex
+          ? jsonStartIndex
+          : arrayStartIndex;
     } else if (jsonStartIndex != -1) {
       startIndex = jsonStartIndex;
     } else if (arrayStartIndex != -1) {
       startIndex = arrayStartIndex;
     }
-    
+
     if (startIndex == -1) {
       return null;
     }
-    
+
     // Extract the JSON part
     final jsonPart = text.substring(startIndex).trim();
-    
+
     try {
       final decoded = json.decode(jsonPart);
-      return {
-        'prefix': text.substring(0, startIndex),
-        'json': decoded,
-      };
+      return {'prefix': text.substring(0, startIndex), 'json': decoded};
     } catch (e) {
       // Not valid JSON, might be Go struct format like {Key:Value}
       // Try to convert Go struct format to JSON
@@ -498,10 +492,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
         final structContent = goStructMatch.group(1)!;
         final converted = _convertGoStructToJson(structContent);
         if (converted != null) {
-          return {
-            'prefix': text.substring(0, startIndex),
-            'json': converted,
-          };
+          return {'prefix': text.substring(0, startIndex), 'json': converted};
         }
       }
       return null;
@@ -513,16 +504,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     try {
       final result = <String, dynamic>{};
       final pairs = goStruct.split(RegExp(r'\s+(?=[A-Z])'));
-      
+
       for (final pair in pairs) {
         final colonIndex = pair.indexOf(':');
         if (colonIndex == -1) continue;
-        
+
         final key = pair.substring(0, colonIndex).trim();
         final value = pair.substring(colonIndex + 1).trim();
-        
+
         if (key.isEmpty) continue;
-        
+
         // Try to parse value as number
         final numValue = num.tryParse(value);
         if (numValue != null) {
@@ -537,53 +528,58 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
           result[key] = value;
         }
       }
-      
+
       return result.isEmpty ? null : result;
     } catch (e) {
       return null;
     }
   }
 
-  Widget _buildJsonLog(Map<String, dynamic> data, String color, bool isMatch, bool isCurrentMatch) {
+  Widget _buildJsonLog(
+    Map<String, dynamic> data,
+    String color,
+    bool isMatch,
+    bool isCurrentMatch,
+  ) {
     final prefix = data['prefix'] as String;
     final jsonObj = data['json'];
     final prettyJson = const JsonEncoder.withIndent('  ').convert(jsonObj);
-    
+
     final spans = <TextSpan>[];
-    
+
     // Add prefix (timestamp, log level, etc.) in original color
     if (prefix.isNotEmpty) {
-      spans.add(TextSpan(
-        text: prefix,
-        style: TextStyle(
-          color: _getColorFromString(color),
-          fontFamily: 'monospace',
-          fontSize: 13,
+      spans.add(
+        TextSpan(
+          text: prefix,
+          style: TextStyle(
+            color: _getColorFromString(color),
+            fontFamily: 'monospace',
+            fontSize: 13,
+          ),
         ),
-      ));
+      );
     }
-    
+
     // Add newline before JSON for better formatting
     if (prefix.isNotEmpty) {
       spans.add(const TextSpan(text: '\n'));
     }
-    
+
     // Add JSON with syntax highlighting
     if (_searchQuery.isNotEmpty && isMatch) {
       spans.addAll(_buildHighlightedJsonSpans(prettyJson, isCurrentMatch));
     } else {
       spans.addAll(_buildJsonSpans(prettyJson, 0));
     }
-    
-    return SelectableText.rich(
-      TextSpan(children: spans),
-    );
+
+    return SelectableText.rich(TextSpan(children: spans));
   }
 
   List<TextSpan> _buildJsonSpans(String json, int indent) {
     final spans = <TextSpan>[];
     final lines = json.split('\n');
-    
+
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       spans.addAll(_parseJsonLine(line));
@@ -591,38 +587,40 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
         spans.add(const TextSpan(text: '\n'));
       }
     }
-    
+
     return spans;
   }
 
   List<TextSpan> _parseJsonLine(String line) {
     final spans = <TextSpan>[];
     final regex = RegExp(
-      r'("(?:[^"\\]|\\.)*")|'  // Strings
-      r'(\btrue\b|\bfalse\b|\bnull\b)|'  // Booleans and null
-      r'(-?\d+\.?\d*)|'  // Numbers
-      r'([{}[\],:])|'  // Structural characters
-      r'(\s+)'  // Whitespace
+      r'("(?:[^"\\]|\\.)*")|' // Strings
+      r'(\btrue\b|\bfalse\b|\bnull\b)|' // Booleans and null
+      r'(-?\d+\.?\d*)|' // Numbers
+      r'([{}[\],:])|' // Structural characters
+      r'(\s+)', // Whitespace
     );
-    
+
     int lastIndex = 0;
     for (final match in regex.allMatches(line)) {
       // Add any text before the match
       if (match.start > lastIndex) {
-        spans.add(TextSpan(
-          text: line.substring(lastIndex, match.start),
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: 'monospace',
-            fontSize: 13,
+        spans.add(
+          TextSpan(
+            text: line.substring(lastIndex, match.start),
+            style: const TextStyle(
+              color: Colors.white,
+              fontFamily: 'monospace',
+              fontSize: 13,
+            ),
           ),
-        ));
+        );
       }
-      
+
       final matchText = match.group(0)!;
       Color textColor;
       FontWeight? fontWeight;
-      
+
       if (match.group(1) != null) {
         // String (including keys)
         if (matchText.endsWith('":')) {
@@ -647,42 +645,46 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
         // Whitespace
         textColor = Colors.white;
       }
-      
-      spans.add(TextSpan(
-        text: matchText,
-        style: TextStyle(
-          color: textColor,
-          fontFamily: 'monospace',
-          fontSize: 13,
-          fontWeight: fontWeight,
+
+      spans.add(
+        TextSpan(
+          text: matchText,
+          style: TextStyle(
+            color: textColor,
+            fontFamily: 'monospace',
+            fontSize: 13,
+            fontWeight: fontWeight,
+          ),
         ),
-      ));
-      
+      );
+
       lastIndex = match.end;
     }
-    
+
     // Add any remaining text
     if (lastIndex < line.length) {
-      spans.add(TextSpan(
-        text: line.substring(lastIndex),
-        style: const TextStyle(
-          color: Colors.white,
-          fontFamily: 'monospace',
-          fontSize: 13,
+      spans.add(
+        TextSpan(
+          text: line.substring(lastIndex),
+          style: const TextStyle(
+            color: Colors.white,
+            fontFamily: 'monospace',
+            fontSize: 13,
+          ),
         ),
-      ));
+      );
     }
-    
+
     return spans;
   }
 
   List<TextSpan> _buildHighlightedJsonSpans(String json, bool isCurrentMatch) {
     final query = _searchQuery.toLowerCase();
     final jsonLower = json.toLowerCase();
-    
+
     final spans = <TextSpan>[];
     int start = 0;
-    
+
     while (start < json.length) {
       final index = jsonLower.indexOf(query, start);
       if (index == -1) {
@@ -691,87 +693,95 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
         spans.addAll(_parseJsonLine(remaining));
         break;
       }
-      
+
       // Add JSON before match with syntax highlighting
       if (index > start) {
         final before = json.substring(start, index);
         spans.addAll(_parseJsonLine(before));
       }
-      
+
       // Add highlighted match
-      spans.add(TextSpan(
-        text: json.substring(index, index + query.length),
-        style: TextStyle(
-          color: Colors.black,
-          backgroundColor: isCurrentMatch 
-              ? Colors.orange.shade400 
-              : Colors.yellow.shade600,
-          fontFamily: 'monospace',
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
+      spans.add(
+        TextSpan(
+          text: json.substring(index, index + query.length),
+          style: TextStyle(
+            color: Colors.black,
+            backgroundColor: isCurrentMatch
+                ? Colors.orange.shade400
+                : Colors.yellow.shade600,
+            fontFamily: 'monospace',
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ));
-      
+      );
+
       start = index + query.length;
     }
-    
+
     return spans;
   }
 
   Widget _buildHighlightedText(String text, String color, bool isCurrentMatch) {
-    final textColor = isCurrentMatch ? Colors.black : _getColorFromString(color);
+    final textColor = isCurrentMatch
+        ? Colors.black
+        : _getColorFromString(color);
     final query = _searchQuery.toLowerCase();
     final textLower = text.toLowerCase();
-    
+
     final spans = <TextSpan>[];
     int start = 0;
-    
+
     while (start < text.length) {
       final index = textLower.indexOf(query, start);
       if (index == -1) {
         // No more matches, add remaining text
-        spans.add(TextSpan(
-          text: text.substring(start),
-          style: TextStyle(
-            color: textColor,
-            fontFamily: 'monospace',
-            fontSize: 13,
+        spans.add(
+          TextSpan(
+            text: text.substring(start),
+            style: TextStyle(
+              color: textColor,
+              fontFamily: 'monospace',
+              fontSize: 13,
+            ),
           ),
-        ));
+        );
         break;
       }
-      
+
       // Add text before match
       if (index > start) {
-        spans.add(TextSpan(
-          text: text.substring(start, index),
+        spans.add(
+          TextSpan(
+            text: text.substring(start, index),
+            style: TextStyle(
+              color: textColor,
+              fontFamily: 'monospace',
+              fontSize: 13,
+            ),
+          ),
+        );
+      }
+
+      // Add highlighted match
+      spans.add(
+        TextSpan(
+          text: text.substring(index, index + query.length),
           style: TextStyle(
-            color: textColor,
+            color: isCurrentMatch ? Colors.black : Colors.black,
+            backgroundColor: isCurrentMatch
+                ? Colors.orange.shade400
+                : Colors.yellow.shade600,
             fontFamily: 'monospace',
             fontSize: 13,
+            fontWeight: FontWeight.bold,
           ),
-        ));
-      }
-      
-      // Add highlighted match
-      spans.add(TextSpan(
-        text: text.substring(index, index + query.length),
-        style: TextStyle(
-          color: isCurrentMatch ? Colors.black : Colors.black,
-          backgroundColor: isCurrentMatch 
-              ? Colors.orange.shade400 
-              : Colors.yellow.shade600,
-          fontFamily: 'monospace',
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
         ),
-      ));
-      
+      );
+
       start = index + query.length;
     }
-    
-    return SelectableText.rich(
-      TextSpan(children: spans),
-    );
+
+    return SelectableText.rich(TextSpan(children: spans));
   }
 }

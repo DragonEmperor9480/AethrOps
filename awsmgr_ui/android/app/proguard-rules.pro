@@ -6,8 +6,8 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# AWS Manager specific
--keep class com.amrut.awsmgr.** { *; }
+#AethrOps specific
+-keep class com.amrut.aethrops.** { *; }
 
 # Keep native methods
 -keepclasseswithmembernames class * {

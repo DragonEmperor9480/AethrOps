@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -74,12 +75,7 @@ class _AboutScreenState extends State<AboutScreen>
     } catch (e) {
       // If still fails, show error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open URL: $url'),
-            backgroundColor: AppTheme.errorRed,
-          ),
-        );
+        ToastUtils.show(context, 'Could not open URL: $url', isError: true);
       }
     }
   }
@@ -237,7 +233,7 @@ class _AboutScreenState extends State<AboutScreen>
                   colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
                 ).createShader(bounds),
                 child: const Text(
-                  'AWS MANAGER',
+                  'AethrOps',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -348,7 +344,7 @@ class _AboutScreenState extends State<AboutScreen>
               const SizedBox(height: 16),
               Text(
                 'Manage your AWS infrastructure with unprecedented ease and power. '
-                'AWS Manager brings you advanced features and capabilities that go beyond '
+                'AethrOps brings you advanced features and capabilities that go beyond '
                 'what the official AWS Console and mobile app offer.',
                 style: TextStyle(
                   fontSize: 15,
@@ -432,7 +428,7 @@ class _AboutScreenState extends State<AboutScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Why Choose AWS Manager?',
+          'Why Choose AethrOps?',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -644,7 +640,7 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            '© 2025-2026 AWS Manager',
+            '© 2025-2026 AethrOps',
             style: TextStyle(
               fontSize: 13,
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),

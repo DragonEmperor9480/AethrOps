@@ -41,7 +41,7 @@ fi
 echo "✓ Flutter app built"
 
 # Rename binary to aws-manager
-mv awsmgr_ui/build/linux/x64/release/bundle/awsmgr awsmgr_ui/build/linux/x64/release/bundle/aws-manager
+mv awsmgr_ui/build/linux/x64/release/bundle/aethrops awsmgr_ui/build/linux/x64/release/bundle/aws-manager
 
 # Step 3: Copy backend to bundle
 echo ""

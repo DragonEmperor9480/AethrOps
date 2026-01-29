@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../screens/splash_screen.dart';
+import '../utils/toast_utils.dart';
 
 class AWSConfigDialog extends StatefulWidget {
   const AWSConfigDialog({super.key});
@@ -57,9 +58,7 @@ class _AWSConfigDialogState extends State<AWSConfigDialog> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   @override

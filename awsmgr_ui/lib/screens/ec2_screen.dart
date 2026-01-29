@@ -4,6 +4,7 @@ import '../widgets/loading_animation.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 import 'ec2_instance_details_screen.dart';
 import 'ec2_launch_screen.dart';
 
@@ -146,35 +147,11 @@ class _EC2ScreenState extends State<EC2Screen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.successGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   @override

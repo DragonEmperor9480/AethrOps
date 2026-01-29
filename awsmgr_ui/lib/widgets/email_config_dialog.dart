@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/email_config_service.dart';
+import '../utils/toast_utils.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
@@ -16,7 +17,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
   final _smtpPortController = TextEditingController(text: '587');
   final _senderEmailController = TextEditingController();
   final _senderPassController = TextEditingController();
-  final _senderNameController = TextEditingController(text: 'AWS Manager');
+  final _senderNameController = TextEditingController(text: 'AethrOps');
   bool _obscurePassword = true;
   bool _isSaveLoading = false;
   bool _isTestLoading = false;
@@ -35,7 +36,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
         _smtpPortController.text = (config['smtp_port'] ?? 587).toString();
         _senderEmailController.text = config['sender_email'] ?? '';
         _senderPassController.text = config['sender_pass'] ?? '';
-        _senderNameController.text = config['sender_name'] ?? 'AWS Manager';
+        _senderNameController.text = config['sender_name'] ?? 'AethrOps';
       });
     }
   }
@@ -58,11 +59,10 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save configuration: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ToastUtils.show(
+          context,
+          'Failed to save configuration: $e',
+          isError: true,
         );
       }
     } finally {
@@ -85,24 +85,18 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Test email sent successfully! Check your inbox.'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ToastUtils.show(
+          context,
+          'Test email sent successfully! Check your inbox.',
+          isError: false,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Test failed: ${e.toString().replaceAll("Exception: ", "")}',
-            ),
-            backgroundColor: AppTheme.errorRed,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ToastUtils.show(
+          context,
+          'Test failed: ${e.toString().replaceAll("Exception: ", "")}',
+          isError: true,
         );
       }
     } finally {
@@ -333,7 +327,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                         controller: _senderNameController,
                         decoration: InputDecoration(
                           labelText: 'Sender Name *',
-                          hintText: 'AWS Manager',
+                          hintText: 'AethrOps',
                           prefixIcon: const Icon(Icons.person),
                           prefixIconColor: AppTheme.primaryPurple,
                           border: OutlineInputBorder(
@@ -404,7 +398,11 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                               ),
                             )
                           : const Icon(Icons.send, size: 18),
-                      label: Text(_isTestLoading ? 'Sending...' : 'Test Email'),
+                      label: Text(
+                        _isTestLoading ? 'Sending...' : 'Test',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.primaryPurple,
                         side: const BorderSide(color: AppTheme.primaryPurple),

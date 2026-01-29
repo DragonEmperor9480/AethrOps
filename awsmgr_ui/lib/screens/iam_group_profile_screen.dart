@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class IAMGroupProfileScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -44,35 +45,11 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   Future<void> _showAttachPoliciesDialog() async {
@@ -676,12 +653,7 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load policies: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ToastUtils.show(context, 'Failed to load policies: $e', isError: true);
       }
     } finally {
       setState(() => _loading = false);
@@ -1022,12 +994,7 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load users: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ToastUtils.show(context, 'Failed to load users: $e', isError: true);
       }
     } finally {
       setState(() => _loading = false);

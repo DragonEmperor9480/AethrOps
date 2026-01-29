@@ -17,6 +17,7 @@ import '../services/email_config_service.dart';
 import '../services/aws_credentials_service.dart';
 import '../services/backend_service.dart';
 import '../utils/constants.dart';
+import '../utils/toast_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -211,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('To get the most out of AWS Manager, please configure:'),
+            const Text('To get the most out of AethrOps, please configure:'),
             const SizedBox(height: 16),
             ...missingItems.map(
               (item) => Padding(
@@ -275,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             Icon(Icons.exit_to_app_rounded, color: AppTheme.primaryPurple),
             const SizedBox(width: 12),
-            const Text('Exit AWS Manager?'),
+            const Text('Exit AethrOps?'),
           ],
         ),
         content: const Text(
@@ -321,26 +322,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _navigateToService(String route, bool comingSoon) {
     if (comingSoon) {
-      final theme = Theme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.info_outline, color: AppTheme.primaryPurple),
-              const SizedBox(width: 8),
-              const Text('This service is coming soon'),
-            ],
-          ),
-          backgroundColor: theme.cardColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: AppTheme.primaryPurple.withValues(alpha: 0.2),
-            ),
-          ),
-        ),
-      );
+      ToastUtils.show(context, 'This service is coming soon', isError: false);
       return;
     }
 

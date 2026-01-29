@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class EC2InstanceDetailsScreen extends StatefulWidget {
   final String instanceId;
@@ -17,7 +18,8 @@ class EC2InstanceDetailsScreen extends StatefulWidget {
   });
 
   @override
-  State<EC2InstanceDetailsScreen> createState() => _EC2InstanceDetailsScreenState();
+  State<EC2InstanceDetailsScreen> createState() =>
+      _EC2InstanceDetailsScreenState();
 }
 
 class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
@@ -54,45 +56,15 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label copied to clipboard'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    ToastUtils.show(context, '$label copied to clipboard', isError: false);
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.successGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   Future<void> _startInstance() async {
@@ -386,8 +358,8 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           _loading
               ? const LoadingAnimation(message: 'Loading instance details')
               : _error != null
-                  ? _buildErrorState()
-                  : _buildDetailsContent(),
+              ? _buildErrorState()
+              : _buildDetailsContent(),
           if (_operationInProgress)
             Container(
               color: Colors.black.withValues(alpha: 0.5),
@@ -422,7 +394,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           const SizedBox(height: 16),
           Text(
             'Failed to load instance details',
-            style: TextStyle(fontSize: 18, color: theme.textTheme.bodyLarge?.color),
+            style: TextStyle(
+              fontSize: 18,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
           ),
           const SizedBox(height: 8),
           Padding(
@@ -454,7 +429,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           // Header Section
           _buildHeaderSection(),
           const SizedBox(height: 8),
-          
+
           // Main Content
           Padding(
             padding: const EdgeInsets.all(16),
@@ -499,7 +474,8 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.instanceName.isEmpty || widget.instanceName == 'N/A'
+                      widget.instanceName.isEmpty ||
+                              widget.instanceName == 'N/A'
                           ? 'Unnamed Instance'
                           : widget.instanceName,
                       style: const TextStyle(
@@ -522,7 +498,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.copy, size: 16),
-                          onPressed: () => _copyToClipboard(widget.instanceId, 'Instance ID'),
+                          onPressed: () => _copyToClipboard(
+                            widget.instanceId,
+                            'Instance ID',
+                          ),
                           padding: const EdgeInsets.all(8),
                           constraints: const BoxConstraints(),
                           tooltip: 'Copy Instance ID',
@@ -533,7 +512,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: _stateColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -555,10 +537,22 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
             spacing: 16,
             runSpacing: 8,
             children: [
-              _buildQuickInfo(Icons.computer, _instanceDetails!['instance_type'] ?? 'N/A'),
-              _buildQuickInfo(Icons.architecture, _instanceDetails!['architecture'] ?? 'N/A'),
-              _buildQuickInfo(Icons.laptop_chromebook, _instanceDetails!['platform'] ?? 'N/A'),
-              _buildQuickInfo(Icons.access_time, _instanceDetails!['launch_time'] ?? 'N/A'),
+              _buildQuickInfo(
+                Icons.computer,
+                _instanceDetails!['instance_type'] ?? 'N/A',
+              ),
+              _buildQuickInfo(
+                Icons.architecture,
+                _instanceDetails!['architecture'] ?? 'N/A',
+              ),
+              _buildQuickInfo(
+                Icons.laptop_chromebook,
+                _instanceDetails!['platform'] ?? 'N/A',
+              ),
+              _buildQuickInfo(
+                Icons.access_time,
+                _instanceDetails!['launch_time'] ?? 'N/A',
+              ),
             ],
           ),
         ],
@@ -575,54 +569,61 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
         const SizedBox(width: 4),
         Text(
           text,
-          style: TextStyle(fontSize: 13, color: theme.textTheme.bodyLarge?.color),
+          style: TextStyle(
+            fontSize: 13,
+            color: theme.textTheme.bodyLarge?.color,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildOverviewSection() {
-    return _buildSection(
-      'Overview',
-      Icons.info_outline,
-      [
-        _buildDetailRow('Instance Type', _instanceDetails!['instance_type']),
-        _buildDetailRow('AMI ID', _instanceDetails!['image_id'], copyable: true),
-        _buildDetailRow('Key Pair', _instanceDetails!['key_name'] ?? 'None'),
-        _buildDetailRow('Availability Zone', _instanceDetails!['availability_zone']),
-        _buildDetailRow('Launch Time', _instanceDetails!['launch_time']),
-        _buildDetailRow('Monitoring', _instanceDetails!['monitoring_state']),
-        _buildDetailRow('Virtualization Type', _instanceDetails!['virtualization_type']),
-        if (_instanceDetails!['instance_lifecycle']?.toString().isNotEmpty == true)
-          _buildDetailRow('Lifecycle', _instanceDetails!['instance_lifecycle']),
-      ],
-    );
+    return _buildSection('Overview', Icons.info_outline, [
+      _buildDetailRow('Instance Type', _instanceDetails!['instance_type']),
+      _buildDetailRow('AMI ID', _instanceDetails!['image_id'], copyable: true),
+      _buildDetailRow('Key Pair', _instanceDetails!['key_name'] ?? 'None'),
+      _buildDetailRow(
+        'Availability Zone',
+        _instanceDetails!['availability_zone'],
+      ),
+      _buildDetailRow('Launch Time', _instanceDetails!['launch_time']),
+      _buildDetailRow('Monitoring', _instanceDetails!['monitoring_state']),
+      _buildDetailRow(
+        'Virtualization Type',
+        _instanceDetails!['virtualization_type'],
+      ),
+      if (_instanceDetails!['instance_lifecycle']?.toString().isNotEmpty ==
+          true)
+        _buildDetailRow('Lifecycle', _instanceDetails!['instance_lifecycle']),
+    ]);
   }
 
   Widget _buildNetworkSection() {
     final publicIp = _instanceDetails!['public_ip'] ?? 'None';
     final privateIp = _instanceDetails!['private_ip'] ?? 'None';
-    final interfaces = _instanceDetails!['network_interfaces'] as List<dynamic>? ?? [];
+    final interfaces =
+        _instanceDetails!['network_interfaces'] as List<dynamic>? ?? [];
 
-    return _buildSection(
-      'Network & Security',
-      Icons.public,
-      [
-        _buildDetailRow('VPC ID', _instanceDetails!['vpc_id'], copyable: true),
-        _buildDetailRow('Subnet ID', _instanceDetails!['subnet_id'], copyable: true),
-        _buildDetailRow('Public IP', publicIp, copyable: publicIp != 'None'),
-        _buildDetailRow('Private IP', privateIp, copyable: privateIp != 'None'),
-        if (interfaces.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          const Text(
-            'Network Interfaces',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          ...interfaces.map((ni) => _buildNetworkInterface(ni)),
-        ],
+    return _buildSection('Network & Security', Icons.public, [
+      _buildDetailRow('VPC ID', _instanceDetails!['vpc_id'], copyable: true),
+      _buildDetailRow(
+        'Subnet ID',
+        _instanceDetails!['subnet_id'],
+        copyable: true,
+      ),
+      _buildDetailRow('Public IP', publicIp, copyable: publicIp != 'None'),
+      _buildDetailRow('Private IP', privateIp, copyable: privateIp != 'None'),
+      if (interfaces.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        const Text(
+          'Network Interfaces',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        ...interfaces.map((ni) => _buildNetworkInterface(ni)),
       ],
-    );
+    ]);
   }
 
   Widget _buildNetworkInterface(Map<String, dynamic> ni) {
@@ -634,40 +635,50 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardBackgroundDark : AppTheme.backgroundLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
+        border: Border.all(
+          color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSubDetail('Interface ID', ni['network_interface_id'], copyable: true),
+          _buildSubDetail(
+            'Interface ID',
+            ni['network_interface_id'],
+            copyable: true,
+          ),
           _buildSubDetail('MAC Address', ni['mac_address']),
           _buildSubDetail('Private IP', ni['private_ip']),
-          if (ni['public_ip'] != null) _buildSubDetail('Public IP', ni['public_ip']),
+          if (ni['public_ip'] != null)
+            _buildSubDetail('Public IP', ni['public_ip']),
         ],
       ),
     );
   }
 
   Widget _buildStorageSection() {
-    final blockDevices = _instanceDetails!['block_devices'] as List<dynamic>? ?? [];
+    final blockDevices =
+        _instanceDetails!['block_devices'] as List<dynamic>? ?? [];
 
-    return _buildSection(
-      'Storage',
-      Icons.storage,
-      [
-        _buildDetailRow('Root Device Type', _instanceDetails!['root_device_type']),
-        _buildDetailRow('Root Device Name', _instanceDetails!['root_device_name']),
-        if (blockDevices.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          const Text(
-            'Block Devices',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          ...blockDevices.map((device) => _buildBlockDevice(device)),
-        ],
+    return _buildSection('Storage', Icons.storage, [
+      _buildDetailRow(
+        'Root Device Type',
+        _instanceDetails!['root_device_type'],
+      ),
+      _buildDetailRow(
+        'Root Device Name',
+        _instanceDetails!['root_device_name'],
+      ),
+      if (blockDevices.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        const Text(
+          'Block Devices',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        ...blockDevices.map((device) => _buildBlockDevice(device)),
       ],
-    );
+    ]);
   }
 
   Widget _buildBlockDevice(Map<String, dynamic> device) {
@@ -679,7 +690,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardBackgroundDark : AppTheme.backgroundLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
+        border: Border.all(
+          color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,7 +703,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
               const SizedBox(width: 6),
               Text(
                 device['device_name'] ?? 'Unknown',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -698,30 +714,35 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           _buildSubDetail('Volume ID', device['volume_id'], copyable: true),
           _buildSubDetail('Status', device['status']),
           _buildSubDetail('Attached', device['attach_time']),
-          _buildSubDetail('Delete on Termination', device['delete_on_termination'].toString()),
+          _buildSubDetail(
+            'Delete on Termination',
+            device['delete_on_termination'].toString(),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSecuritySection() {
-    final securityGroups = _instanceDetails!['security_groups'] as List<dynamic>? ?? [];
+    final securityGroups =
+        _instanceDetails!['security_groups'] as List<dynamic>? ?? [];
 
-    return _buildSection(
-      'Security',
-      Icons.security,
-      [
-        if (securityGroups.isNotEmpty) ...[
-          const Text(
-            'Security Groups',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+    return _buildSection('Security', Icons.security, [
+      if (securityGroups.isNotEmpty) ...[
+        const Text(
+          'Security Groups',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        ...securityGroups.map((sg) => _buildSecurityGroup(sg)),
+      ] else
+        Text(
+          'No security groups',
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
           ),
-          const SizedBox(height: 8),
-          ...securityGroups.map((sg) => _buildSecurityGroup(sg)),
-        ] else
-          Text('No security groups', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
-      ],
-    );
+        ),
+    ]);
   }
 
   Widget _buildSecurityGroup(Map<String, dynamic> sg) {
@@ -733,7 +754,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardBackgroundDark : AppTheme.backgroundLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
+        border: Border.all(
+          color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -748,21 +771,22 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   Widget _buildConfigurationSection() {
     final tags = _instanceDetails!['tags'] as Map<String, dynamic>? ?? {};
 
-    return _buildSection(
-      'Configuration',
-      Icons.settings,
-      [
-        if (tags.isNotEmpty) ...[
-          const Text(
-            'Tags',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+    return _buildSection('Configuration', Icons.settings, [
+      if (tags.isNotEmpty) ...[
+        const Text(
+          'Tags',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        ...tags.entries.map((tag) => _buildTag(tag.key, tag.value)),
+      ] else
+        Text(
+          'No tags',
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
           ),
-          const SizedBox(height: 8),
-          ...tags.entries.map((tag) => _buildTag(tag.key, tag.value)),
-        ] else
-          Text('No tags', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
-      ],
-    );
+        ),
+    ]);
   }
 
   Widget _buildTag(String key, String value) {
@@ -817,7 +841,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                    color: isDark
+                        ? AppTheme.textPrimaryDark
+                        : AppTheme.textPrimary,
                   ),
                 ),
               ],
@@ -835,7 +861,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   Widget _buildDetailRow(String label, dynamic value, {bool copyable = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayValue = value?.toString() ?? 'N/A';
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -846,7 +872,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
             child: Text(
               label,
               style: TextStyle(
-                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                color: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondary,
                 fontSize: 13,
               ),
             ),
@@ -860,7 +888,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                      color: isDark
+                          ? AppTheme.textPrimaryDark
+                          : AppTheme.textPrimary,
                     ),
                   ),
                 ),
@@ -869,7 +899,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
                     icon: Icon(
                       Icons.copy,
                       size: 14,
-                      color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                      color: isDark
+                          ? AppTheme.textMutedDark
+                          : AppTheme.textMuted,
                     ),
                     onPressed: () => _copyToClipboard(displayValue, label),
                     padding: const EdgeInsets.all(4),
@@ -887,7 +919,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
   Widget _buildSubDetail(String label, dynamic value, {bool copyable = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final displayValue = value?.toString() ?? 'N/A';
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -895,7 +927,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           Text(
             '$label: ',
             style: TextStyle(
-              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondary,
               fontSize: 12,
             ),
           ),

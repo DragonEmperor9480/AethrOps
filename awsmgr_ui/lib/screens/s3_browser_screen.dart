@@ -10,6 +10,7 @@ import '../widgets/progress_dialog.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class S3BrowserScreen extends StatefulWidget {
   final String bucketName;
@@ -132,6 +133,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   String _currentPrefix = '';
   bool _loading = false;
   String _searchQuery = '';
+  String _lastSearchText = '';
   SortOption _sortOption = SortOption.nameAsc;
   final TextEditingController _searchController = TextEditingController();
   
@@ -145,10 +147,49 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     super.initState();
     _loadItems();
     _loadVersioningStatus();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final text = _searchController.text;
+    
+    // Logic to detect if user is typing a path
+    if (text.contains('/')) {
+      final lastSlashIndex = text.lastIndexOf('/');
+      final newPrefix = text.substring(0, lastSlashIndex + 1);
+      final newQuery = text.substring(lastSlashIndex + 1);
+
+      if (_currentPrefix != newPrefix) {
+        setState(() {
+          _currentPrefix = newPrefix;
+          _searchQuery = newQuery;
+        });
+        _loadItems(keepSearch: true);
+      } else if (_searchQuery != newQuery) {
+        setState(() => _searchQuery = newQuery);
+        _filterAndSortItems();
+      }
+    } else {
+      // Logic to reset to root if user backspaces out of a path
+      if (_currentPrefix.isNotEmpty && _lastSearchText.contains('/')) {
+        setState(() {
+          _currentPrefix = '';
+          _searchQuery = text;
+        });
+        _loadItems(keepSearch: true);
+      } else {
+        if (_searchQuery != text) {
+          setState(() => _searchQuery = text);
+          _filterAndSortItems();
+        }
+      }
+    }
+    _lastSearchText = text;
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -227,23 +268,27 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     setState(() => _filteredItems = filtered);
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadItems({bool keepSearch = false}) async {
     setState(() => _loading = true);
     try {
       final items = await ApiService.listS3ItemsWithPrefix(
         widget.bucketName,
         _currentPrefix,
       );
+      if (!mounted) return;
       setState(() {
         _items = items;
-        _searchQuery = '';
-        _searchController.clear();
+        if (!keepSearch) {
+          _searchQuery = '';
+          _lastSearchText = '';
+          _searchController.clear();
+        }
       });
       _filterAndSortItems();
     } catch (e) {
-      _showError('Failed to load items: $e');
+      if (mounted) _showError('Failed to load items: $e');
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -458,36 +503,12 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   void _showSuccess(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.successGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   Future<void> _uploadFile() async {

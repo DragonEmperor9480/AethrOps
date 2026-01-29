@@ -5,6 +5,7 @@ import '../widgets/loading_animation.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 import 's3_browser_screen.dart';
 
 class S3Screen extends StatefulWidget {
@@ -87,35 +88,11 @@ class _S3ScreenState extends State<S3Screen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.successGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   Future<void> _createBucket() async {
@@ -594,35 +571,11 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorRed,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: true);
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.successGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   Future<void> _downloadObject(S3Object object) async {
