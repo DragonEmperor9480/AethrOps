@@ -1,4 +1,4 @@
-package com.amrut.awsmgr
+package com.amrut.aethrops
 
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -7,7 +7,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.amrut.awsmgr/media_scanner"
+    private val CHANNEL = "com.amrut.aethrops/media_scanner"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

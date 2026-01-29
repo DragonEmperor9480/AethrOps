@@ -7,7 +7,7 @@
 -keep class io.flutter.plugins.** { *; }
 
 #AethrOps specific
--keep class com.amrut.awsmgr.** { *; }
+-keep class com.amrut.aethrops.** { *; }
 
 # Keep native methods
 -keepclasseswithmembernames class * {

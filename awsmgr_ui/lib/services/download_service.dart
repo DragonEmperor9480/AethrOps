@@ -5,7 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Service for handling file downloads with proper permissions and MediaStore integration
 class DownloadService {
-  static const _mediaScanner = MethodChannel('com.amrut.awsmgr/media_scanner');
+  static const _mediaScanner = MethodChannel('com.amrut.aethrops/media_scanner');
 
   /// Request storage permissions on Android
   /// Returns true if permission is granted, false otherwise
