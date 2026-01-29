@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -74,12 +75,7 @@ class _AboutScreenState extends State<AboutScreen>
     } catch (e) {
       // If still fails, show error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open URL: $url'),
-            backgroundColor: AppTheme.errorRed,
-          ),
-        );
+        ToastUtils.show(context, 'Could not open URL: $url', isError: true);
       }
     }
   }

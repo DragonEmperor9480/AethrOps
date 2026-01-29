@@ -9,6 +9,7 @@ import '../widgets/email_config_dialog.dart';
 import '../widgets/mfa_device_dialog.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../utils/toast_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -133,12 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✓ Credentials deleted'),
-              backgroundColor: AppTheme.successGreen,
-            ),
-          );
+          ToastUtils.show(context, 'Credentials deleted', isError: false);
           
           // Navigate to credentials setup screen
           Navigator.of(context).pushAndRemoveUntil(
@@ -150,12 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete credentials: $e'),
-              backgroundColor: AppTheme.errorRed,
-            ),
-          );
+          ToastUtils.show(context, 'Failed to delete credentials: $e', isError: true);
         }
       }
     }
@@ -170,12 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (result == true) {
       _loadEmailConfigStatus();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Email configuration saved'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        ToastUtils.show(context, 'Email configuration saved', isError: false);
       }
     }
   }
@@ -212,21 +198,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✓ Email configuration deleted'),
-              backgroundColor: AppTheme.successGreen,
-            ),
-          );
+          ToastUtils.show(context, 'Email configuration deleted', isError: false);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete email configuration: $e'),
-              backgroundColor: AppTheme.errorRed,
-            ),
-          );
+          ToastUtils.show(context, 'Failed to delete email configuration: $e', isError: true);
         }
       }
     }
@@ -241,12 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (result == true) {
       _loadMFADeviceStatus();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ MFA device saved'),
-            backgroundColor: AppTheme.successGreen,
-          ),
-        );
+        ToastUtils.show(context, 'MFA device saved', isError: false);
       }
     }
   }
@@ -283,21 +254,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✓ MFA device deleted'),
-              backgroundColor: AppTheme.successGreen,
-            ),
-          );
+          ToastUtils.show(context, 'MFA device deleted', isError: false);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete MFA device: $e'),
-              backgroundColor: AppTheme.errorRed,
-            ),
-          );
+          ToastUtils.show(context, 'Failed to delete MFA device: $e', isError: true);
         }
       }
     }

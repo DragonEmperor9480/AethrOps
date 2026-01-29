@@ -7,6 +7,7 @@ import '../widgets/aws_config_dialog.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../widgets/list_header_with_search.dart';
+import '../utils/toast_utils.dart';
 import 'iam_user_profile_screen.dart';
 import 'iam_group_profile_screen.dart';
 
@@ -76,36 +77,12 @@ class _IAMScreenState extends State<IAMScreen> with TickerProviderStateMixin {
     if (message.contains('AWS credentials not configured')) {
       _showAWSConfigDialog();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      ToastUtils.show(context, message, isError: true);
     }
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   Future<void> _showAWSConfigDialog() async {
@@ -2047,19 +2024,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     final hasConfig = await EmailConfigService.hasEmailConfig();
     if (!hasConfig) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please configure email settings first'),
-            backgroundColor: AppTheme.warningAmber,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            action: SnackBarAction(
-              label: 'Settings',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
-          ),
-        );
+        ToastUtils.show(context, 'Please configure email settings first', isError: true);
       }
       return;
     }
@@ -2212,31 +2177,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
-                const SizedBox(width: 8),
-                Text('Credentials sent to $email'),
-              ],
-            ),
-            backgroundColor: AppTheme.successGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
+        ToastUtils.show(context, 'Credentials sent to $email', isError: false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send email: $e'),
-            backgroundColor: AppTheme.errorRed,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
+        ToastUtils.show(context, 'Failed to send email: $e', isError: true);
       }
     } finally {
       setState(() => _sending = false);
@@ -2262,39 +2207,13 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     final content = buffer.toString();
     Clipboard.setData(ClipboardData(text: content));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white),
-            SizedBox(width: 8),
-            Text('All credentials copied to clipboard!'),
-          ],
-        ),
-        backgroundColor: AppTheme.successGreen,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ToastUtils.show(context, 'All credentials copied to clipboard!', isError: false);
   }
 
   void _copyToClipboard(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text('$label copied to clipboard'),
-          ],
-        ),
-        backgroundColor: Colors.black87,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    ToastUtils.show(context, '$label copied to clipboard', isError: false);
   }
 
   Widget _buildCredentialField({

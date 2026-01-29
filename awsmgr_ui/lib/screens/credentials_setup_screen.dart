@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/aws_credentials_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/credentials_tutorial_dialog.dart';
+import '../utils/toast_utils.dart';
 import 'splash_screen.dart';
 
 
@@ -56,12 +57,7 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save credentials: $e'),
-            backgroundColor: AppTheme.errorRed,
-          ),
-        );
+        ToastUtils.show(context, 'Failed to save credentials: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);

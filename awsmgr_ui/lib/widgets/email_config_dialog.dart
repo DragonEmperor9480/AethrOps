@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/email_config_service.dart';
+import '../utils/toast_utils.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
@@ -58,11 +59,10 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save configuration: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ToastUtils.show(
+          context,
+          'Failed to save configuration: $e',
+          isError: true,
         );
       }
     } finally {
@@ -85,24 +85,18 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Test email sent successfully! Check your inbox.'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ToastUtils.show(
+          context,
+          'Test email sent successfully! Check your inbox.',
+          isError: false,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Test failed: ${e.toString().replaceAll("Exception: ", "")}',
-            ),
-            backgroundColor: AppTheme.errorRed,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ToastUtils.show(
+          context,
+          'Test failed: ${e.toString().replaceAll("Exception: ", "")}',
+          isError: true,
         );
       }
     } finally {
