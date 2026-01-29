@@ -16,7 +16,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
   final _smtpPortController = TextEditingController(text: '587');
   final _senderEmailController = TextEditingController();
   final _senderPassController = TextEditingController();
-  final _senderNameController = TextEditingController(text: 'AWS Manager');
+  final _senderNameController = TextEditingController(text: 'AethrOps');
   bool _obscurePassword = true;
   bool _isSaveLoading = false;
   bool _isTestLoading = false;
@@ -35,7 +35,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
         _smtpPortController.text = (config['smtp_port'] ?? 587).toString();
         _senderEmailController.text = config['sender_email'] ?? '';
         _senderPassController.text = config['sender_pass'] ?? '';
-        _senderNameController.text = config['sender_name'] ?? 'AWS Manager';
+        _senderNameController.text = config['sender_name'] ?? 'AethrOps';
       });
     }
   }
@@ -333,7 +333,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                         controller: _senderNameController,
                         decoration: InputDecoration(
                           labelText: 'Sender Name *',
-                          hintText: 'AWS Manager',
+                          hintText: 'AethrOps',
                           prefixIcon: const Icon(Icons.person),
                           prefixIconColor: AppTheme.primaryPurple,
                           border: OutlineInputBorder(

@@ -211,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('To get the most out of AWS Manager, please configure:'),
+            const Text('To get the most out of AethrOps, please configure:'),
             const SizedBox(height: 16),
             ...missingItems.map(
               (item) => Padding(
@@ -275,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             Icon(Icons.exit_to_app_rounded, color: AppTheme.primaryPurple),
             const SizedBox(width: 12),
-            const Text('Exit AWS Manager?'),
+            const Text('Exit AethrOps?'),
           ],
         ),
         content: const Text(

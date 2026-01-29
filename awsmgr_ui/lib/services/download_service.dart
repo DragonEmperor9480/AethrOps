@@ -140,6 +140,6 @@ class DownloadService {
   /// Get error message for permission denial
   static String getPermissionDeniedMessage() {
     return 'Storage permission required. Please grant "All files access" in:\n'
-        'Settings > Apps > AWS Manager > Permissions';
+        'Settings > Apps > AethrOps > Permissions';
   }
 }

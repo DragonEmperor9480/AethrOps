@@ -127,7 +127,7 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                       
                       // Title
                       Text(
-                        'Welcome to AWS Manager',
+                        'Welcome to AethrOps',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,

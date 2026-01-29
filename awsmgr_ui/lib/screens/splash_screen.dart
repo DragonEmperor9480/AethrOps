@@ -193,7 +193,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
               // App Name
               Text(
-                'AWS Manager',
+                'AethrOps',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,

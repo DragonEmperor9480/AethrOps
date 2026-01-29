@@ -790,7 +790,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'About AWS Manager',
+                    'About AethrOps',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
