@@ -14,11 +14,13 @@ jobs:
   build_init_notification:
     name: Build Init Notification
     uses: ./.github/workflows/notify-build-init.yml
+    secrets: inherit
     
   android:
     name: AetherOpsAndroid Build
     needs: build_init_notification
     uses: ./.github/workflows/build-android.yml
+    secrets: inherit
 
   windows:
     name: Windows Build
