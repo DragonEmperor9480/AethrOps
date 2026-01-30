@@ -1,0 +1,50 @@
+name: "AetherBuild"
+description: "An Automated Pipelline WHich Builds all the applications, releases them and updates the website + Linkedin Post"
+
+permissions:
+  contents: write
+
+on:
+    push:
+        branches:
+            - github-actions
+
+jobs:
+
+  build_init_notification:
+    name: Build Init Notification
+    uses: ./.github/workflows/notify/build-init-notify.yml
+    
+  android:
+    name: AetherOpsAndroid Build
+    uses: ./.github/workflows/build/build-android.yml
+
+  windows:
+    name: Windows Build
+    uses: ./.github/workflows/build/build-windows.yml
+
+  linux:
+    name: Linux Build
+    uses: ./.github/workflows/build/build-linux-appimage.yml
+
+  build_summary_notification:
+    name: Build Summary Notification
+    if: always()
+    needs: [android, windows, linux]
+    uses: ./.github/workflows/notify/build-summary-notification.yml
+    secrets: inherit
+    with:
+      android_status: ${{ needs.android.result }}
+      windows_status: ${{ needs.windows.result }}
+      linux_status: ${{ needs.linux.result }}
+
+
+
+
+
+              
+
+
+
+
+

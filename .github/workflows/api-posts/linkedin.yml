@@ -1,0 +1,51 @@
+name: AethrOps Linkedin Post
+
+on:
+    workflow_call:
+jobs:
+    linkedin_post:
+      name: Post Release to LinkedIn
+      runs-on: ubuntu-latest
+      needs: release
+      if: success()
+
+      steps:
+        - name: Post to LinkedIn
+          shell: bash
+          run: |
+            AUTHOR_URN="${{ secrets.LINKEDIN_AUTHOR_URN }}"
+
+            MESSAGE=$(cat <<EOF
+            AWS Manager – CI TEST
+
+            Android (APK – all architectures)
+            Windows (Installer)
+            Linux (AppImage)
+
+            🔗 Download:
+            https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
+
+            #AWS #DevOps #Flutter #GoLang #OpenSource
+            EOF
+            )
+
+            curl -X POST "https://api.linkedin.com/v2/ugcPosts" \
+              -H "Authorization: Bearer ${{ secrets.LINKEDIN_ACCESS_TOKEN }}" \
+              -H "X-Restli-Protocol-Version: 2.0.0" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n \
+                --arg author "$AUTHOR_URN" \
+                --arg text "$MESSAGE" \
+                '{
+                  author: $author,
+                  lifecycleState: "PUBLISHED",
+                  specificContent: {
+                    "com.linkedin.ugc.ShareContent": {
+                      shareCommentary: { text: $text },
+                      shareMediaCategory: "NONE"
+                    }
+                  },
+                  visibility: {
+                    "com.linkedin.ugc.MemberNetworkVisibility": "CONNECTIONS"
+                  }
+                }')"
