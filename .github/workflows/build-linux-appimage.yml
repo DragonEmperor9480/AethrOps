@@ -9,7 +9,7 @@ jobs:
     if: success()
 
     env:
-      APP_NAME: AetherOps
+      APP_NAME: AethrOps
       VERSION: preview-beta-1
 
     steps:
@@ -118,5 +118,5 @@ jobs:
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: AetherOps-linux-appimage
+          name: AethrOps-linux-appimage
           path: release/linux/*.AppImage

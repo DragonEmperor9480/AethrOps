@@ -53,50 +53,50 @@ jobs:
               '{
                 version: $version,
                 releaseDate: $date,
-                releaseNotes: ("https://github.com/DragonEmperor9480/AetherOps/releases/tag/" + $tag),
+                releaseNotes: ("https://github.com/DragonEmperor9480/AethrOps/releases/tag/" + $tag),
                 platforms: {
                   android: {
                     version: $version,
                     status: "available",
-                    downloadUrl: ("https://github.com/DragonEmperor9480/AetherOps/releases/tag/" + $tag),
+                    downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/tag/" + $tag),
                     files: [
                       {
                         name: "ARM64 (Modern phones)",
-                        url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps-" + $tag + "-arm64-v8a.apk")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-" + $tag + "-arm64-v8a.apk")
                       },
                       {
                         name: "ARM32 (Older phones)",
-                        url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps-" + $tag + "-armeabi-v7a.apk")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-" + $tag + "-armeabi-v7a.apk")
                       },
                       {
                         name: "x86_64 (Emulators)",
-                        url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps-" + $tag + "-x86_64.apk")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-" + $tag + "-x86_64.apk")
                       }
                     ]
                   },
                   linux: {
                     version: $version,
                     status: "available",
-                    downloadUrl: ("https://github.com/DragonEmperor9480/AetherOps/releases/tag/" + $tag),
+                    downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/tag/" + $tag),
                     files: [
                       {
                         name: "AppImage",
-                        url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps-" + $version + "-x86_64.AppImage")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-" + $version + "-x86_64.AppImage")
                       },
                       {
                         name: "DEB",
-                        url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps_0.0.0-" + ($version | gsub(" "; "-")) + "_amd64.deb")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps_0.0.0-" + ($version | gsub(" "; "-")) + "_amd64.deb")
                       }
                     ]
                   },
                   windows: {
                     version: $version,
                     status: "available",
-                    downloadUrl: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps-setup-" + $version + ".exe"),
+                    downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-setup-" + $version + ".exe"),
                     files: [
                       {
                         name: "Installer (.exe)",
-                        url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/AetherOps-setup-" + $version + ".exe")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-setup-" + $version + ".exe")
                       }
                     ]
                   },

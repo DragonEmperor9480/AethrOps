@@ -1,4 +1,4 @@
-name: "AetherBuild"
+name: "AethrBuild"
 description: "An Automated Pipelline WHich Builds all the applications, releases them and updates the website + Linkedin Post"
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
     secrets: inherit
     
   android:
-    name: AetherOps Android Build
+    name: AethrOps Android Build
     needs: build_init_notification
     if: success()
     uses: ./.github/workflows/build-android.yml

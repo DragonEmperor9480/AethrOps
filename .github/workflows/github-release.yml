@@ -10,7 +10,7 @@ jobs:
 
       env:
         RELEASE_TAG: preview-beta-2
-        RELEASE_NAME: "AetherOps Preview Beta 2(CI TEST)"
+        RELEASE_NAME: "AethrOps Preview Beta 2(CI TEST)"
       steps:
         - name: Checkout repository
           uses: actions/checkout@v4
@@ -18,19 +18,19 @@ jobs:
         - name: Download Android Artifacts
           uses: actions/download-artifact@v4
           with:
-            name: AetherOps-android-release
+            name: AethrOps-android-release
             path: release/android
           
         - name: Download Windows Artifacts
           uses: actions/download-artifact@v4
           with:
-            name: AetherOps-windows-build
+            name: AethrOps-windows-build
             path: release/windows
         
         - name: Download Linux Artifacts
           uses: actions/download-artifact@v4
           with:
-            name: AetherOps-linux-appimage
+            name: AethrOps-linux-appimage
             path: release/linux
           
         - name: Create GitHub Release
