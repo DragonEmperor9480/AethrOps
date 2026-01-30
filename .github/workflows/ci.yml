@@ -171,13 +171,13 @@ jobs:
                 mkdir -p "$RELEASE_DIR"
 
                 cp "$APK_DIR/app-arm64-v8a-release.apk" \
-                   "$RELEASE_DIR/aws-manager-preview-beta-1-arm64-v8a.apk"
+                   "$RELEASE_DIR/AetherOps-preview-beta-1-arm64-v8a.apk"
 
                 cp "$APK_DIR/app-armeabi-v7a-release.apk" \
-                   "$RELEASE_DIR/aws-manager-preview-beta-1-armeabi-v7a.apk"
+                   "$RELEASE_DIR/AetherOps-preview-beta-1-armeabi-v7a.apk"
 
                 cp "$APK_DIR/app-x86_64-release.apk" \
-                   "$RELEASE_DIR/aws-manager-preview-beta-1-x86_64.apk"
+                   "$RELEASE_DIR/AetherOps-preview-beta-1-x86_64.apk"
 
                 cd "$RELEASE_DIR"
                 sha256sum *.apk > checksums-sha256.txt
@@ -196,7 +196,7 @@ jobs:
       if: success()
 
       env:
-        APP_NAME: aws-manager
+        APP_NAME: AetherOps
         VERSION: preview-beta-1
 
       steps:
@@ -252,7 +252,7 @@ jobs:
             cp -r awsmgr_ui/build/linux/x64/release/bundle/* "$APPDIR/"
             cp backend/awsmgr_backend "$APPDIR/"
             chmod +x "$APPDIR/awsmgr_backend"
-            mv "$APPDIR/awsmgr" "$APPDIR/aws-manager"
+            mv "$APPDIR/aetherops" "$APPDIR/aws-manager"
 
         - name: Create AppRun
           run: |
@@ -337,47 +337,47 @@ jobs:
             --data-urlencode text="$MESSAGE"
 
       
-    release: 
-      name: Github Release
-      runs-on: ubuntu-latest
-      needs: build_summary_notification
-      if: success()
+    # release: 
+    #   name: Github Release
+    #   runs-on: ubuntu-latest
+    #   needs: build_summary_notification
+    #   if: success()
 
-      env:
-        RELEASE_TAG: preview-beta-2
-        RELEASE_NAME: "AWS Manager Preview Beta 2(CI TEST)"
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+    #   env:
+    #     RELEASE_TAG: preview-beta-2
+    #     RELEASE_NAME: "AetherOps Preview Beta 2(CI TEST)"
+    #   steps:
+    #     - name: Checkout repository
+    #       uses: actions/checkout@v4
 
-        - name: Download Android Artifacts
-          uses: actions/download-artifact@v4
-          with:
-            name: aws-manager-android-release
-            path: release/android
+    #     - name: Download Android Artifacts
+    #       uses: actions/download-artifact@v4
+    #       with:
+    #         name: aws-manager-android-release
+    #         path: release/android
           
-        - name: Download Windows Artifacts
-          uses: actions/download-artifact@v4
-          with:
-            name: aws_manager-windows-build
-            path: release/windows
+    #     - name: Download Windows Artifacts
+    #       uses: actions/download-artifact@v4
+    #       with:
+    #         name: aws_manager-windows-build
+    #         path: release/windows
         
-        - name: Download Linux Artifacts
-          uses: actions/download-artifact@v4
-          with:
-            name: aws-manager-linux-appimage
-            path: release/linux
+    #     - name: Download Linux Artifacts
+    #       uses: actions/download-artifact@v4
+    #       with:
+    #         name: aws-manager-linux-appimage
+    #         path: release/linux
           
-        - name: Create GitHub Release
-          uses: softprops/action-gh-release@v2
-          with:
-            tag_name: ${{ env.RELEASE_TAG }}
-            name: ${{ env.RELEASE_NAME }}
-            body_path: RELEASE_NOTES.md
-            files: |
-              release/android/*.apk
-              release/windows/*.exe
-              release/linux/*.AppImage
+    #     - name: Create GitHub Release
+    #       uses: softprops/action-gh-release@v2
+    #       with:
+    #         tag_name: ${{ env.RELEASE_TAG }}
+    #         name: ${{ env.RELEASE_NAME }}
+    #         body_path: RELEASE_NOTES.md
+    #         files: |
+    #           release/android/*.apk
+    #           release/windows/*.exe
+    #           release/linux/*.AppImage
               
     # Website_Update:
     #   name: Update Version in Website
@@ -431,50 +431,50 @@ jobs:
     #           '{
     #             version: $version,
     #             releaseDate: $date,
-    #             releaseNotes: ("https://github.com/DragonEmperor9480/aws-manager/releases/tag/" + $tag),
+    #             releaseNotes: ("https://github.com/DragonEmperor9480/AetherOps/releases/tag/" + $tag),
     #             platforms: {
     #               android: {
     #                 version: $version,
     #                 status: "available",
-    #                 downloadUrl: ("https://github.com/DragonEmperor9480/aws-manager/releases/tag/" + $tag),
+    #                 downloadUrl: ("https://github.com/DragonEmperor9480/AetherOps/releases/tag/" + $tag),
     #                 files: [
     #                   {
     #                     name: "ARM64 (Modern phones)",
-    #                     url: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager-" + $tag + "-arm64-v8a.apk")
+    #                     url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager-" + $tag + "-arm64-v8a.apk")
     #                   },
     #                   {
     #                     name: "ARM32 (Older phones)",
-    #                     url: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager-" + $tag + "-armeabi-v7a.apk")
+    #                     url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager-" + $tag + "-armeabi-v7a.apk")
     #                   },
     #                   {
     #                     name: "x86_64 (Emulators)",
-    #                     url: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager-" + $tag + "-x86_64.apk")
+    #                     url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager-" + $tag + "-x86_64.apk")
     #                   }
     #                 ]
     #               },
     #               linux: {
     #                 version: $version,
     #                 status: "available",
-    #                 downloadUrl: ("https://github.com/DragonEmperor9480/aws-manager/releases/tag/" + $tag),
+    #                 downloadUrl: ("https://github.com/DragonEmperor9480/AetherOps/releases/tag/" + $tag),
     #                 files: [
     #                   {
     #                     name: "AppImage",
-    #                     url: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager-" + $version + "-x86_64.AppImage")
+    #                     url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager-" + $version + "-x86_64.AppImage")
     #                   },
     #                   {
     #                     name: "DEB",
-    #                     url: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager_0.0.0-" + ($version | gsub(" "; "-")) + "_amd64.deb")
+    #                     url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager_0.0.0-" + ($version | gsub(" "; "-")) + "_amd64.deb")
     #                   }
     #                 ]
     #               },
     #               windows: {
     #                 version: $version,
     #                 status: "available",
-    #                 downloadUrl: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager-setup-" + $version + ".exe"),
+    #                 downloadUrl: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager-setup-" + $version + ".exe"),
     #                 files: [
     #                   {
     #                     name: "Installer (.exe)",
-    #                     url: ("https://github.com/DragonEmperor9480/aws-manager/releases/download/" + $tag + "/aws-manager-setup-" + $version + ".exe")
+    #                     url: ("https://github.com/DragonEmperor9480/AetherOps/releases/download/" + $tag + "/aws-manager-setup-" + $version + ".exe")
     #                   }
     #                 ]
     #               },
