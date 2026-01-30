@@ -24,7 +24,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 ; Output settings
 OutputDir=..\..\release\windows
-OutputBaseFilename=aws-manager-setup-{#MyAppVersion}
+OutputBaseFilename=AethrOps-setup-{#MyAppVersion}
 ; Installer settings
 SetupIconFile=..\..\awsmgr_ui\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64

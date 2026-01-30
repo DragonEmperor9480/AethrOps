@@ -9,18 +9,12 @@ REM Change to project root (parent of scripts directory)
 cd /d "%~dp0\.."
 set PROJECT_ROOT=%cd%
 
-REM Fetch version from GitHub version.json
-echo Fetching version from GitHub...
-for /f "tokens=*" %%i in ('powershell -Command "try { $json = Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json' -TimeoutSec 10; $json.windows.version } catch { '' }"') do set VERSION=%%i
+REM Read version from local version.json (windows key) and normalize (lowercase + spaces to dashes)
+echo Reading version from version.json...
+for /f "tokens=*" %%i in ('powershell -Command "try { $v = (Get-Content 'version.json' | ConvertFrom-Json).windows.version; $v.ToLower().Replace(' ', '-') } catch { '' }"') do set VERSION=%%i
 
-REM Fallback to local version.json if GitHub fetch fails
-if "%VERSION%"=="" (
-    echo GitHub fetch failed, trying local version.json...
-    for /f "tokens=*" %%i in ('powershell -Command "try { $json = Get-Content 'version.json' | ConvertFrom-Json; $json.windows.version } catch { '' }"') do set VERSION=%%i
-)
-
-REM Final fallback
-if "%VERSION%"=="" set VERSION=Preview Beta 1
+REM Fallback if version.json read fails
+if "%VERSION%"=="" set VERSION=preview-beta-1
 
 echo Version: %VERSION%
 echo.
@@ -136,8 +130,8 @@ echo ==========================================
 echo.
 echo Build outputs in: release\windows\
 echo.
-if exist "%RELEASE_DIR%\aws-manager-setup-%VERSION%.exe" (
-    echo   Installer: aws-manager-setup-%VERSION%.exe
+if exist "%RELEASE_DIR%\AethrOps-setup-%VERSION%.exe" (
+    echo   Installer: AethrOps-setup-%VERSION%.exe
     echo.
     echo Users can run the installer to:
     echo   - Install to Program Files
@@ -145,8 +139,8 @@ if exist "%RELEASE_DIR%\aws-manager-setup-%VERSION%.exe" (
     echo   - Create Desktop shortcut (optional)
     echo   - Add uninstaller to Control Panel
 )
-if exist "%RELEASE_DIR%\aws-manager-%VERSION%-windows-x64.zip" (
-    echo   Portable: aws-manager-%VERSION%-windows-x64.zip
+if exist "%RELEASE_DIR%\AethrOps-%VERSION%-windows-x64.zip" (
+    echo   Portable: AethrOps-%VERSION%-windows-x64.zip
 )
 echo.
 pause

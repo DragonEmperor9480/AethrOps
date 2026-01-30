@@ -10,10 +10,19 @@ jobs:
 
     env:
       APP_NAME: AethrOps
-      VERSION: preview-beta-1
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure jq is installed
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Read version from version.json
+        id: version
+        run: |
+          # Read version and normalize (lowercase + spaces to dashes)
+          VERSION=$(jq -r '.linux.version' version.json | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - uses: actions/setup-java@v4
         with:
@@ -110,9 +119,9 @@ jobs:
           ./appimagetool.AppImage \
             --appimage-extract-and-run \
             aws-manager.AppDir \
-            aws-manager-${VERSION}-x86_64.AppImage
+            AethrOps-${VERSION}-x86_64.AppImage
 
-          mv aws-manager-${VERSION}-x86_64.AppImage \
+          mv AethrOps-${VERSION}-x86_64.AppImage \
             "$GITHUB_WORKSPACE/release/linux/"
 
       - name: Upload AppImage

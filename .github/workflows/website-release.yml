@@ -14,24 +14,36 @@ jobs:
         - name: Ensure jq is installed
           run: sudo apt-get update && sudo apt-get install -y jq
 
-        - name: Read release version
+        - name: Read release versions
           id: version
           shell: bash
           run: |
+            # Read website version for display
             VERSION=$(jq -r '.website.version' version.json | xargs)
-
             if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
               echo "❌ website.version is empty. Aborting."
               exit 1
             fi
 
-              echo "Release version: $VERSION"
+            # Derive release tag from website version (normalize: lowercase + spaces to hyphens)
+            RELEASE_TAG=$(echo "$VERSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 
-              # Normalize for tags (Preview Beta 2 → preview-beta-2)
-              TAG=$(echo "$VERSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            # Read platform-specific versions
+            ANDROID_VERSION=$(jq -r '.android.version' version.json | xargs)
+            LINUX_VERSION=$(jq -r '.linux.version' version.json | xargs)
+            WINDOWS_VERSION=$(jq -r '.windows.version' version.json | xargs)
 
-              echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
-              echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+            echo "Website version: $VERSION"
+            echo "Release tag: $RELEASE_TAG"
+            echo "Android version: $ANDROID_VERSION"
+            echo "Linux version: $LINUX_VERSION"
+            echo "Windows version: $WINDOWS_VERSION"
+
+            echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+            echo "ANDROID_VERSION=$ANDROID_VERSION" >> $GITHUB_ENV
+            echo "LINUX_VERSION=$LINUX_VERSION" >> $GITHUB_ENV
+            echo "WINDOWS_VERSION=$WINDOWS_VERSION" >> $GITHUB_ENV
 
         - name: Clone website repository
           run: |
@@ -50,13 +62,16 @@ jobs:
               --arg version "$RELEASE_VERSION" \
               --arg tag "$RELEASE_TAG" \
               --arg date "$RELEASE_DATE" \
+              --arg android_ver "$ANDROID_VERSION" \
+              --arg linux_ver "$LINUX_VERSION" \
+              --arg windows_ver "$WINDOWS_VERSION" \
               '{
                 version: $version,
                 releaseDate: $date,
                 releaseNotes: ("https://github.com/DragonEmperor9480/AethrOps/releases/tag/" + $tag),
                 platforms: {
                   android: {
-                    version: $version,
+                    version: $android_ver,
                     status: "available",
                     downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/tag/" + $tag),
                     files: [
@@ -75,28 +90,28 @@ jobs:
                     ]
                   },
                   linux: {
-                    version: $version,
+                    version: $linux_ver,
                     status: "available",
                     downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/tag/" + $tag),
                     files: [
                       {
                         name: "AppImage",
-                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-" + $version + "-x86_64.AppImage")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-" + $tag + "-x86_64.AppImage")
                       },
                       {
                         name: "DEB",
-                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps_0.0.0-" + ($version | gsub(" "; "-")) + "_amd64.deb")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps_0.0.0-" + $tag + "_amd64.deb")
                       }
                     ]
                   },
                   windows: {
-                    version: $version,
+                    version: $windows_ver,
                     status: "available",
-                    downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-setup-" + $version + ".exe"),
+                    downloadUrl: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-setup-" + $tag + ".exe"),
                     files: [
                       {
                         name: "Installer (.exe)",
-                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-setup-" + $version + ".exe")
+                        url: ("https://github.com/DragonEmperor9480/AethrOps/releases/download/" + $tag + "/AethrOps-setup-" + $tag + ".exe")
                       }
                     ]
                   },
