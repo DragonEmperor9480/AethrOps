@@ -2,7 +2,8 @@
 ; This script creates a Windows installer for AethrOps
 
 #define MyAppName "AethrOps"
-#define MyAppVersion "Preview Beta 1"
+#define MyAppVersion "Preview Beta 2"
+#define MyAppVersionTag "preview-beta-2"
 #define MyAppNumericVersion "0.1.0"
 #define MyAppPublisher "DragonEmperor9480"
 #define MyAppURL "https://github.com/DragonEmperor9480/aws-manager"
@@ -24,7 +25,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 ; Output settings
 OutputDir=..\..\release\windows
-OutputBaseFilename=AethrOps-setup-{#MyAppVersion}
+OutputBaseFilename=AethrOps-setup-{#MyAppVersionTag}
 ; Installer settings
 SetupIconFile=..\..\awsmgr_ui\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64

@@ -9,14 +9,21 @@ REM Change to project root (parent of scripts directory)
 cd /d "%~dp0\.."
 set PROJECT_ROOT=%cd%
 
-REM Read version from local version.json (windows key) and normalize (lowercase + spaces to dashes)
+REM Read version from local version.json (windows key)
 echo Reading version from version.json...
+
+REM Get display version (e.g., "Preview Beta 2")
+for /f "tokens=*" %%i in ('powershell -Command "try { (Get-Content 'version.json' | ConvertFrom-Json).windows.version } catch { '' }"') do set VERSION_DISPLAY=%%i
+
+REM Get normalized version for filenames (e.g., "preview-beta-2")
 for /f "tokens=*" %%i in ('powershell -Command "try { $v = (Get-Content 'version.json' | ConvertFrom-Json).windows.version; $v.ToLower().Replace(' ', '-') } catch { '' }"') do set VERSION=%%i
 
 REM Fallback if version.json read fails
+if "%VERSION_DISPLAY%"=="" set VERSION_DISPLAY=Preview Beta 1
 if "%VERSION%"=="" set VERSION=preview-beta-1
 
-echo Version: %VERSION%
+echo Display Version: %VERSION_DISPLAY%
+echo Tag Version: %VERSION%
 echo.
 
 echo Step 1: Building Go backend executable...
@@ -63,8 +70,8 @@ if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
 
 echo.
 echo Step 5: Updating version in Inno Setup script...
-REM Update display version (MyAppVersion) - keeps numeric version (MyAppNumericVersion) unchanged
-powershell -Command "$content = Get-Content 'scripts\installer\windows_setup.iss' -Raw; $content = $content -replace '(?m)^#define MyAppVersion \"[^\"]*\"', '#define MyAppVersion \"%VERSION%\"'; Set-Content 'scripts\installer\windows_setup.iss' -Value $content -NoNewline"
+REM Update display version (MyAppVersion) and tag version (MyAppVersionTag)
+powershell -Command "$content = Get-Content 'scripts\installer\windows_setup.iss' -Raw; $content = $content -replace '(?m)^#define MyAppVersion \"[^\"]*\"', '#define MyAppVersion \"%VERSION_DISPLAY%\"'; $content = $content -replace '(?m)^#define MyAppVersionTag \"[^\"]*\"', '#define MyAppVersionTag \"%VERSION%\"'; Set-Content 'scripts\installer\windows_setup.iss' -Value $content -NoNewline"
 
 echo.
 echo Step 6: Building installer with Inno Setup...
