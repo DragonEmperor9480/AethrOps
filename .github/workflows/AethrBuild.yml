@@ -19,17 +19,20 @@ jobs:
   android:
     name: AetherOps Android Build
     needs: build_init_notification
+    if: success()
     uses: ./.github/workflows/build-android.yml
     secrets: inherit
 
   windows:
     name: Aethrops Windows Build
     needs: build_init_notification
+    if: success()
     uses: ./.github/workflows/build-windows.yml
 
   linux:
     name: Aethrops Linux AppImage Build
     needs: build_init_notification
+    if: success()
     uses: ./.github/workflows/build-linux-appimage.yml
 
   build_summary_notification:
@@ -42,6 +45,14 @@ jobs:
       android_status: ${{ needs.android.result }}
       windows_status: ${{ needs.windows.result }}
       linux_status: ${{ needs.linux.result }}
+
+  release:
+    name: Github Release
+    needs: build_summary_notification
+    if: success()
+    uses: ./.github/workflows/github-release.yml
+    
+
 
 
 

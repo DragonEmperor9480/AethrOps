@@ -108,5 +108,5 @@ jobs:
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: aws-manager-android-release
+          name: AetherOps-android-release
           path: release/android/

@@ -37,5 +37,5 @@ jobs:
       - name: Upload Windows Build
         uses: actions/upload-artifact@v4
         with:
-          name: aws_manager-windows-build
+          name: AetherOps-windows-build
           path: release/windows/
