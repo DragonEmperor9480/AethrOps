@@ -1,43 +1,41 @@
 name: AethrOps Windows Build
 
 on:
-    workflow_call:
+  workflow_call:
 
 jobs:
-    windows:
-        runs-on: windows-latest
-        if: success()
+  build:
+    runs-on: windows-latest
+    if: success()
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-            
-            - name: Setup Java
-              uses: actions/setup-java@v4
-              with:
-                java-version: '17'
-                distribution: 'oracle'
-            - name: Setup Flutter
-              uses: subosito/flutter-action@v2
-              with:
-                channel: 'stable'
-            
-            - name: Enable Windows Desktop
-              run: flutter config --enable-windows-desktop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Install Inno Setup
-              shell: pwsh
-              run: |
-                choco install innosetup --yes --no-progress
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: oracle
 
-            - name: Start Building 
-              shell: cmd
-              run: |
-                call scripts\build_windows.bat
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
 
-            - name: Upload Windows Build
-              uses: actions/upload-artifact@v4
-              with:
-                name: aws_manager-windows-build
-                path: release/windows/
-    
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Start Building
+        shell: cmd
+        run: call scripts\build_windows.bat
+
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws_manager-windows-build
+          path: release/windows/
