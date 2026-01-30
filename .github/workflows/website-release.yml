@@ -1,9 +1,11 @@
+name: AethrOps Website Update
+
+on:
+    workflow_call:
 jobs:
     Website_Update:
       name: Update Version in Website
       runs-on: ubuntu-latest
-      needs: release
-      if: success()
 
       steps:
         - name: Checkout repository

@@ -51,6 +51,12 @@ jobs:
     needs: build_summary_notification
     if: success()
     uses: ./.github/workflows/github-release.yml
+
+  website_update:
+    name: Website Update
+    needs: release
+    if: success()
+    uses: ./.github/workflows/website-release.yml
     
 
 
