@@ -12,23 +12,28 @@ on:
 jobs:
 
   build_init_notification:
+    name: Build Init Notification
     uses: ./.github/workflows/notify-build-init.yml
     secrets: inherit
     
   android:
+    name: AetherOps Android Build
     needs: build_init_notification
     uses: ./.github/workflows/build-android.yml
     secrets: inherit
 
   windows:
+    name: Aethrops Windows Build
     needs: build_init_notification
     uses: ./.github/workflows/build-windows.yml
 
   linux:
+    name: Aethrops Linux AppImage Build
     needs: build_init_notification
     uses: ./.github/workflows/build-linux-appimage.yml
 
   build_summary_notification:
+    name: Build Summary Notification
     if: always()
     needs: [android, windows, linux]
     uses: ./.github/workflows/notify-build-summary.yml
