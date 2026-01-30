@@ -17,18 +17,18 @@ jobs:
     secrets: inherit
     
   android:
-    name: AetherOpsAndroid Build
+    name: AetherOps Android Build
     needs: build_init_notification
     uses: ./.github/workflows/build-android.yml
     secrets: inherit
 
   windows:
-    name: Windows Build
+    name: Aethrops Windows Build
     needs: build_init_notification
     uses: ./.github/workflows/build-windows.yml
 
   linux:
-    name: Linux Build
+    name: Aethrops Linux AppImage Build
     needs: build_init_notification
     uses: ./.github/workflows/build-linux-appimage.yml
 
