@@ -57,7 +57,7 @@ jobs:
     needs: release
     if: success()
     uses: ./.github/workflows/website-release.yml
-    
+    secrets: inherit
 
 
 
