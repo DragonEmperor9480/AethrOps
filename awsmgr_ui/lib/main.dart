@@ -6,6 +6,7 @@ import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'services/backend_service.dart';
+import 'widgets/loading_animation.dart';
 
 // Global navigator key to access navigator context for dialogs
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -122,8 +123,41 @@ class _MyAppState extends State<MyApp> with WindowListener {
     }
 
     if (shouldExit == true) {
+      // Show shutting down animation
+      showDialog(
+        context: overlayContext,
+        barrierDismissible: false,
+        builder: (context) => PopScope(
+          canPop: false,
+          child: const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LoadingAnimation(
+                  message: 'Shutting down...',
+                  size: 40,
+                  style: LoadingStyle.orbital,
+                  showQuote: false,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Shutting down...',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Give the animation a moment to render
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Stop the backend before exiting
       BackendService.stop();
+
+      // Small delay to show the animation
+      await Future.delayed(const Duration(milliseconds: 500));
 
       // Allow window to close
       await windowManager.destroy();
