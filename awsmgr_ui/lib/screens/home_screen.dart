@@ -13,7 +13,6 @@ import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../services/email_config_service.dart';
 import '../services/aws_credentials_service.dart';
-import '../services/backend_service.dart';
 import '../utils/constants.dart';
 import '../utils/toast_utils.dart';
 
@@ -256,48 +255,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Future<bool> _onWillPop() async {
-    // Show exit confirmation dialog
-    final shouldExit = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.exit_to_app_rounded, color: AppTheme.primaryPurple),
-            const SizedBox(width: 12),
-            const Text('Exit AethrOps?'),
-          ],
-        ),
-        content: const Text(
-          'Are you sure you want to exit? The backend service will be stopped.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('Exit'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorRed,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldExit == true) {
-      // Stop the backend before exiting
-      BackendService.stop();
-      return true;
-    }
-
-    return false;
-  }
-
   void _navigateToService(String route, bool comingSoon) {
     if (comingSoon) {
       ToastUtils.show(context, 'This service is coming soon', isError: false);
@@ -353,11 +310,8 @@ class _HomeScreenState extends State<HomeScreen>
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-
-        final shouldPop = await _onWillPop();
-        if (shouldPop && context.mounted) {
-          SystemNavigator.pop();
-        }
+        // Exit app on Android back button (window close handling is in main.dart)
+        SystemNavigator.pop();
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,

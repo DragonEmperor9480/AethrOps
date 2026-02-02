@@ -6,6 +6,10 @@ import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'services/backend_service.dart';
+import 'utils/toast_utils.dart';
+
+// Global navigator key to access navigator context for dialogs
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,42 +70,71 @@ class _MyAppState extends State<MyApp> with WindowListener {
 
   @override
   Future<void> onWindowClose() async {
+    // Get the overlay context from navigator (has both Navigator and MaterialLocalizations)
+    final overlayContext = navigatorKey.currentState?.overlay?.context;
+    
+    if (overlayContext == null) {
+      // If no proper context available, just close gracefully
+      BackendService.stop();
+      await windowManager.destroy();
+      return;
+    }
+
     // Show exit confirmation dialog
-    final shouldExit = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.exit_to_app_rounded, color: AppTheme.primaryPurple),
-            const SizedBox(width: 12),
-            const Text('Exit AethrOps?'),
+    bool? shouldExit;
+    try {
+      shouldExit = await showDialog<bool>(
+        context: overlayContext,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.exit_to_app_rounded, color: AppTheme.primaryPurple),
+              const SizedBox(width: 12),
+              const Text('Exit AethrOps?'),
+            ],
+          ),
+          content: const Text(
+            'Are you sure you want to exit? The backend service will be stopped.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: const Text('Exit'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorRed,
+                foregroundColor: Colors.white,
+              ),
+            ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to exit? The backend service will be stopped.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.check_rounded, size: 18),
-            label: const Text('Exit'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorRed,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      // If dialog fails, just close gracefully
+      debugPrint('Failed to show exit dialog: $e');
+      BackendService.stop();
+      await windowManager.destroy();
+      return;
+    }
 
     if (shouldExit == true) {
+      // Show shutting down toast
+      ToastUtils.show(overlayContext, 'Shutting down...');
+
+      // Give the toast a moment to render
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Stop the backend before exiting
       BackendService.stop();
+
+      // Small delay to ensure backend cleanup
+      await Future.delayed(const Duration(milliseconds: 300));
+
       // Allow window to close
       await windowManager.destroy();
     }
@@ -112,6 +145,7 @@ class _MyAppState extends State<MyApp> with WindowListener {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'AethrOps',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
