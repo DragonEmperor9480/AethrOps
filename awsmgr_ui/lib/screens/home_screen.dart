@@ -15,6 +15,7 @@ import '../services/email_config_service.dart';
 import '../services/aws_credentials_service.dart';
 import '../utils/constants.dart';
 import '../utils/toast_utils.dart';
+import '../utils/exit_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,8 +24,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _shimmerController;
 
   String _username = 'User';
@@ -65,8 +65,6 @@ class _HomeScreenState extends State<HomeScreen>
     ),
   ];
 
-
-
   @override
   void initState() {
     super.initState();
@@ -75,7 +73,6 @@ class _HomeScreenState extends State<HomeScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkMissingConfigurations();
     });
-
 
     _shimmerController = AnimationController(
       duration: const Duration(seconds: 3),
@@ -255,6 +252,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Future<bool> _onWillPop() async {
+    return await ExitHandler.showExitConfirmation(context);
+  }
+
   void _navigateToService(String route, bool comingSoon) {
     if (comingSoon) {
       ToastUtils.show(context, 'This service is coming soon', isError: false);
@@ -310,8 +311,11 @@ class _HomeScreenState extends State<HomeScreen>
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        // Exit app on Android back button (window close handling is in main.dart)
-        SystemNavigator.pop();
+
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          SystemNavigator.pop();
+        }
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -626,7 +630,6 @@ class _HomeScreenState extends State<HomeScreen>
                         );
                       },
                     ),
-
 
                     const SizedBox(height: 32),
                   ],
