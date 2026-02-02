@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:window_manager/window_manager.dart';
 
 import 'iam_screen.dart';
 import 's3_screen.dart';
@@ -27,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin, WindowListener {
+    with TickerProviderStateMixin {
   late AnimationController _shimmerController;
 
   String _username = 'User';
@@ -94,11 +92,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Load user info asynchronously
     _loadUserInfo();
-
-    // Register window listener for desktop platforms
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      windowManager.addListener(this);
-    }
   }
 
   void _cycleLoadingMessages() {
@@ -158,10 +151,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    // Unregister window listener for desktop platforms
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      windowManager.removeListener(this);
-    }
     _shimmerController.dispose();
     super.dispose();
   }
@@ -307,17 +296,6 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return false;
-  }
-
-  @override
-  Future<void> onWindowClose() async {
-    // Show the exit dialog
-    final shouldExit = await _onWillPop();
-
-    if (shouldExit) {
-      // Allow window to close
-      await windowManager.destroy();
-    }
   }
 
   void _navigateToService(String route, bool comingSoon) {
