@@ -6,7 +6,6 @@ import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'services/backend_service.dart';
-import 'utils/toast_utils.dart';
 
 // Global navigator key to access navigator context for dialogs
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -123,17 +122,8 @@ class _MyAppState extends State<MyApp> with WindowListener {
     }
 
     if (shouldExit == true) {
-      // Show shutting down toast
-      ToastUtils.show(overlayContext, 'Shutting down...');
-
-      // Give the toast a moment to render
-      await Future.delayed(const Duration(milliseconds: 100));
-
       // Stop the backend before exiting
       BackendService.stop();
-
-      // Small delay to ensure backend cleanup
-      await Future.delayed(const Duration(milliseconds: 300));
 
       // Allow window to close
       await windowManager.destroy();
