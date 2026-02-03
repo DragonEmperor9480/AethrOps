@@ -7,7 +7,7 @@ permissions:
 on:
     push:
         branches:
-            - github-actions
+            - production
 
 jobs:
 
@@ -57,6 +57,13 @@ jobs:
     needs: release
     if: success()
     uses: ./.github/workflows/website-release.yml
+    secrets: inherit
+
+  linkedin_post:
+    name: LinkedIn Post
+    needs: release
+    if: success()
+    uses: ./.github/workflows/post-linkedin.yml
     secrets: inherit
 
 
