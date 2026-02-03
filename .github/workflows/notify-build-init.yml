@@ -1,0 +1,35 @@
+name: AethrOps Build init Notification
+
+on:
+    workflow_call:
+
+jobs:
+    Build_initiation_notification:
+      name: Build Start notification
+      runs-on: ubuntu-latest
+      steps:
+        - name: Send Telegram summary
+          shell: bash
+          run: |
+                START_TIME="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+                SHORT_SHA="$(echo ${{ github.sha }} | cut -c1-7)"
+
+                MESSAGE="<b>🚀 CI Build Started</b>
+
+                <b>Project:</b> <a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>
+                <b>Branch:</b> <code>${{ github.ref_name }}</code>
+                <b>Commit:</b> <code>${SHORT_SHA}</code>
+                <b>Triggered by:</b> ${{ github.actor }}
+                <b>Event:</b> ${{ github.event_name }}
+
+                <b>Platforms:</b> Windows • Android • Linux
+
+                <b>Started at:</b> ${START_TIME}
+
+                🔗 <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View CI Run</a>"
+
+                curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+                  -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+                  -d parse_mode=HTML \
+                  -d disable_web_page_preview=true \
+                  --data-urlencode text="$MESSAGE"

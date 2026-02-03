@@ -1,4 +1,5 @@
 {
+    "Name":"AethrOps",
     "tui": {
         "version": ""
     },
@@ -9,6 +10,12 @@
         "version": "Preview Beta 2"
     },
     "android": {
+        "version": "Preview Beta 2"
+    },
+    "macos": {
+        "version": ""
+    },
+    "website": {
         "version": "Preview Beta 2"
     }
 }

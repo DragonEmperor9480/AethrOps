@@ -1,0 +1,63 @@
+name: AethrOps Linkedin Post
+
+on:
+    workflow_call:
+jobs:
+    linkedin_post:
+      name: Post Release to LinkedIn
+      runs-on: ubuntu-latest
+      if: success()
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Read version info
+          run: |
+            VERSION=$(jq -r '.website.version' version.json)
+            # Normalize version for tag
+            RELEASE_TAG=$(echo "$VERSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+        - name: Post to LinkedIn
+          shell: bash
+          run: |
+            AUTHOR_URN="${{ secrets.LINKEDIN_AUTHOR_URN }}"
+
+            MESSAGE=$(cat <<EOF
+            AethrOps - New Release!
+            Version: ${{ env.RELEASE_TAG }}
+
+            Android (APK – all architectures)
+            Windows (Installer)
+            Linux (AppImage)
+
+            🔗 Release Notes and Download:
+            https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
+
+            (Automated Post by AethrBuild Pipeline)
+
+            #AethrOps #AWS #DevOps #Flutter #GoLang #OpenSource #CloudComputing #S3 #EC2 #Lambda #MobileDev #Linux #Windows #Android #TechRelease #CloudInfrastructure #CloudManagement #SysAdmin #AmazonWebServices #AWSCloud #IAM #SoftwareEngineering #CrossPlatform #AppDev #Developers #GitHubActions #CI_CD #Automation #Update #NewRelease #BetaRelease
+            EOF
+            )
+
+            curl -X POST "https://api.linkedin.com/v2/ugcPosts" \
+              -H "Authorization: Bearer ${{ secrets.LINKEDIN_ACCESS_TOKEN }}" \
+              -H "X-Restli-Protocol-Version: 2.0.0" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n \
+                --arg author "$AUTHOR_URN" \
+                --arg text "$MESSAGE" \
+                '{
+                  author: $author,
+                  lifecycleState: "PUBLISHED",
+                  specificContent: {
+                    "com.linkedin.ugc.ShareContent": {
+                      shareCommentary: { text: $text },
+                      shareMediaCategory: "NONE"
+                    }
+                  },
+                  visibility: {
+                    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+                  }
+                }')"
