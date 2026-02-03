@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _shimmerController;
 
   String _username = 'User';
+  String _region = '';
   String _greeting = 'Good day';
   String _quote = 'Loading...';
   bool _isLoadingUserInfo = true;
@@ -108,11 +109,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadUserInfo() async {
     try {
+      // Load region from stored credentials
+      final credentials = await AWSCredentialsService.getCredentials();
+      final region = credentials['region'] ?? '';
+
       final identity = await ApiService.getCallerIdentity();
       final username = identity['username'] ?? 'User';
 
       setState(() {
         _username = username;
+        _region = region;
         _greeting = _getGreeting();
         _quote = _getRandomQuote();
         _isLoadingUserInfo = false;
@@ -120,6 +126,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } catch (e) {
       debugPrint('Error loading user info: $e');
+      // Try to load region even if identity fails
+      try {
+        final credentials = await AWSCredentialsService.getCredentials();
+        _region = credentials['region'] ?? '';
+      } catch (_) {}
+      
       setState(() {
         _username = 'User';
         _greeting = _getGreeting();
@@ -384,6 +396,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
+                if (_region.isNotEmpty && !_isLoadingUserInfo)
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 4,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.public,
+                          size: 14,
+                          color: AppTheme.primaryBlue,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _region,
+                          style: TextStyle(
+                            color: AppTheme.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 IconButton(
                   icon: const Icon(Icons.settings_outlined),
                   onPressed: () => _navigateToService('/settings', false),
