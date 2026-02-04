@@ -78,7 +78,7 @@ chmod +x build/linux/x64/release/bundle/awsmgr_backend
 echo "✓ Backend copied to bundle"
 
 # Rename binary to aws-manager
-mv build/linux/x64/release/bundle/awsmgr build/linux/x64/release/bundle/aws-manager
+mv build/linux/x64/release/bundle/aethrops build/linux/x64/release/bundle/aws-manager
 
 cd ..
 

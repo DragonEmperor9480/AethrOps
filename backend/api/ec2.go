@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 
+	ec2models "github.com/DragonEmperor9480/aws_cli_manager/models/ec2"
 	"github.com/DragonEmperor9480/aws_cli_manager/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
@@ -393,5 +396,264 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 		"instances": instances,
 		"count":     len(instances),
 		"state":     state,
+	})
+}
+
+// LaunchEC2Instance launches a new EC2 instance
+func LaunchEC2Instance(c *gin.Context) {
+	var req ec2models.LaunchInstanceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validation
+	if req.ImageID == "" || req.InstanceType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "image_id and instance_type are required"})
+		return
+	}
+
+	if req.MinCount < 1 {
+		req.MinCount = 1
+	}
+	if req.MaxCount < 1 {
+		req.MaxCount = 1
+	}
+
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	// If storage size is requested, we need the RootDeviceName from the image
+	var rootDeviceName string
+	if req.VolumeSize > 0 {
+		imageOutput, err := client.DescribeImages(ctx, &ec2.DescribeImagesInput{
+			ImageIds: []string{req.ImageID},
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to describe image: " + err.Error()})
+			return
+		}
+		if len(imageOutput.Images) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Image not found"})
+			return
+		}
+		rootDeviceName = aws.ToString(imageOutput.Images[0].RootDeviceName)
+	}
+
+	input := &ec2.RunInstancesInput{
+		ImageId:      aws.String(req.ImageID),
+		InstanceType: types.InstanceType(req.InstanceType),
+		MinCount:     aws.Int32(req.MinCount),
+		MaxCount:     aws.Int32(req.MaxCount),
+	}
+
+	if req.KeyName != "" {
+		input.KeyName = aws.String(req.KeyName)
+	}
+
+	if req.SubnetID != "" {
+		input.SubnetId = aws.String(req.SubnetID)
+	}
+
+	if len(req.SecurityGroupIDs) > 0 {
+		input.SecurityGroupIds = req.SecurityGroupIDs
+	}
+
+	// Handle UserData (Base64 encode)
+	if req.UserData != "" {
+		encoded := base64.StdEncoding.EncodeToString([]byte(req.UserData))
+		input.UserData = aws.String(encoded)
+	}
+
+	// Handle Tags using TagSpecifications (atomic tagging)
+	if len(req.Tags) > 0 {
+		var awsTags []types.Tag
+		for k, v := range req.Tags {
+			awsTags = append(awsTags, types.Tag{
+				Key:   aws.String(k),
+				Value: aws.String(v),
+			})
+		}
+
+		input.TagSpecifications = []types.TagSpecification{
+			{
+				ResourceType: types.ResourceTypeInstance,
+				Tags:         awsTags,
+			},
+			{
+				ResourceType: types.ResourceTypeVolume, // Also tag volumes
+				Tags:         awsTags,
+			},
+		}
+	}
+
+	// Handle Storage Size (Root Volume)
+	if req.VolumeSize > 0 && rootDeviceName != "" {
+		volumeType := types.VolumeTypeGp3
+		if req.VolumeType != "" {
+			volumeType = types.VolumeType(req.VolumeType)
+		}
+
+		input.BlockDeviceMappings = []types.BlockDeviceMapping{
+			{
+				DeviceName: aws.String(rootDeviceName),
+				Ebs: &types.EbsBlockDevice{
+					VolumeSize: aws.Int32(req.VolumeSize),
+					VolumeType: volumeType,
+				},
+			},
+		}
+	}
+
+	result, err := client.RunInstances(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to launch instance: " + err.Error()})
+		return
+	}
+
+	if len(result.Instances) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No instances returned from launch request"})
+		return
+	}
+
+	// Return details of the first launched instance
+	// Return details of the first launched instance
+	instance := result.Instances[0]
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Instance launched successfully",
+		"instance_id":    aws.ToString(instance.InstanceId),
+		"launch_time":    aws.ToTime(instance.LaunchTime).Format("2006-01-02 15:04:05"),
+		"private_ip":     aws.ToString(instance.PrivateIpAddress),
+		"state":          string(instance.State.Name),
+		"instance_count": len(result.Instances),
+	})
+}
+
+// ListSecurityGroups returns all security groups
+func ListSecurityGroups(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeSecurityGroupsInput{}
+	result, err := client.DescribeSecurityGroups(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list security groups: " + err.Error()})
+		return
+	}
+
+	var groups []map[string]string
+	for _, sg := range result.SecurityGroups {
+		groups = append(groups, map[string]string{
+			"group_id":    aws.ToString(sg.GroupId),
+			"group_name":  aws.ToString(sg.GroupName),
+			"description": aws.ToString(sg.Description),
+			"vpc_id":      aws.ToString(sg.VpcId),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"security_groups": groups,
+		"count":           len(groups),
+	})
+}
+
+// ListKeyPairs returns all key pairs
+func ListKeyPairs(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeKeyPairsInput{}
+	result, err := client.DescribeKeyPairs(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list key pairs: " + err.Error()})
+		return
+	}
+
+	var keyPairs []map[string]string
+	for _, kp := range result.KeyPairs {
+		keyPairs = append(keyPairs, map[string]string{
+			"key_name":        aws.ToString(kp.KeyName),
+			"key_pair_id":     aws.ToString(kp.KeyPairId),
+			"key_fingerprint": aws.ToString(kp.KeyFingerprint),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"key_pairs": keyPairs,
+		"count":     len(keyPairs),
+	})
+}
+
+// ListSubnets returns all subnets
+func ListSubnets(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeSubnetsInput{}
+	result, err := client.DescribeSubnets(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list subnets: " + err.Error()})
+		return
+	}
+
+	var subnets []map[string]string
+	for _, sn := range result.Subnets {
+		name := ""
+		for _, tag := range sn.Tags {
+			if aws.ToString(tag.Key) == "Name" {
+				name = aws.ToString(tag.Value)
+				break
+			}
+		}
+
+		subnets = append(subnets, map[string]string{
+			"subnet_id":         aws.ToString(sn.SubnetId),
+			"vpc_id":            aws.ToString(sn.VpcId),
+			"cidr_block":        aws.ToString(sn.CidrBlock),
+			"availability_zone": aws.ToString(sn.AvailabilityZone),
+			"name":              name,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"subnets": subnets,
+		"count":   len(subnets),
+	})
+}
+
+// ListVPCs returns all VPCs
+func ListVPCs(c *gin.Context) {
+	client := utils.GetEC2Client()
+	ctx := context.TODO()
+
+	input := &ec2.DescribeVpcsInput{}
+	result, err := client.DescribeVpcs(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list VPCs: " + err.Error()})
+		return
+	}
+
+	var vpcs []map[string]interface{}
+	for _, vpc := range result.Vpcs {
+		name := ""
+		for _, tag := range vpc.Tags {
+			if aws.ToString(tag.Key) == "Name" {
+				name = aws.ToString(tag.Value)
+				break
+			}
+		}
+
+		vpcs = append(vpcs, map[string]interface{}{
+			"vpc_id":     aws.ToString(vpc.VpcId),
+			"cidr_block": aws.ToString(vpc.CidrBlock),
+			"state":      string(vpc.State),
+			"name":       name,
+			"is_default": vpc.IsDefault,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"vpcs":  vpcs,
+		"count": len(vpcs),
 	})
 }

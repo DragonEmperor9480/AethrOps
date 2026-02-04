@@ -1,0 +1,63 @@
+name: AethrOps Github Release
+
+on:
+    workflow_call:
+
+jobs:
+    release: 
+      name: Github Release
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Ensure jq is installed
+          run: sudo apt-get update && sudo apt-get install -y jq
+
+        - name: Read version info
+          run: |
+            APP_NAME=$(jq -r '.Name' version.json)
+            VERSION=$(jq -r '.website.version' version.json)
+            
+            # Normalize version for tag (lowercase + spaces to dashes)
+            RELEASE_TAG=$(echo "$VERSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            
+            # Combine Name and Version for release name
+            RELEASE_NAME="${APP_NAME} ${VERSION}"
+            
+            echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+            echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+            
+            echo "Release Tag: $RELEASE_TAG"
+            echo "Release Name: $RELEASE_NAME"
+
+        - name: Download Android Artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: AethrOps-android-release
+            path: release/android
+          
+        - name: Download Windows Artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: AethrOps-windows-build
+            path: release/windows
+        
+        - name: Download Linux Artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: AethrOps-linux-appimage
+            path: release/linux
+          
+        - name: Create GitHub Release
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: ${{ env.RELEASE_TAG }}
+            name: ${{ env.RELEASE_NAME }}
+            body_path: RELEASE_NOTES.md
+            files: |
+              release/android/*.apk
+              release/windows/*.exe
+              release/linux/*.AppImage

@@ -36,3 +36,9 @@ build/
 *.db-shm
 *.db-wal
 .awsmgr/
+
+#Releases
+release/*
+
+# Something you should not know
+secerets*

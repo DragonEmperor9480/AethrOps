@@ -9,20 +9,21 @@ REM Change to project root (parent of scripts directory)
 cd /d "%~dp0\.."
 set PROJECT_ROOT=%cd%
 
-REM Fetch version from GitHub version.json
-echo Fetching version from GitHub...
-for /f "tokens=*" %%i in ('powershell -Command "try { $json = Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json' -TimeoutSec 10; $json.windows.version } catch { '' }"') do set VERSION=%%i
+REM Read version from local version.json (windows key)
+echo Reading version from version.json...
 
-REM Fallback to local version.json if GitHub fetch fails
-if "%VERSION%"=="" (
-    echo GitHub fetch failed, trying local version.json...
-    for /f "tokens=*" %%i in ('powershell -Command "try { $json = Get-Content 'version.json' | ConvertFrom-Json; $json.windows.version } catch { '' }"') do set VERSION=%%i
-)
+REM Get display version (e.g., "Preview Beta 2")
+for /f "tokens=*" %%i in ('powershell -Command "try { (Get-Content 'version.json' | ConvertFrom-Json).windows.version } catch { '' }"') do set VERSION_DISPLAY=%%i
 
-REM Final fallback
-if "%VERSION%"=="" set VERSION=Preview Beta 1
+REM Get normalized version for filenames (e.g., "preview-beta-2")
+for /f "tokens=*" %%i in ('powershell -Command "try { $v = (Get-Content 'version.json' | ConvertFrom-Json).windows.version; $v.ToLower().Replace(' ', '-') } catch { '' }"') do set VERSION=%%i
 
-echo Version: %VERSION%
+REM Fallback if version.json read fails
+if "%VERSION_DISPLAY%"=="" set VERSION_DISPLAY=Preview Beta 1
+if "%VERSION%"=="" set VERSION=preview-beta-1
+
+echo Display Version: %VERSION_DISPLAY%
+echo Tag Version: %VERSION%
 echo.
 
 echo Step 1: Building Go backend executable...
@@ -69,8 +70,8 @@ if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
 
 echo.
 echo Step 5: Updating version in Inno Setup script...
-REM Update display version (MyAppVersion) - keeps numeric version (MyAppNumericVersion) unchanged
-powershell -Command "$content = Get-Content 'scripts\installer\windows_setup.iss' -Raw; $content = $content -replace '(?m)^#define MyAppVersion \"[^\"]*\"', '#define MyAppVersion \"%VERSION%\"'; Set-Content 'scripts\installer\windows_setup.iss' -Value $content -NoNewline"
+REM Update display version (MyAppVersion) and tag version (MyAppVersionTag)
+powershell -Command "$content = Get-Content 'scripts\installer\windows_setup.iss' -Raw; $content = $content -replace '(?m)^#define MyAppVersion \"[^\"]*\"', '#define MyAppVersion \"%VERSION_DISPLAY%\"'; $content = $content -replace '(?m)^#define MyAppVersionTag \"[^\"]*\"', '#define MyAppVersionTag \"%VERSION%\"'; Set-Content 'scripts\installer\windows_setup.iss' -Value $content -NoNewline"
 
 echo.
 echo Step 6: Building installer with Inno Setup...
@@ -136,8 +137,8 @@ echo ==========================================
 echo.
 echo Build outputs in: release\windows\
 echo.
-if exist "%RELEASE_DIR%\aws-manager-setup-%VERSION%.exe" (
-    echo   Installer: aws-manager-setup-%VERSION%.exe
+if exist "%RELEASE_DIR%\AethrOps-setup-%VERSION%.exe" (
+    echo   Installer: AethrOps-setup-%VERSION%.exe
     echo.
     echo Users can run the installer to:
     echo   - Install to Program Files
@@ -145,8 +146,8 @@ if exist "%RELEASE_DIR%\aws-manager-setup-%VERSION%.exe" (
     echo   - Create Desktop shortcut (optional)
     echo   - Add uninstaller to Control Panel
 )
-if exist "%RELEASE_DIR%\aws-manager-%VERSION%-windows-x64.zip" (
-    echo   Portable: aws-manager-%VERSION%-windows-x64.zip
+if exist "%RELEASE_DIR%\AethrOps-%VERSION%-windows-x64.zip" (
+    echo   Portable: AethrOps-%VERSION%-windows-x64.zip
 )
 echo.
 pause

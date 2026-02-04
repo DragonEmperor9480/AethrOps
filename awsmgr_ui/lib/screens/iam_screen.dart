@@ -7,6 +7,7 @@ import '../widgets/aws_config_dialog.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../widgets/list_header_with_search.dart';
+import '../utils/toast_utils.dart';
 import 'iam_user_profile_screen.dart';
 import 'iam_group_profile_screen.dart';
 
@@ -17,8 +18,7 @@ class IAMScreen extends StatefulWidget {
   State<IAMScreen> createState() => _IAMScreenState();
 }
 
-class _IAMScreenState extends State<IAMScreen>
-    with TickerProviderStateMixin {
+class _IAMScreenState extends State<IAMScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
   List<dynamic> _users = [];
   List<dynamic> _groups = [];
@@ -77,36 +77,12 @@ class _IAMScreenState extends State<IAMScreen>
     if (message.contains('AWS credentials not configured')) {
       _showAWSConfigDialog();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      ToastUtils.show(context, message, isError: true);
     }
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ToastUtils.show(context, message, isError: false);
   }
 
   Future<void> _showAWSConfigDialog() async {
@@ -136,12 +112,14 @@ class _IAMScreenState extends State<IAMScreen>
           password: result['password'],
           requireReset: result['require_reset'] ?? false,
         );
-        
+
         if (!mounted) return;
         setState(() => _operationInProgress = false);
-        
+
         // Show credentials dialog only if password was set
-        if (mounted && result['password'] != null && result['password'].isNotEmpty) {
+        if (mounted &&
+            result['password'] != null &&
+            result['password'].isNotEmpty) {
           await showDialog(
             context: context,
             barrierDismissible: false,
@@ -150,7 +128,7 @@ class _IAMScreenState extends State<IAMScreen>
                 {
                   'username': result['username']!,
                   'password': result['password']!,
-                }
+                },
               ],
             ),
           );
@@ -158,7 +136,7 @@ class _IAMScreenState extends State<IAMScreen>
           // Show success message for user without password
           _showSuccess('User "${result['username']}" created successfully');
         }
-        
+
         await _loadData();
       } catch (e) {
         if (!mounted) return;
@@ -179,14 +157,14 @@ class _IAMScreenState extends State<IAMScreen>
       setState(() => _operationInProgress = true);
       try {
         final response = await ApiService.createMultipleIAMUsers(result);
-        
+
         final successCount = response['success_count'] ?? 0;
         final failureCount = response['failure_count'] ?? 0;
         final results = response['results'] as List;
-        
+
         if (!mounted) return;
         setState(() => _operationInProgress = false);
-        
+
         // Prepare credentials for successful users with passwords
         final credentials = <Map<String, String>>[];
         for (int i = 0; i < results.length; i++) {
@@ -199,7 +177,7 @@ class _IAMScreenState extends State<IAMScreen>
             });
           }
         }
-        
+
         // Show credentials dialog first if there are any
         if (mounted && credentials.isNotEmpty) {
           await showDialog(
@@ -208,7 +186,7 @@ class _IAMScreenState extends State<IAMScreen>
             builder: (context) => CredentialsDialog(credentials: credentials),
           );
         }
-        
+
         // Then show detailed results dialog
         if (mounted) {
           await showDialog(
@@ -220,7 +198,7 @@ class _IAMScreenState extends State<IAMScreen>
             ),
           );
         }
-        
+
         await _loadData();
       } catch (e) {
         if (!mounted) return;
@@ -234,12 +212,12 @@ class _IAMScreenState extends State<IAMScreen>
     if (_selectedUsers.isEmpty) return;
 
     final usernames = _selectedUsers.toList();
-    
+
     // Check dependencies for all selected users
     if (!mounted) return;
     setState(() => _operationInProgress = true);
     late List<dynamic> dependencies;
-    
+
     try {
       dependencies = await ApiService.checkMultipleUserDependencies(usernames);
     } catch (e) {
@@ -248,22 +226,21 @@ class _IAMScreenState extends State<IAMScreen>
       _showError('Failed to check dependencies: $e');
       return;
     }
-    
+
     if (!mounted) return;
     setState(() => _operationInProgress = false);
 
     // Show dependencies dialog and get confirmation
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => BatchDeleteConfirmationDialog(
-        dependencies: dependencies,
-      ),
+      builder: (context) =>
+          BatchDeleteConfirmationDialog(dependencies: dependencies),
     );
 
     if (confirmed == true) {
       if (!mounted) return;
       setState(() => _operationInProgress = true);
-      
+
       try {
         // Prepare delete requests with force flag
         final deleteRequests = usernames.map((username) {
@@ -272,16 +249,18 @@ class _IAMScreenState extends State<IAMScreen>
             'force': true, // Always force delete to remove dependencies
           };
         }).toList();
-        
-        final response = await ApiService.deleteMultipleIAMUsers(deleteRequests);
-        
+
+        final response = await ApiService.deleteMultipleIAMUsers(
+          deleteRequests,
+        );
+
         final successCount = response['success_count'] ?? 0;
         final failureCount = response['failure_count'] ?? 0;
         final results = response['results'] as List;
-        
+
         if (!mounted) return;
         setState(() => _operationInProgress = false);
-        
+
         // Show results dialog
         if (mounted) {
           await showDialog(
@@ -293,14 +272,14 @@ class _IAMScreenState extends State<IAMScreen>
             ),
           );
         }
-        
+
         // Clear selection and exit selection mode
         if (!mounted) return;
         setState(() {
           _selectedUsers.clear();
           _selectionMode = false;
         });
-        
+
         await _loadData();
       } catch (e) {
         if (!mounted) return;
@@ -315,7 +294,7 @@ class _IAMScreenState extends State<IAMScreen>
     if (!mounted) return;
     setState(() => _operationInProgress = true);
     late Map<String, dynamic> dependencies;
-    
+
     try {
       dependencies = await ApiService.checkUserDependencies(username);
     } catch (e) {
@@ -324,15 +303,16 @@ class _IAMScreenState extends State<IAMScreen>
       _showError('Failed to check user dependencies: $e');
       return;
     }
-    
+
     if (!mounted) return;
     setState(() => _operationInProgress = false);
 
-    final hasDeps = (dependencies['groups'] as List?)?.isNotEmpty == true ||
-                    (dependencies['managed_policies'] as List?)?.isNotEmpty == true ||
-                    (dependencies['inline_policies'] as List?)?.isNotEmpty == true ||
-                    (dependencies['access_keys'] as List?)?.isNotEmpty == true ||
-                    dependencies['has_login_profile'] == true;
+    final hasDeps =
+        (dependencies['groups'] as List?)?.isNotEmpty == true ||
+        (dependencies['managed_policies'] as List?)?.isNotEmpty == true ||
+        (dependencies['inline_policies'] as List?)?.isNotEmpty == true ||
+        (dependencies['access_keys'] as List?)?.isNotEmpty == true ||
+        dependencies['has_login_profile'] == true;
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -340,8 +320,10 @@ class _IAMScreenState extends State<IAMScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(hasDeps ? Icons.warning : Icons.delete, 
-                 color: hasDeps ? Colors.orange : Colors.red),
+            Icon(
+              hasDeps ? Icons.warning : Icons.delete,
+              color: hasDeps ? Colors.orange : Colors.red,
+            ),
             const SizedBox(width: 8),
             const Text('Delete User'),
           ],
@@ -378,28 +360,57 @@ class _IAMScreenState extends State<IAMScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if ((dependencies['groups'] as List?)?.isNotEmpty == true) ...[
-                        const Text('Groups:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ...(dependencies['groups'] as List).map((g) => Text('  • $g')),
+                      if ((dependencies['groups'] as List?)?.isNotEmpty ==
+                          true) ...[
+                        const Text(
+                          'Groups:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...(dependencies['groups'] as List).map(
+                          (g) => Text('  • $g'),
+                        ),
                         const SizedBox(height: 4),
                       ],
-                      if ((dependencies['managed_policies'] as List?)?.isNotEmpty == true) ...[
-                        const Text('Managed Policies:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ...(dependencies['managed_policies'] as List).map((p) => Text('  • $p')),
+                      if ((dependencies['managed_policies'] as List?)
+                              ?.isNotEmpty ==
+                          true) ...[
+                        const Text(
+                          'Managed Policies:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...(dependencies['managed_policies'] as List).map(
+                          (p) => Text('  • $p'),
+                        ),
                         const SizedBox(height: 4),
                       ],
-                      if ((dependencies['inline_policies'] as List?)?.isNotEmpty == true) ...[
-                        const Text('Inline Policies:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ...(dependencies['inline_policies'] as List).map((p) => Text('  • $p')),
+                      if ((dependencies['inline_policies'] as List?)
+                              ?.isNotEmpty ==
+                          true) ...[
+                        const Text(
+                          'Inline Policies:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...(dependencies['inline_policies'] as List).map(
+                          (p) => Text('  • $p'),
+                        ),
                         const SizedBox(height: 4),
                       ],
-                      if ((dependencies['access_keys'] as List?)?.isNotEmpty == true) ...[
-                        const Text('Access Keys:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ...(dependencies['access_keys'] as List).map((k) => Text('  • $k')),
+                      if ((dependencies['access_keys'] as List?)?.isNotEmpty ==
+                          true) ...[
+                        const Text(
+                          'Access Keys:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...(dependencies['access_keys'] as List).map(
+                          (k) => Text('  • $k'),
+                        ),
                         const SizedBox(height: 4),
                       ],
                       if (dependencies['has_login_profile'] == true) ...[
-                        const Text('• Has login profile', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          '• Has login profile',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ],
                   ),
@@ -407,7 +418,11 @@ class _IAMScreenState extends State<IAMScreen>
                 const SizedBox(height: 12),
                 const Text(
                   'All dependencies will be removed automatically.',
-                  style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
               const SizedBox(height: 8),
@@ -464,10 +479,7 @@ class _IAMScreenState extends State<IAMScreen>
       message: 'Processing...',
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('IAM Management'),
-          elevation: 0,
-        ),
+        appBar: AppBar(title: const Text('IAM Management'), elevation: 0),
         body: _currentIndex == 0 ? _buildUsersTab() : _buildGroupsTab(),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -480,14 +492,8 @@ class _IAMScreenState extends State<IAMScreen>
             });
           },
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Users',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group),
-              label: 'Groups',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Users'),
+            BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
           ],
         ),
         floatingActionButton: _currentIndex == 0 && !_selectionMode
@@ -525,23 +531,23 @@ class _IAMScreenState extends State<IAMScreen>
                 ],
               )
             : _currentIndex == 1
-                ? SpeedDialMenu(
-                    items: [
-                      SpeedDialMenuItem(
-                        icon: Icons.group_add,
-                        label: 'Create Group',
-                        color: AppTheme.purple400,
-                        onTap: _createGroup,
-                      ),
-                      SpeedDialMenuItem(
-                        icon: Icons.refresh,
-                        label: 'Refresh',
-                        color: AppTheme.accentCoral,
-                        onTap: _loadData,
-                      ),
-                    ],
-                  )
-                : null,
+            ? SpeedDialMenu(
+                items: [
+                  SpeedDialMenuItem(
+                    icon: Icons.group_add,
+                    label: 'Create Group',
+                    color: AppTheme.purple400,
+                    onTap: _createGroup,
+                  ),
+                  SpeedDialMenuItem(
+                    icon: Icons.refresh,
+                    label: 'Refresh',
+                    color: AppTheme.accentCoral,
+                    onTap: _loadData,
+                  ),
+                ],
+              )
+            : null,
       ),
     );
   }
@@ -553,7 +559,8 @@ class _IAMScreenState extends State<IAMScreen>
           ListHeaderWithSearch(
             title: 'IAM Users',
             subtitle: '${_filteredUsers.length} users',
-            icon: Icons.people,
+            svgAsset:
+                'assets/icons/Arch_AWS-Identity-and-Access-Management_32.svg',
             iconBackgroundColor: AppTheme.purple100,
             iconColor: AppTheme.purple600,
             searchController: _searchController,
@@ -589,13 +596,15 @@ class _IAMScreenState extends State<IAMScreen>
                       children: [
                         Text(
                           'Select Users',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           '${_selectedUsers.length} selected',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -606,7 +615,9 @@ class _IAMScreenState extends State<IAMScreen>
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _selectedUsers.isNotEmpty ? _batchDeleteUsers : null,
+                        onPressed: _selectedUsers.isNotEmpty
+                            ? _batchDeleteUsers
+                            : null,
                         icon: const Icon(Icons.delete, size: 18),
                         label: Text('Delete (${_selectedUsers.length})'),
                         style: ElevatedButton.styleFrom(
@@ -644,110 +655,108 @@ class _IAMScreenState extends State<IAMScreen>
           child: _loading
               ? const LoadingAnimation(message: 'Loading users')
               : _filteredUsers.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _searchController.text.isNotEmpty
-                                ? Icons.search_off
-                                : Icons.people_outline,
-                            size: 80,
-                            color: Colors.grey[300],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _searchController.text.isNotEmpty
-                                ? 'No users found'
-                                : 'No users found',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _searchController.text.isNotEmpty
-                                ? 'Try a different search term'
-                                : 'Create your first IAM user',
-                            style: TextStyle(color: Colors.grey[500]),
-                          ),
-                          if (_searchController.text.isEmpty) ...[
-                            const SizedBox(height: 24),
-                            ElevatedButton.icon(
-                              onPressed: _createUser,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Create User'),
-                            ),
-                          ],
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _searchController.text.isNotEmpty
+                            ? Icons.search_off
+                            : Icons.people_outline,
+                        size: 80,
+                        color: Colors.grey[300],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _filteredUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = _filteredUsers[index];
-                        final username = user['username'] ?? '';
-                        final isSelected = _selectedUsers.contains(username);
-                        
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: isSelected ? 3 : 1,
-                          color: isSelected ? AppTheme.purple50 : null,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: isSelected
-                                ? BorderSide(color: AppTheme.purple400, width: 2)
-                                : BorderSide(color: Colors.grey.shade200, width: 1),
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: _selectionMode
-                                ? () {
+                      const SizedBox(height: 16),
+                      Text(
+                        _searchController.text.isNotEmpty
+                            ? 'No users found'
+                            : 'No users found',
+                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _searchController.text.isNotEmpty
+                            ? 'Try a different search term'
+                            : 'Create your first IAM user',
+                        style: TextStyle(color: Colors.grey[500]),
+                      ),
+                      if (_searchController.text.isEmpty) ...[
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _createUser,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Create User'),
+                        ),
+                      ],
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _filteredUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = _filteredUsers[index];
+                    final username = user['username'] ?? '';
+                    final isSelected = _selectedUsers.contains(username);
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: isSelected ? 3 : 1,
+                      color: isSelected ? AppTheme.purple50 : null,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: isSelected
+                            ? BorderSide(color: AppTheme.purple400, width: 2)
+                            : BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: _selectionMode
+                            ? () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedUsers.remove(username);
+                                  } else {
+                                    _selectedUsers.add(username);
+                                  }
+                                });
+                              }
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        IAMUserProfileScreen(user: user),
+                                  ),
+                                );
+                              },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              // Leading - checkbox only in selection mode
+                              if (_selectionMode)
+                                Checkbox(
+                                  value: isSelected,
+                                  onChanged: (value) {
                                     setState(() {
-                                      if (isSelected) {
-                                        _selectedUsers.remove(username);
-                                      } else {
+                                      if (value == true) {
                                         _selectedUsers.add(username);
+                                      } else {
+                                        _selectedUsers.remove(username);
                                       }
                                     });
-                                  }
-                                : () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => IAMUserProfileScreen(user: user),
-                                      ),
-                                    );
                                   },
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // Leading - checkbox only in selection mode
-                                  if (_selectionMode)
-                                    Checkbox(
-                                      value: isSelected,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          if (value == true) {
-                                            _selectedUsers.add(username);
-                                          } else {
-                                            _selectedUsers.remove(username);
-                                          }
-                                        });
-                                      },
-                                    ),
-                                  if (_selectionMode)
-                                    const SizedBox(width: 16),
-                                  // Content
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        ShaderMask(
-                                          shaderCallback: (bounds) => const LinearGradient(
+                                ),
+                              if (_selectionMode) const SizedBox(width: 16),
+                              // Content
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ShaderMask(
+                                      shaderCallback: (bounds) =>
+                                          const LinearGradient(
                                             colors: [
                                               Color(0xFF6366F1),
                                               Color(0xFF8B5CF6),
@@ -756,85 +765,102 @@ class _IAMScreenState extends State<IAMScreen>
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ).createShader(bounds),
+                                      child: Text(
+                                        user['username'] ?? '',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.fingerprint,
+                                          size: 14,
+                                          color: Colors.grey[500],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
                                           child: Text(
-                                            user['username'] ?? '',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 20,
-                                              color: Colors.white,
-                                              letterSpacing: -0.5,
+                                            user['user_id'] ?? '',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.fingerprint,
-                                                size: 14, color: Colors.grey[500]),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                user['user_id'] ?? '',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
+                                      ],
+                                    ),
+                                    if (user['create_date'] != null) ...[
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            size: 14,
+                                            color: Colors.grey[500],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            user['create_date'],
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
                                             ),
-                                          ],
-                                        ),
-                                        if (user['create_date'] != null) ...[
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.calendar_today,
-                                                  size: 14, color: Colors.grey[500]),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                user['create_date'],
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
                                           ),
                                         ],
-                                      ],
-                                    ),
-                                  ),
-                                  // Trailing
-                                  if (!_selectionMode)
-                                    PopupMenuButton<String>(
-                                      tooltip: 'Actions',
-                                      icon: Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
-                                      onSelected: (value) {
-                                        if (value == 'delete') {
-                                          _deleteUser(username);
-                                        }
-                                      },
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                              SizedBox(width: 12),
-                                              Text('Delete User', style: TextStyle(color: Colors.red)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
-                            ),
+                              // Trailing
+                              if (!_selectionMode)
+                                PopupMenuButton<String>(
+                                  tooltip: 'Actions',
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    size: 20,
+                                    color: Colors.grey[600],
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'delete') {
+                                      _deleteUser(username);
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                            color: Colors.red,
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Delete User',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -857,49 +883,50 @@ class _IAMScreenState extends State<IAMScreen>
           child: _loading
               ? const LoadingAnimation(message: 'Loading groups')
               : _groups.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.group_outlined,
-                              size: 80, color: Colors.grey[300]),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No groups found',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.group_outlined,
+                        size: 80,
+                        color: Colors.grey[300],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _groups.length,
-                      itemBuilder: (context, index) {
-                        final group = _groups[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          elevation: 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: Colors.grey.shade200, width: 1),
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () => _showGroupDetails(group),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // Content
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        ShaderMask(
-                                          shaderCallback: (bounds) => const LinearGradient(
+                      const SizedBox(height: 16),
+                      Text(
+                        'No groups found',
+                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _groups.length,
+                  itemBuilder: (context, index) {
+                    final group = _groups[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _showGroupDetails(group),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              // Content
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ShaderMask(
+                                      shaderCallback: (bounds) =>
+                                          const LinearGradient(
                                             colors: [
                                               Color(0xFF6366F1),
                                               Color(0xFF8B5CF6),
@@ -908,67 +935,81 @@ class _IAMScreenState extends State<IAMScreen>
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ).createShader(bounds),
+                                      child: Text(
+                                        group['groupname'] ?? '',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.fingerprint,
+                                          size: 14,
+                                          color: Colors.grey[500],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
                                           child: Text(
-                                            group['groupname'] ?? '',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 20,
-                                              color: Colors.white,
-                                              letterSpacing: -0.5,
+                                            group['group_id'] ?? '',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.fingerprint,
-                                                size: 14, color: Colors.grey[500]),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                group['group_id'] ?? '',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Trailing
+                              PopupMenuButton<String>(
+                                tooltip: 'Actions',
+                                icon: Icon(
+                                  Icons.more_vert,
+                                  size: 20,
+                                  color: Colors.grey[600],
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'delete') {
+                                    _deleteGroup(group['groupname'] ?? '');
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete_outline,
+                                          size: 18,
+                                          color: Colors.red,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Delete Group',
+                                          style: TextStyle(color: Colors.red),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  // Trailing
-                                  PopupMenuButton<String>(
-                                    tooltip: 'Actions',
-                                    icon: Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
-                                    onSelected: (value) {
-                                      if (value == 'delete') {
-                                        _deleteGroup(group['groupname'] ?? '');
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                            SizedBox(width: 12),
-                                            Text('Delete Group', style: TextStyle(color: Colors.red)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
-                            ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -992,9 +1033,7 @@ class _IAMScreenState extends State<IAMScreen>
           decoration: InputDecoration(
             labelText: 'Group Name *',
             hintText: 'Enter group name',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.group),
           ),
           autofocus: true,
@@ -1040,7 +1079,7 @@ class _IAMScreenState extends State<IAMScreen>
     if (!mounted) return;
     setState(() => _operationInProgress = true);
     late Map<String, dynamic> dependencies;
-    
+
     try {
       dependencies = await ApiService.checkGroupDependencies(groupname);
     } catch (e) {
@@ -1049,7 +1088,7 @@ class _IAMScreenState extends State<IAMScreen>
       _showError('Failed to check group dependencies: $e');
       return;
     }
-    
+
     if (!mounted) return;
     setState(() => _operationInProgress = false);
 
@@ -1063,8 +1102,10 @@ class _IAMScreenState extends State<IAMScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(hasDeps ? Icons.warning : Icons.delete, 
-                 color: hasDeps ? Colors.orange : Colors.red),
+            Icon(
+              hasDeps ? Icons.warning : Icons.delete,
+              color: hasDeps ? Colors.orange : Colors.red,
+            ),
             const SizedBox(width: 8),
             const Text('Delete Group'),
           ],
@@ -1102,13 +1143,21 @@ class _IAMScreenState extends State<IAMScreen>
                       ),
                       const SizedBox(height: 8),
                       if (users.isNotEmpty) ...[
-                        const Text('Users:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Users:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         ...users.map((u) => Text('  • $u')),
                         const SizedBox(height: 4),
                       ],
                       if (policies.isNotEmpty) ...[
-                        const Text('Attached Policies:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ...policies.map((p) => Text('  • ${p.split('/').last}')),
+                        const Text(
+                          'Attached Policies:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...policies.map(
+                          (p) => Text('  • ${p.split('/').last}'),
+                        ),
                       ],
                     ],
                   ),
@@ -1116,7 +1165,11 @@ class _IAMScreenState extends State<IAMScreen>
                 const SizedBox(height: 12),
                 const Text(
                   'All dependencies will be removed automatically.',
-                  style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
               const SizedBox(height: 8),
@@ -1170,7 +1223,7 @@ class _IAMScreenState extends State<IAMScreen>
         builder: (context) => IAMGroupProfileScreen(group: group),
       ),
     );
-    
+
     // Reload data in case changes were made
     await _loadData();
   }
@@ -1182,8 +1235,6 @@ class _IAMScreenState extends State<IAMScreen>
     super.dispose();
   }
 }
-
-
 
 // Create User Dialog with password validation
 class CreateUserDialog extends StatefulWidget {
@@ -1199,26 +1250,26 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
   bool _setPassword = false;
   bool _requireReset = false;
   bool _obscurePassword = true;
-  
+
   // Password validation states
   bool _hasMinLength = false;
   bool _hasUppercase = false;
   bool _hasLowercase = false;
   bool _hasNumber = false;
-  
+
   @override
   void initState() {
     super.initState();
     _passwordController.addListener(_validatePassword);
   }
-  
+
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
-  
+
   void _validatePassword() {
     final password = _passwordController.text;
     setState(() {
@@ -1228,13 +1279,14 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
       _hasNumber = password.contains(RegExp(r'[0-9]'));
     });
   }
-  
+
   bool get _isPasswordValid =>
-      !_setPassword || (_hasMinLength && _hasUppercase && _hasLowercase && _hasNumber);
-  
+      !_setPassword ||
+      (_hasMinLength && _hasUppercase && _hasLowercase && _hasNumber);
+
   bool get _canCreate =>
       _usernameController.text.isNotEmpty && _isPasswordValid;
-  
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -1266,7 +1318,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
-            
+
             // Set password checkbox
             CheckboxListTile(
               value: _setPassword,
@@ -1283,7 +1335,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
             ),
-            
+
             // Password field (shown only if checkbox is checked)
             if (_setPassword) ...[
               const SizedBox(height: 8),
@@ -1299,7 +1351,9 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() => _obscurePassword = !_obscurePassword);
@@ -1308,7 +1362,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Password requirements
               Container(
                 padding: const EdgeInsets.all(12),
@@ -1329,14 +1383,20 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
                     ),
                     const SizedBox(height: 8),
                     _buildRequirement('At least 8 characters', _hasMinLength),
-                    _buildRequirement('One uppercase letter (A-Z)', _hasUppercase),
-                    _buildRequirement('One lowercase letter (a-z)', _hasLowercase),
+                    _buildRequirement(
+                      'One uppercase letter (A-Z)',
+                      _hasUppercase,
+                    ),
+                    _buildRequirement(
+                      'One lowercase letter (a-z)',
+                      _hasLowercase,
+                    ),
                     _buildRequirement('One number (0-9)', _hasNumber),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Require reset checkbox
               CheckboxListTile(
                 value: _requireReset,
@@ -1378,7 +1438,7 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
       ],
     );
   }
-  
+
   Widget _buildRequirement(String text, bool met) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -1403,7 +1463,6 @@ class _CreateUserDialogState extends State<CreateUserDialog> {
     );
   }
 }
-
 
 // Batch Create Users Dialog
 class BatchCreateUsersDialog extends StatefulWidget {
@@ -1508,7 +1567,7 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
                 ],
               ),
             ),
-            
+
             // Users list
             Expanded(
               child: ListView.builder(
@@ -1527,7 +1586,7 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
                 },
               ),
             ),
-            
+
             // Footer
             Container(
               padding: const EdgeInsets.all(16),
@@ -1554,7 +1613,10 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
                       const SizedBox(width: 8),
                       Text(
                         '${_users.length} user(s)',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -1786,7 +1848,10 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
                   setState(() => widget.entry.requireReset = value ?? false);
                   widget.onChanged();
                 },
-                title: const Text('Require reset', style: TextStyle(fontSize: 13)),
+                title: const Text(
+                  'Require reset',
+                  style: TextStyle(fontSize: 13),
+                ),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 dense: true,
@@ -1802,10 +1867,7 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
     return Chip(
       label: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          color: met ? Colors.green : Colors.grey,
-        ),
+        style: TextStyle(fontSize: 11, color: met ? Colors.green : Colors.grey),
       ),
       avatar: Icon(
         met ? Icons.check_circle : Icons.cancel,
@@ -1885,7 +1947,7 @@ class BatchResultsDialog extends StatelessWidget {
                   final success = result['Success'] ?? false;
                   final username = result['Username'] ?? '';
                   final error = result['Error'] ?? '';
-                  
+
                   return ListTile(
                     dense: true,
                     leading: Icon(
@@ -1894,7 +1956,9 @@ class BatchResultsDialog extends StatelessWidget {
                       size: 20,
                     ),
                     title: Text(username),
-                    subtitle: !success ? Text(error, style: const TextStyle(fontSize: 12)) : null,
+                    subtitle: !success
+                        ? Text(error, style: const TextStyle(fontSize: 12))
+                        : null,
                   );
                 },
               ),
@@ -1924,16 +1988,12 @@ class BatchResultsDialog extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
       ],
     );
   }
 }
-
 
 // Credentials Dialog
 class CredentialsDialog extends StatefulWidget {
@@ -1964,17 +2024,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     final hasConfig = await EmailConfigService.hasEmailConfig();
     if (!hasConfig) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please configure email settings first'),
-            backgroundColor: Colors.orange,
-            action: SnackBarAction(
-              label: 'Settings',
-              textColor: Colors.white,
-              onPressed: () {},
-            ),
-          ),
-        );
+        ToastUtils.show(context, 'Please configure email settings first', isError: true);
       }
       return;
     }
@@ -1985,27 +2035,41 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.email, color: Colors.blue),
-            SizedBox(width: 8),
-            Text('Send Credentials'),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.email_rounded, color: AppTheme.primaryPurple),
+            ),
+            const SizedBox(width: 12),
+            const Text('Send Credentials'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Send credentials for ${credential['username']} via email'),
+            Text(
+              'Send credentials for ${credential['username']} via email',
+              style: TextStyle(color: Colors.grey[700]),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: emailController,
               decoration: InputDecoration(
                 labelText: 'Recipient Email',
                 hintText: 'user@example.com',
-                prefixIcon: const Icon(Icons.email),
+                prefixIcon: const Icon(Icons.alternate_email_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  borderSide: BorderSide(color: AppTheme.primaryPurple, width: 2),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -2016,6 +2080,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -2024,6 +2089,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 Navigator.pop(context, emailController.text.trim());
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: const Text('Next'),
           ),
         ],
@@ -2039,8 +2109,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber, color: Colors.orange),
-            SizedBox(width: 8),
+            Icon(Icons.warning_amber_rounded, color: AppTheme.warningAmber),
+            SizedBox(width: 12),
             Text('Confirm Email'),
           ],
         ),
@@ -2053,13 +2123,13 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: AppTheme.primaryPurple.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.email, color: Colors.blue),
+                  const Icon(Icons.email_outlined, color: AppTheme.primaryPurple),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -2073,40 +2143,22 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info, color: Colors.orange, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Credentials will be sent to this email address',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
             child: const Text('Cancel'),
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.send),
+            icon: const Icon(Icons.send_rounded, size: 18),
             label: const Text('Send'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: AppTheme.successGreen,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
         ],
@@ -2125,29 +2177,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 8),
-                Text('Credentials sent to $email'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ToastUtils.show(context, 'Credentials sent to $email', isError: false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send email: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ToastUtils.show(context, 'Failed to send email: $e', isError: true);
       }
     } finally {
       setState(() => _sending = false);
@@ -2160,7 +2194,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     buffer.writeln('Generated: ${DateTime.now()}');
     buffer.writeln('=' * 50);
     buffer.writeln();
-    
+
     for (var cred in widget.credentials) {
       buffer.writeln('Username: ${cred['username']}');
       if (cred['password'] != null && cred['password']!.isNotEmpty) {
@@ -2168,23 +2202,101 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
       }
       buffer.writeln('-' * 50);
     }
-    
+
     // Copy to clipboard
     final content = buffer.toString();
     Clipboard.setData(ClipboardData(text: content));
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Credentials copied to clipboard!'),
-          ],
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ToastUtils.show(context, 'All credentials copied to clipboard!', isError: false);
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ToastUtils.show(context, '$label copied to clipboard', isError: false);
+  }
+
+  Widget _buildCredentialField({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required bool isPassword,
+    VoidCallback? onCopy,
+    VoidCallback? onToggleVisibility,
+    bool isVisible = true,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+            letterSpacing: 0.3,
+          ),
         ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    isVisible ? value : '•' * 20,
+                    style: TextStyle(
+                      fontFamily: isPassword ? 'monospace' : null,
+                      fontSize: 15,
+                      letterSpacing: (isPassword && !isVisible) ? 1 : 0,
+                      fontWeight: isPassword ? FontWeight.w500 : FontWeight.w400,
+                      color: Colors.grey[900],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 24,
+                color: Colors.grey.shade300,
+              ),
+              if (isPassword && onToggleVisibility != null)
+                IconButton(
+                  icon: Icon(
+                    isVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 18,
+                    color: Colors.grey[600],
+                  ),
+                  tooltip: isVisible ? 'Hide' : 'Show',
+                  onPressed: onToggleVisibility,
+                  splashRadius: 20,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 48),
+                ),
+              if (isPassword)
+                 Container(
+                  width: 1,
+                  height: 24,
+                  color: Colors.grey.shade300,
+                ),
+              IconButton(
+                icon: Icon(Icons.copy_rounded, size: 18, color: Colors.grey[600]),
+                tooltip: 'Copy $label',
+                onPressed: onCopy,
+                splashRadius: 20,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 48),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -2194,7 +2306,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     final credsWithPasswords = widget.credentials
         .where((c) => c['password'] != null && c['password']!.isNotEmpty)
         .toList();
-    
+
     if (credsWithPasswords.isEmpty) {
       // No passwords to show, just close
       Future.microtask(() => Navigator.pop(context));
@@ -2203,50 +2315,94 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
       child: Container(
-        width: 600,
+        width: 550,
         constraints: const BoxConstraints(maxHeight: 700),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.orange.shade600],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.key, color: Colors.white),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successGreen.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: AppTheme.successGreen,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'User Created Successfully',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warningAmber.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.warningAmber.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Save These Credentials!',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 20,
+                          color: Colors.orange[800],
                         ),
-                        Text(
-                          'This is the only time you can view these passwords',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'These credentials will not be available again. Please copy or download them now.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: Colors.orange[900],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -2255,239 +2411,126 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
               ),
             ),
             
-            // Warning banner
-            Container(
-              padding: const EdgeInsets.all(12),
-              color: Colors.orange.shade50,
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade700),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Make sure to save these credentials securely. You won\'t be able to retrieve them later.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.orange.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
+            const Divider(height: 1),
+
             // Credentials list
             Flexible(
-              child: ListView.builder(
+              child: ListView.separated(
                 shrinkWrap: true,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 itemCount: credsWithPasswords.length,
+                separatorBuilder: (context, index) => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Divider(),
+                ),
                 itemBuilder: (context, index) {
                   final cred = credsWithPasswords[index];
                   final username = cred['username'] ?? '';
                   final password = cred['password'] ?? '';
                   final isVisible = _visiblePasswords.contains(index);
-                  
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Username
-                          Row(
-                            children: [
-                              const Icon(Icons.person, size: 18, color: Colors.blue),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Username:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  username,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 18),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: username));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Username copied!'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy username',
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 24),
-                          
-                          // Password
-                          Row(
-                            children: [
-                              const Icon(Icons.lock, size: 18, color: Colors.orange),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Password:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.shade300),
-                                  ),
-                                  child: Text(
-                                    isVisible ? password : '•' * 12,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontFamily: isVisible ? 'monospace' : null,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: isVisible ? 1 : 2,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: Icon(
-                                  isVisible ? Icons.visibility_off : Icons.visibility,
-                                  size: 18,
-                                ),
-                                onPressed: () => _togglePasswordVisibility(index),
-                                tooltip: isVisible ? 'Hide password' : 'Show password',
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, size: 18),
-                                onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: password));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Password copied!'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                                tooltip: 'Copy password',
-                              ),
-                            ],
-                          ),
-                        ],
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildCredentialField(
+                        context: context,
+                        label: 'Username',
+                        value: username,
+                        isPassword: false,
+                        onCopy: () => _copyToClipboard(username, 'Username'),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      _buildCredentialField(
+                        context: context,
+                        label: 'Console Password',
+                        value: password,
+                        isPassword: true,
+                        isVisible: isVisible,
+                        onToggleVisibility: () => _togglePasswordVisibility(index),
+                        onCopy: () => _copyToClipboard(password, 'Password'),
+                      ),
+                    ],
                   );
                 },
               ),
             ),
-            
-            // Footer
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
-              ),
+
+            const Divider(height: 1),
+
+            // Footer Buttons
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // Send via Email buttons (one per credential)
-                  if (credsWithPasswords.length == 1) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _sending ? null : () => _sendViaEmail(credsWithPasswords[0]),
-                        icon: _sending
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.email),
-                        label: Text(_sending ? 'Sending...' : 'Send via Email'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          foregroundColor: Colors.blue,
-                          side: const BorderSide(color: Colors.blue),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ] else ...[
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: credsWithPasswords.map((cred) {
-                        return OutlinedButton.icon(
-                          onPressed: _sending ? null : () => _sendViaEmail(cred),
-                          icon: const Icon(Icons.email, size: 16),
-                          label: Text('Email ${cred['username']}', style: const TextStyle(fontSize: 12)),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            foregroundColor: Colors.blue,
-                            side: const BorderSide(color: Colors.blue),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _downloadCredentials,
-                          icon: const Icon(Icons.download),
-                          label: const Text('Copy All'),
+                          icon: const Icon(Icons.copy_all_rounded, size: 18),
+                          label: const Text('Copy All Credentials'),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            foregroundColor: AppTheme.textPrimary,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.check),
-                          label: const Text('I\'ve Saved Them'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: OutlinedButton.icon(
+                          onPressed: _sending
+                              ? null
+                              : () async {
+                                  for (var cred in credsWithPasswords) {
+                                    await _sendViaEmail(cred);
+                                  }
+                                },
+                           icon: _sending
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.email_outlined, size: 18),
+                          label: Text(_sending ? 'Sending...' : 'Email Credentials'),
+                           style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            foregroundColor: AppTheme.primaryPurple,
+                            side: const BorderSide(color: AppTheme.primaryPurple),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -2499,15 +2542,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
   }
 }
 
-
 // Batch Delete Confirmation Dialog
 class BatchDeleteConfirmationDialog extends StatelessWidget {
   final List<dynamic> dependencies;
 
-  const BatchDeleteConfirmationDialog({
-    super.key,
-    required this.dependencies,
-  });
+  const BatchDeleteConfirmationDialog({super.key, required this.dependencies});
 
   @override
   Widget build(BuildContext context) {
@@ -2516,7 +2555,8 @@ class BatchDeleteConfirmationDialog extends StatelessWidget {
     for (var dep in dependencies) {
       final deps = dep['dependencies'];
       if (deps != null) {
-        final hasDeps = (deps['groups'] as List?)?.isNotEmpty == true ||
+        final hasDeps =
+            (deps['groups'] as List?)?.isNotEmpty == true ||
             (deps['managed_policies'] as List?)?.isNotEmpty == true ||
             (deps['inline_policies'] as List?)?.isNotEmpty == true ||
             (deps['access_keys'] as List?)?.isNotEmpty == true ||
@@ -2562,7 +2602,11 @@ class BatchDeleteConfirmationDialog extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.info, color: Colors.orange, size: 20),
+                          const Icon(
+                            Icons.info,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '$usersWithDeps user(s) have dependencies',
@@ -2587,47 +2631,77 @@ class BatchDeleteConfirmationDialog extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                ...dependencies.where((dep) {
-                  final deps = dep['dependencies'];
-                  if (deps == null) return false;
-                  return (deps['groups'] as List?)?.isNotEmpty == true ||
-                      (deps['managed_policies'] as List?)?.isNotEmpty == true ||
-                      (deps['inline_policies'] as List?)?.isNotEmpty == true ||
-                      (deps['access_keys'] as List?)?.isNotEmpty == true ||
-                      deps['has_login_profile'] == true;
-                }).map((dep) {
-                  final username = dep['username'];
-                  final deps = dep['dependencies'];
-                  return ExpansionTile(
-                    dense: true,
-                    title: Text(username, style: const TextStyle(fontSize: 14)),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, bottom: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if ((deps['groups'] as List?)?.isNotEmpty == true)
-                              _buildDepList('Groups', deps['groups']),
-                            if ((deps['managed_policies'] as List?)?.isNotEmpty == true)
-                              _buildDepList('Policies', deps['managed_policies']),
-                            if ((deps['inline_policies'] as List?)?.isNotEmpty == true)
-                              _buildDepList('Inline Policies', deps['inline_policies']),
-                            if ((deps['access_keys'] as List?)?.isNotEmpty == true)
-                              _buildDepList('Access Keys', deps['access_keys']),
-                            if (deps['has_login_profile'] == true)
-                              const Text('• Has login profile', style: TextStyle(fontSize: 12)),
-                          ],
+                ...dependencies
+                    .where((dep) {
+                      final deps = dep['dependencies'];
+                      if (deps == null) return false;
+                      return (deps['groups'] as List?)?.isNotEmpty == true ||
+                          (deps['managed_policies'] as List?)?.isNotEmpty ==
+                              true ||
+                          (deps['inline_policies'] as List?)?.isNotEmpty ==
+                              true ||
+                          (deps['access_keys'] as List?)?.isNotEmpty == true ||
+                          deps['has_login_profile'] == true;
+                    })
+                    .map((dep) {
+                      final username = dep['username'];
+                      final deps = dep['dependencies'];
+                      return ExpansionTile(
+                        dense: true,
+                        title: Text(
+                          username,
+                          style: const TextStyle(fontSize: 14),
                         ),
-                      ),
-                    ],
-                  );
-                }),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16, bottom: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if ((deps['groups'] as List?)?.isNotEmpty ==
+                                    true)
+                                  _buildDepList('Groups', deps['groups']),
+                                if ((deps['managed_policies'] as List?)
+                                        ?.isNotEmpty ==
+                                    true)
+                                  _buildDepList(
+                                    'Policies',
+                                    deps['managed_policies'],
+                                  ),
+                                if ((deps['inline_policies'] as List?)
+                                        ?.isNotEmpty ==
+                                    true)
+                                  _buildDepList(
+                                    'Inline Policies',
+                                    deps['inline_policies'],
+                                  ),
+                                if ((deps['access_keys'] as List?)
+                                        ?.isNotEmpty ==
+                                    true)
+                                  _buildDepList(
+                                    'Access Keys',
+                                    deps['access_keys'],
+                                  ),
+                                if (deps['has_login_profile'] == true)
+                                  const Text(
+                                    '• Has login profile',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
               ],
               const SizedBox(height: 16),
               const Text(
                 'This action cannot be undone.',
-                style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -2657,8 +2731,13 @@ class BatchDeleteConfirmationDialog extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$title:', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ...items.map((item) => Text('  • $item', style: const TextStyle(fontSize: 11))),
+          Text(
+            '$title:',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+          ...items.map(
+            (item) => Text('  • $item', style: const TextStyle(fontSize: 11)),
+          ),
         ],
       ),
     );
@@ -2731,7 +2810,7 @@ class BatchDeleteResultsDialog extends StatelessWidget {
                   final success = result['Success'] ?? false;
                   final username = result['Username'] ?? '';
                   final error = result['Error'] ?? '';
-                  
+
                   return ListTile(
                     dense: true,
                     leading: Icon(
@@ -2740,7 +2819,9 @@ class BatchDeleteResultsDialog extends StatelessWidget {
                       size: 20,
                     ),
                     title: Text(username),
-                    subtitle: !success ? Text(error, style: const TextStyle(fontSize: 12)) : null,
+                    subtitle: !success
+                        ? Text(error, style: const TextStyle(fontSize: 12))
+                        : null,
                   );
                 },
               ),
@@ -2770,10 +2851,7 @@ class BatchDeleteResultsDialog extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
       ],
     );

@@ -5,7 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Service for handling file downloads with proper permissions and MediaStore integration
 class DownloadService {
-  static const _mediaScanner = MethodChannel('com.amrut.awsmgr/media_scanner');
+  static const _mediaScanner = MethodChannel('com.amrut.aethrops/media_scanner');
 
   /// Request storage permissions on Android
   /// Returns true if permission is granted, false otherwise
@@ -140,6 +140,6 @@ class DownloadService {
   /// Get error message for permission denial
   static String getPermissionDeniedMessage() {
     return 'Storage permission required. Please grant "All files access" in:\n'
-        'Settings > Apps > AWS Manager > Permissions';
+        'Settings > Apps > AethrOps > Permissions';
   }
 }

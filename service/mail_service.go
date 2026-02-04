@@ -166,7 +166,7 @@ func SendIAMCredentialsEmail(config *EmailConfig, username, password, email, con
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;">
-                                This is an automated message from AWS Manager<br>
+                                This is an automated message from AethrOps<br>
                                 Please do not reply to this email
                             </p>
                         </td>
@@ -200,7 +200,7 @@ Best regards,
 %s
 
 ---
-This is an automated message from AWS Manager.
+This is an automated message from AethrOps.
 Please do not reply to this email.
 `, username, password, consoleURL, config.SenderName)
 
@@ -339,7 +339,7 @@ func SendAccessKeyEmail(config *EmailConfig, username, email, accessKey, secretK
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="margin: 0; color: #6c757d; font-size: 13px; line-height: 1.6;">
-                                This is an automated message from AWS Manager<br>
+                                This is an automated message from AethrOps<br>
                                 Please do not reply to this email
                             </p>
                         </td>
@@ -380,12 +380,33 @@ Best regards,
 %s
 
 ---
-This is an automated message from AWS Manager.
+This is an automated message from AethrOps.
 Please do not reply to this email.
 `, username, accessKey, secretKey, config.SenderName)
 
 	m.SetBody("text/plain", plainBody)
 	m.AddAlternative("text/html", htmlBody)
+
+	d := gomail.NewDialer(config.SMTPHost, config.SMTPPort, config.SenderEmail, config.SenderPass)
+
+	if err := d.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %v", err)
+	}
+
+	return nil
+}
+
+// SendTestEmail sends a verification email to check SMTP configuration
+func SendTestEmail(config *EmailConfig, recipient string) error {
+	if config == nil {
+		return fmt.Errorf("email configuration is required")
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", fmt.Sprintf("%s <%s>", config.SenderName, config.SenderEmail))
+	m.SetHeader("To", recipient)
+	m.SetHeader("Subject", "AethrOps - Test Email")
+	m.SetBody("text/plain", "This is a test email from AethrOps to verify your SMTP settings.\n\nIf you are reading this, your configuration is correct! ✅")
 
 	d := gomail.NewDialer(config.SMTPHost, config.SMTPPort, config.SenderEmail, config.SenderPass)
 

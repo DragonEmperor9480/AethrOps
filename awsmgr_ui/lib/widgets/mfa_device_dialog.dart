@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/toast_utils.dart';
 
 class MFADeviceDialog extends StatefulWidget {
   const MFADeviceDialog({super.key});
@@ -49,11 +50,10 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save MFA device: $e'),
-            backgroundColor: Colors.red,
-          ),
+        ToastUtils.show(
+          context,
+          'Failed to save MFA device: $e',
+          isError: true,
         );
       }
     } finally {

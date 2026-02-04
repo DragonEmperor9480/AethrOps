@@ -1,4 +1,4 @@
-# awsmgr
+# aethrops
 
 A new Flutter project.
 

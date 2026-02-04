@@ -12,6 +12,7 @@ import (
 	"github.com/DragonEmperor9480/aws_cli_manager/backend/api"
 	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
 	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
@@ -164,6 +165,21 @@ func StartBackend() int {
 	r.HandleFunc("/api/ec2/instances/{instance_id}/terminate", api.TerminateEC2Instance).Methods("DELETE")
 	r.HandleFunc("/api/ec2/instances/by-state", api.GetInstanceStateChanges).Methods("GET")
 
+	// EC2 Launch & Configuration (Gin Router)
+	gin.SetMode(gin.ReleaseMode)
+	ginRouter := gin.New()
+	ginRouter.POST("/api/ec2/instances", api.LaunchEC2Instance)
+	ginRouter.GET("/api/ec2/security-groups", api.ListSecurityGroups)
+	ginRouter.GET("/api/ec2/key-pairs", api.ListKeyPairs)
+	ginRouter.GET("/api/ec2/subnets", api.ListSubnets)
+	ginRouter.GET("/api/ec2/vpcs", api.ListVPCs)
+
+	r.Handle("/api/ec2/instances", ginRouter).Methods("POST")
+	r.Handle("/api/ec2/security-groups", ginRouter).Methods("GET")
+	r.Handle("/api/ec2/key-pairs", ginRouter).Methods("GET")
+	r.Handle("/api/ec2/subnets", ginRouter).Methods("GET")
+	r.Handle("/api/ec2/vpcs", ginRouter).Methods("GET")
+
 	// Settings
 	r.HandleFunc("/api/settings/mfa", api.GetMFADevice).Methods("GET")
 	r.HandleFunc("/api/settings/mfa", api.SaveMFADevice).Methods("POST")
@@ -177,6 +193,7 @@ func StartBackend() int {
 	// Email Configuration
 	r.HandleFunc("/api/email/config", api.GetEmailConfig).Methods("GET")
 	r.HandleFunc("/api/email/config", api.SaveEmailConfig).Methods("POST")
+	r.HandleFunc("/api/email/test", api.SendTestEmail).Methods("POST")
 	r.HandleFunc("/api/email/config", api.DeleteEmailConfig).Methods("DELETE")
 
 	// Health

@@ -1,12 +1,13 @@
-; AWS Manager - Inno Setup Script
-; This script creates a Windows installer for AWS Manager
+; AethrOps - Inno Setup Script
+; This script creates a Windows installer for AethrOps
 
-#define MyAppName "AWS Manager"
-#define MyAppVersion "Preview Beta 1"
+#define MyAppName "AethrOps"
+#define MyAppVersion "Preview Beta 2"
+#define MyAppVersionTag "preview-beta-2"
 #define MyAppNumericVersion "0.1.0"
 #define MyAppPublisher "DragonEmperor9480"
 #define MyAppURL "https://github.com/DragonEmperor9480/aws-manager"
-#define MyAppExeName "aws-manager.exe"
+#define MyAppExeName "AethrOps.exe"
 #define MyAppDescription "AWS Resource Management Tool"
 
 [Setup]
@@ -24,7 +25,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 ; Output settings
 OutputDir=..\..\release\windows
-OutputBaseFilename=aws-manager-setup-{#MyAppVersion}
+OutputBaseFilename=AethrOps-setup-{#MyAppVersionTag}
 ; Installer settings
 SetupIconFile=..\..\awsmgr_ui\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
@@ -90,6 +91,6 @@ procedure InitializeWizard();
 begin
   if not IsWindows10OrLater() then
   begin
-    MsgBox('Note: AWS Manager is optimized for Windows 10 and later. It may work on older versions but is not officially supported.', mbInformation, MB_OK);
+    MsgBox('Note: AethrOps is optimized for Windows 10 and later. It may work on older versions but is not officially supported.', mbInformation, MB_OK);
   end;
 end;

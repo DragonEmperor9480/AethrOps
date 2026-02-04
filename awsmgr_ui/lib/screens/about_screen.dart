@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/toast_utils.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -67,22 +68,14 @@ class _AboutScreenState extends State<AboutScreen>
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
     try {
-      if (!await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      )) {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         // If external app mode fails, try platform default
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       // If still fails, show error
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open URL: $url'),
-            backgroundColor: AppTheme.errorRed,
-          ),
-        );
+        ToastUtils.show(context, 'Could not open URL: $url', isError: true);
       }
     }
   }
@@ -153,7 +146,7 @@ class _AboutScreenState extends State<AboutScreen>
         color: theme.cardColor.withValues(alpha: 0.95),
         boxShadow: [
           BoxShadow(
-            color: isDark 
+            color: isDark
                 ? Colors.black.withValues(alpha: 0.3)
                 : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
@@ -240,7 +233,7 @@ class _AboutScreenState extends State<AboutScreen>
                   colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
                 ).createShader(bounds),
                 child: const Text(
-                  'AWS MANAGER',
+                  'AethrOps',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -307,7 +300,7 @@ class _AboutScreenState extends State<AboutScreen>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: isDark 
+                color: isDark
                     ? Colors.black.withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
@@ -351,7 +344,7 @@ class _AboutScreenState extends State<AboutScreen>
               const SizedBox(height: 16),
               Text(
                 'Manage your AWS infrastructure with unprecedented ease and power. '
-                'AWS Manager brings you advanced features and capabilities that go beyond '
+                'AethrOps brings you advanced features and capabilities that go beyond '
                 'what the official AWS Console and mobile app offer.',
                 style: TextStyle(
                   fontSize: 15,
@@ -362,7 +355,11 @@ class _AboutScreenState extends State<AboutScreen>
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.computer, size: 16, color: theme.textTheme.bodyMedium?.color),
+                  Icon(
+                    Icons.computer,
+                    size: 16,
+                    color: theme.textTheme.bodyMedium?.color,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     _osName,
@@ -431,7 +428,7 @@ class _AboutScreenState extends State<AboutScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Why Choose AWS Manager?',
+          'Why Choose AethrOps?',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -463,7 +460,7 @@ class _AboutScreenState extends State<AboutScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: isDark 
+                    color: isDark
                         ? Colors.black.withValues(alpha: 0.3)
                         : Colors.black.withValues(alpha: 0.03),
                     blurRadius: 8,
@@ -601,7 +598,8 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 8),
           InkWell(
-            onTap: () => _launchURL('https://www.linkedin.com/in/amarjeet-aryan/'),
+            onTap: () =>
+                _launchURL('https://www.linkedin.com/in/amarjeet-aryan/'),
             borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -642,7 +640,7 @@ class _AboutScreenState extends State<AboutScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            '© 2025 AWS Manager',
+            '© 2025-2026 AethrOps',
             style: TextStyle(
               fontSize: 13,
               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),

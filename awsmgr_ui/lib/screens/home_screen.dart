@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'iam_screen.dart';
@@ -13,6 +14,8 @@ import '../services/api_service.dart';
 import '../services/email_config_service.dart';
 import '../services/aws_credentials_service.dart';
 import '../utils/constants.dart';
+import '../utils/toast_utils.dart';
+import '../utils/exit_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,13 +25,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  bool _showAllServices = false;
-  late AnimationController _fadeController;
   late AnimationController _shimmerController;
-  late Animation<double> _fadeAnimation;
-
 
   String _username = 'User';
+  String _region = '';
   String _greeting = 'Good day';
   String _quote = 'Loading...';
   bool _isLoadingUserInfo = true;
@@ -39,57 +39,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ServiceInfo(
       title: 'IAM',
       description: 'Control access to AWS resources',
-      icon: Icons.security,
+      svgAsset: 'assets/icons/Arch_AWS-Identity-and-Access-Management_32.svg',
       color: AppTheme.iamColor,
       route: '/iam',
     ),
     ServiceInfo(
       title: 'S3',
       description: 'Scalable cloud storage',
-      icon: Icons.cloud_queue,
+      svgAsset: 'assets/icons/Arch_Amazon-Simple-Storage-Service_32.svg',
       color: AppTheme.s3Color,
       route: '/s3',
     ),
     ServiceInfo(
       title: 'EC2',
       description: 'Virtual servers in the cloud',
-      icon: Icons.developer_board,
+      svgAsset: 'assets/icons/Res_Amazon-EC2_Instances_48.svg',
       color: AppTheme.ec2Color,
       route: '/ec2',
     ),
     ServiceInfo(
       title: 'CloudWatch',
       description: 'Monitor resources & logs',
-      icon: Icons.insights,
+      svgAsset: 'assets/icons/amazon_cloudwatch_logo_icon_168662.svg',
       color: AppTheme.cloudwatchColor,
       route: '/cloudwatch',
-    ),
-  ];
-
-  final List<ServiceInfo> _additionalServices = [
-    ServiceInfo(
-      title: 'Lambda',
-      description: 'Run code without servers',
-      icon: Icons.offline_bolt,
-      color: AppTheme.lambdaColor,
-      route: '/lambda',
-      comingSoon: true,
-    ),
-    ServiceInfo(
-      title: 'RDS',
-      description: 'Relational Database',
-      icon: Icons.storage_rounded,
-      color: AppTheme.rdsColor,
-      route: '/rds',
-      comingSoon: true,
-    ),
-    ServiceInfo(
-      title: 'VPC',
-      description: 'Isolated cloud networks',
-      icon: Icons.hub,
-      color: AppTheme.vpcColor,
-      route: '/vpc',
-      comingSoon: true,
     ),
   ];
 
@@ -102,21 +75,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _checkMissingConfigurations();
     });
 
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    );
-
     _shimmerController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat();
-
-
 
     // Set initial greeting and quote immediately
     _greeting = _getGreeting();
@@ -147,11 +109,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _loadUserInfo() async {
     try {
+      // Load region from stored credentials
+      final credentials = await AWSCredentialsService.getCredentials();
+      final region = credentials['region'] ?? '';
+
       final identity = await ApiService.getCallerIdentity();
       final username = identity['username'] ?? 'User';
 
       setState(() {
         _username = username;
+        _region = region;
         _greeting = _getGreeting();
         _quote = _getRandomQuote();
         _isLoadingUserInfo = false;
@@ -159,6 +126,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     } catch (e) {
       debugPrint('Error loading user info: $e');
+      // Try to load region even if identity fails
+      try {
+        final credentials = await AWSCredentialsService.getCredentials();
+        _region = credentials['region'] ?? '';
+      } catch (_) {}
+      
       setState(() {
         _username = 'User';
         _greeting = _getGreeting();
@@ -186,7 +159,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _fadeController.dispose();
     _shimmerController.dispose();
     super.dispose();
   }
@@ -237,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('To get the most out of AWS Manager, please configure:'),
+            const Text('To get the most out of AethrOps, please configure:'),
             const SizedBox(height: 16),
             ...missingItems.map(
               (item) => Padding(
@@ -292,28 +264,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Future<bool> _onWillPop() async {
+    return await ExitHandler.showExitConfirmation(context);
+  }
+
   void _navigateToService(String route, bool comingSoon) {
     if (comingSoon) {
-      final theme = Theme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.info_outline, color: AppTheme.primaryPurple),
-              const SizedBox(width: 8),
-              const Text('This service is coming soon'),
-            ],
-          ),
-          backgroundColor: theme.cardColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: AppTheme.primaryPurple.withValues(alpha: 0.2),
-            ),
-          ),
-        ),
-      );
+      ToastUtils.show(context, 'This service is coming soon', isError: false);
       return;
     }
 
@@ -362,470 +319,375 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar.large(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            backgroundColor: theme.scaffoldBackgroundColor,
-            elevation: 0,
-            actions: [
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: _isLoadingUserInfo
-                      ? AppTheme.purple400
-                      : _isConnected
-                      ? AppTheme.successGreen
-                      : AppTheme.errorRed,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isLoadingUserInfo)
-                      SizedBox(
-                        width: 10,
-                        height: 10,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.onPrimary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isLoadingUserInfo
-                          ? 'Connecting...'
-                          : _isConnected
-                          ? 'Connected'
-                          : 'Disconnected',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () => _navigateToService('/settings', false),
-                tooltip: 'Settings',
-              ),
-            ],
-            flexibleSpace: LayoutBuilder(
-              builder: (context, constraints) {
-                final isCollapsed = constraints.maxHeight <= 120;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
 
-                return FlexibleSpaceBar(
-                  titlePadding: EdgeInsets.only(
-                    left: 16,
-                    right: 60,
-                    bottom: 16,
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar.large(
+              expandedHeight: 200,
+              floating: false,
+              pinned: true,
+              backgroundColor: theme.scaffoldBackgroundColor,
+              elevation: 0,
+              actions: [
+                Container(
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 8,
                   ),
-                  title: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isMobile = MediaQuery.of(context).size.width < 600;
-                      return SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _greeting,
-                              style: TextStyle(
-                                fontSize: isMobile ? 20 : 22,
-                                fontWeight: FontWeight.w800,
-                                color: theme.textTheme.bodyMedium?.color,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            Text(
-                              _username,
-                              style: TextStyle(
-                                fontSize: isMobile ? 18 : 20,
-                                fontWeight: FontWeight.w700,
-                                color: theme.textTheme.bodyLarge?.color,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            if (!isCollapsed) ...[
-                              const SizedBox(height: 4),
-                              if (_isLoadingUserInfo)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4.0),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: isMobile ? 10 : 12,
-                                        height: isMobile ? 10 : 12,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                AppTheme.primaryPurple,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          _loadingMessage,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 8 : 11,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: FontStyle.italic,
-                                            color: AppTheme.primaryPurple,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4.0),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: 2.0,
-                                        ),
-                                        child: Icon(
-                                          Icons.format_quote,
-                                          size: isMobile ? 9 : 12,
-                                          color:
-                                              theme.textTheme.bodyMedium?.color,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          _quote,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 8 : 11,
-                                            fontWeight: FontWeight.w600,
-                                            fontStyle: FontStyle.italic,
-                                            color: theme
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.color,
-                                            letterSpacing: 0.2,
-                                            height: 1.3,
-                                          ),
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ],
-                        ),
-                      );
-                    },
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
                   ),
-                  background: Stack(
-                    fit: StackFit.expand,
+                  decoration: BoxDecoration(
+                    color: _isLoadingUserInfo
+                        ? AppTheme.purple400
+                        : _isConnected
+                        ? AppTheme.successGreen
+                        : AppTheme.errorRed,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppTheme.primaryPurple.withValues(alpha: 0.1),
-                              AppTheme.primaryBlue.withValues(alpha: 0.1),
-                            ],
+                      if (_isLoadingUserInfo)
+                        SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onPrimary,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ),
-                      // Floating particles
-                      const FloatingParticles(
-                        count: 15,
-                        color: AppTheme.primaryPurple,
-                      ),
-                      // Shimmer effect
-                      AnimatedBuilder(
-                        animation: _shimmerController,
-                        builder: (context, child) {
-                          return CustomPaint(
-                            painter: ShimmerPainter(
-                              animation: _shimmerController.value,
-                            ),
-                          );
-                        },
+                      const SizedBox(width: 8),
+                      Text(
+                        _isLoadingUserInfo
+                            ? 'Connecting...'
+                            : _isConnected
+                            ? 'Connected'
+                            : 'Disconnected',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Services Header
+                ),
+                if (_region.isNotEmpty && !_isLoadingUserInfo)
                   Container(
-                    padding: const EdgeInsets.only(bottom: 4, left: 2),
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 4,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(
-                          color: AppTheme.primaryPurple,
-                          width: 4,
-                        ),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                        width: 1,
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
-                        'Available Services',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: theme.textTheme.bodyLarge?.color,
-                          letterSpacing: -0.5,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.public,
+                          size: 14,
+                          color: AppTheme.primaryBlue,
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _region,
+                          style: TextStyle(
+                            color: AppTheme.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final crossAxisCount = constraints.maxWidth > 900
-                          ? 4
-                          : constraints.maxWidth > 600
-                          ? 3
-                          : 2;
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () => _navigateToService('/settings', false),
+                  tooltip: 'Settings',
+                ),
+              ],
+              flexibleSpace: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCollapsed = constraints.maxHeight <= 120;
 
-                      // Adjust aspect ratio based on screen size
-                      final aspectRatio = constraints.maxWidth > 600
-                          ? 1.15
-                          : 1.0;
-
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: aspectRatio,
-                        ),
-                        itemCount: _mainServices.length,
-                        itemBuilder: (context, index) {
-                          final service = _mainServices[index];
-                          return TweenAnimationBuilder<double>(
-                            duration: Duration(
-                              milliseconds: 300 + (index * 100),
-                            ),
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            builder: (context, value, child) {
-                              return Transform.scale(
-                                scale: value,
-                                child: Opacity(opacity: value, child: child),
-                              );
-                            },
-                            child: ServiceCard(
-                              title: service.title,
-                              description: service.description,
-                              icon: service.icon,
-                              color: service.color,
-                              onTap: () => _navigateToService(
-                                service.route,
-                                service.comingSoon,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 28),
-                  // Show All Services Button with enhanced design
-                  Center(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _showAllServices = !_showAllServices;
-                          if (_showAllServices) {
-                            _fadeController.forward();
-                          } else {
-                            _fadeController.reverse();
-                          }
-                        });
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 14,
-                        ),
-                        side: BorderSide(
-                          color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                          width: 1.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: Icon(
-                        _showAllServices
-                            ? Icons.expand_less
-                            : Icons.expand_more,
-                        color: AppTheme.primaryPurple,
-                      ),
-                      label: Text(
-                        _showAllServices
-                            ? 'Show Less Services'
-                            : 'Show All Services',
-                        style: TextStyle(
-                          color: AppTheme.primaryPurple,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
+                  return FlexibleSpaceBar(
+                    titlePadding: EdgeInsets.only(
+                      left: 16,
+                      right: 60,
+                      bottom: 16,
                     ),
-                  ),
-
-                  if (_showAllServices) ...[
-                    const SizedBox(height: 36),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                left: BorderSide(
-                                  color: AppTheme.primaryPurple,
-                                  width: 3,
+                    title: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isMobile =
+                            MediaQuery.of(context).size.width < 600;
+                        return SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _greeting,
+                                style: TextStyle(
+                                  fontSize: isMobile ? 20 : 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: theme.textTheme.bodyMedium?.color,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 16),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.apps_outlined,
-                                    color: AppTheme.primaryPurple,
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'Additional Services',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryPurple.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      'Coming Soon',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.primaryPurple,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                _username,
+                                style: TextStyle(
+                                  fontSize: isMobile ? 18 : 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.textTheme.bodyLarge?.color,
+                                  letterSpacing: -0.3,
+                                ),
                               ),
+                              if (!isCollapsed) ...[
+                                const SizedBox(height: 4),
+                                if (_isLoadingUserInfo)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4.0),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: isMobile ? 10 : 12,
+                                          height: isMobile ? 10 : 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  AppTheme.primaryPurple,
+                                                ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            _loadingMessage,
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 8 : 11,
+                                              fontWeight: FontWeight.w500,
+                                              fontStyle: FontStyle.italic,
+                                              color: AppTheme.primaryPurple,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 4.0),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 2.0,
+                                          ),
+                                          child: Icon(
+                                            Icons.format_quote,
+                                            size: isMobile ? 9 : 12,
+                                            color: theme
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            _quote,
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 8 : 11,
+                                              fontWeight: FontWeight.w600,
+                                              fontStyle: FontStyle.italic,
+                                              color: theme
+                                                  .textTheme
+                                                  .bodyLarge
+                                                  ?.color,
+                                              letterSpacing: 0.2,
+                                              height: 1.3,
+                                            ),
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppTheme.primaryPurple.withValues(alpha: 0.1),
+                                AppTheme.primaryBlue.withValues(alpha: 0.1),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final crossAxisCount = constraints.maxWidth > 900
-                                  ? 4
-                                  : constraints.maxWidth > 600
-                                  ? 3
-                                  : 2;
-
-                              // Adjust aspect ratio based on screen size
-                              final aspectRatio = constraints.maxWidth > 600
-                                  ? 1.15
-                                  : 1.0;
-
-                              return GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: crossAxisCount,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                      childAspectRatio: aspectRatio,
-                                    ),
-                                itemCount: _additionalServices.length,
-                                itemBuilder: (context, index) {
-                                  final service = _additionalServices[index];
-                                  return ServiceCard(
-                                    title: service.title,
-                                    description: service.comingSoon
-                                        ? 'Coming Soon'
-                                        : service.description,
-                                    icon: service.icon,
-                                    color: service.color,
-                                    onTap: () => _navigateToService(
-                                      service.route,
-                                      service.comingSoon,
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                        ),
+                        // Floating particles
+                        const FloatingParticles(
+                          count: 15,
+                          color: AppTheme.primaryPurple,
+                        ),
+                        // Shimmer effect
+                        AnimatedBuilder(
+                          animation: _shimmerController,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              painter: ShimmerPainter(
+                                animation: _shimmerController.value,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                  ],
-                  const SizedBox(height: 32),
-                ],
+                  );
+                },
               ),
             ),
-          ),
-        ],
+
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Services Header
+                    Container(
+                      padding: const EdgeInsets.only(bottom: 4, left: 2),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: AppTheme.primaryPurple,
+                            width: 4,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Text(
+                          'Available Services',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: theme.textTheme.bodyLarge?.color,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final crossAxisCount = constraints.maxWidth > 900
+                            ? 4
+                            : constraints.maxWidth > 600
+                            ? 3
+                            : 2;
+
+                        // Adjust aspect ratio based on screen size
+                        final aspectRatio = constraints.maxWidth > 600
+                            ? 1.15
+                            : 1.0;
+
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: aspectRatio,
+                              ),
+                          itemCount: _mainServices.length,
+                          itemBuilder: (context, index) {
+                            final service = _mainServices[index];
+                            return TweenAnimationBuilder<double>(
+                              duration: Duration(
+                                milliseconds: 300 + (index * 100),
+                              ),
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              builder: (context, value, child) {
+                                return Transform.scale(
+                                  scale: value,
+                                  child: Opacity(opacity: value, child: child),
+                                );
+                              },
+                              child: ServiceCard(
+                                title: service.title,
+                                description: service.description,
+                                icon: service.icon,
+                                svgAsset: service.svgAsset,
+                                color: service.color,
+                                onTap: () => _navigateToService(
+                                  service.route,
+                                  service.comingSoon,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -834,7 +696,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 class ServiceInfo {
   final String title;
   final String description;
-  final IconData icon;
+  final IconData? icon;
+  final String? svgAsset;
   final Color color;
   final String route;
   final bool comingSoon;
@@ -842,11 +705,15 @@ class ServiceInfo {
   ServiceInfo({
     required this.title,
     required this.description,
-    required this.icon,
+    this.icon,
+    this.svgAsset,
     required this.color,
     required this.route,
     this.comingSoon = false,
-  });
+  }) : assert(
+         icon != null || svgAsset != null,
+         'Either icon or svgAsset must be provided',
+       );
 }
 
 class ShimmerPainter extends CustomPainter {

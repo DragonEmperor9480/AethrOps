@@ -73,38 +73,31 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('CloudWatch'),
-        backgroundColor: AppTheme.cloudwatchColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('CloudWatch Management'), elevation: 0),
       body: _isLoading
           ? const Center(child: LoadingAnimation())
           : _error != null
-              ? _buildError(theme, isDark)
-              : _buildFunctionList(theme, isDark),
+          ? _buildError(theme, isDark)
+          : _buildFunctionList(theme, isDark),
     );
   }
 
   Widget _buildError(ThemeData theme, bool isDark) {
     final textColor = isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary;
-    final secondaryColor = isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary;
-    
+    final secondaryColor = isDark
+        ? AppTheme.textSecondaryDark
+        : AppTheme.textSecondary;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppTheme.errorRed,
-            ),
+            Icon(Icons.error_outline, size: 64, color: AppTheme.errorRed),
             const SizedBox(height: 16),
             Text(
               'Error Loading Functions',
@@ -118,9 +111,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: secondaryColor,
-              ),
+              style: TextStyle(color: secondaryColor),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -140,10 +131,16 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
 
   Widget _buildFunctionList(ThemeData theme, bool isDark) {
     final textColor = isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary;
-    final secondaryColor = isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary;
-    final cardColor = isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground;
-    final borderColor = isDark ? AppTheme.borderColorDark : AppTheme.borderColor;
-    
+    final secondaryColor = isDark
+        ? AppTheme.textSecondaryDark
+        : AppTheme.textSecondary;
+    final cardColor = isDark
+        ? AppTheme.cardBackgroundDark
+        : AppTheme.cardBackground;
+    final borderColor = isDark
+        ? AppTheme.borderColorDark
+        : AppTheme.borderColor;
+
     if (_functions.isEmpty) {
       return Center(
         child: Column(
@@ -157,10 +154,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
             const SizedBox(height: 16),
             Text(
               'No Lambda Functions Found',
-              style: TextStyle(
-                fontSize: 18,
-                color: secondaryColor,
-              ),
+              style: TextStyle(fontSize: 18, color: secondaryColor),
             ),
           ],
         ),
@@ -172,7 +166,8 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
       children: [
         ListHeaderWithSearch(
           title: 'Lambda Functions',
-          subtitle: '${_functions.length} function${_functions.length != 1 ? 's' : ''} available',
+          subtitle:
+              '${_functions.length} function${_functions.length != 1 ? 's' : ''} available',
           icon: Icons.analytics_outlined,
           iconBackgroundColor: AppTheme.cloudwatchColor.withValues(alpha: 0.2),
           iconColor: AppTheme.cloudwatchColor,
@@ -195,90 +190,85 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'No functions match "${_searchController.text}"',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: secondaryColor,
-                        ),
+                        style: TextStyle(fontSize: 16, color: secondaryColor),
                       ),
                     ],
                   ),
                 )
               : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _filteredFunctions.length,
-            itemBuilder: (context, index) {
-              final function = _filteredFunctions[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: isDark ? 0 : 2,
-                color: cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: borderColor),
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LiveLogViewerScreen(
-                          functionName: function,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _filteredFunctions.length,
+                  itemBuilder: (context, index) {
+                    final function = _filteredFunctions[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: isDark ? 0 : 2,
+                      color: cardColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: borderColor),
+                      ),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  LiveLogViewerScreen(functionName: function),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.cloudwatchColor.withValues(
+                                    alpha: isDark ? 0.2 : 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.functions,
+                                  color: AppTheme.cloudwatchColor,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      function,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Tap to view live logs',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: secondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, color: secondaryColor),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.cloudwatchColor.withValues(alpha: isDark ? 0.2 : 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.functions,
-                            color: AppTheme.cloudwatchColor,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                function,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Tap to view live logs',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: secondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: secondaryColor,
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
