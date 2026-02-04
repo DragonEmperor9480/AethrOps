@@ -1,153 +1,129 @@
+# AethrOps
 
-# AWS CLI Manager (awsmgr)
+**AethrOps** is a modern, cross-platform AWS management tool built to simplify cloud operations for developers through a clean UI, efficient workflows, and platform-wide availability.
 
-A CLI tool to manage various AWS services such as IAM, EC2, and S3 through an interactive terminal interface.
+<p align="center">
+  <a href="#about">About</a> •
+  <a href="#features">Features</a> •
+  <a href="#supported-platforms">Downloads</a> •
+  <a href="#-getting-started--aws-credentials-setup">Getting Started</a> •
+  <a href="#aethrbuild--the-builder-of-aethrops">AethrBuild</a>
+</p>
 
 ---
 
 ## About
 
-This project is a Go-based rewrite and enhancement of the original [awsmgr](https://github.com/DragonEmperor9480/awsmgr) bash script project by DragonEmperor9480.  
-It provides a modular architecture to interact with AWS services using a user-friendly command-line interface.
+AethrOps is designed to make managing AWS services simple and intuitive. With a clean, user-friendly interface, it allows you to control AWS resources directly from your mobile device or PC—without repeatedly logging into the AWS Management Console.
+
+The core goal of AethrOps is to make AWS **easy**, **accessible**, and **portable** for everyone, enabling seamless cloud management anytime, anywhere.
 
 ---
 
-## Features
+## Supported Platforms
 
-- Interactive menus for managing AWS IAM, EC2, and S3 services.
-- Modular structure with separate controllers and views for each service.
-- Colored and formatted terminal output for improved UX.
-- Under development: EC2 management features coming soon.
-- Easily extensible to add more AWS service modules.
+You can download **AethrOps** for **Android**, **Windows**, and **Linux** directly from our GitHub Releases page.
+
+[**📥 Download Latest Version**](https://github.com/DragonEmperor9480/AethrOps/releases/latest)  
 
 ---
 
-## Project Structure
+##  Features
 
-- `controllers/` — Contains service-specific logic and menu handlers (e.g., IAM_mgr, EC2_mgr).
-- `views/` — Contains UI components for menus and prompts.
-- `utils/` — Utility functions like color codes, input helpers, animations, etc.
-- `models/` — (Reserved for future) Data models or structs representing AWS entities.
+### 🛡️ IAM (Identity & Access Management)
+- **User & Group Management:** Create, delete, and manage IAM users and groups.
+- **Batch User Creation:** Create multiple users simultaneously in a single operation.
+- **Force Delete:** Recursively delete users and groups, even with attached policies or active members.
+- **Policy Attachment:** Seamlessly attach policies to users and groups.
+- **Smart Credential Delivery:** Automatically compose emails with credentials for new users.
 
----
+### ☁️ EC2 (Elastic Compute Cloud)
+- **Instance Dashboard:** View, filter, and monitor your EC2 instances.
+- **Lifecycle Control:** Start, Stop, Reboot, and Terminate instances directly.
+- **Deep Inspection:** Detailed view of Network interfaces, Security Groups, Storage volumes, and Tags.
+- **Status Tracking:** Real-time updates on instance states (Pending, Running, Stopping, etc.).
 
-## Getting Started
+### 🗄️ S3 (Simple Storage Service)
+- **Object Management:** Upload, Download, and Delete files; Create Folders.
+- **Bucket Operations:** Create and delete S3 buckets easily.
+- **Versioning Control:** Enable or disable bucket versioning.
+- **MFA Protection:** Configure MFA Delete for critical buckets.
+- **Bucket Browser:** Navigate folders and explore your S3 hierarchy.
+- **Instant Search:** High-performance search bar to find buckets and objects quickly.
 
-### Prerequisites
+### 📊 Monitoring & Logs
+- **Lambda Live Logs:** Real-time log streaming for AWS Lambda functions.
+- **Custom Log Viewer:** Built-in viewer for easy log analysis.
 
-- Go installed (version 1.24.3 or newer recommended)
-- AWS CLI configured on your machine (for actual AWS command executions)
-
-### Installation Options
-
-#### Option 1: Compile and Install to System Path
-
-This method installs `awsmgr` globally so you can run it from anywhere:
-
-```bash
-# Clone the repository
-git clone https://github.com/DragonEmperor9480/aws_cli_manager
-cd aws_cli_manager
-
-# Build the application
-go build -o awsmgr
-
-# Move to system path (requires sudo)
-sudo mv awsmgr /usr/local/bin/
-
-# Verify installation
-awsmgr --version
-```
-
-After installation, you can run `awsmgr` from any directory.
-
-#### Option 2: Quick Run (Local Build)
-
-This method builds and runs the application locally without system installation:
-
-```bash
-# Clone the repository
-git clone https://github.com/DragonEmperor9480/aws_cli_manager
-cd aws_cli_manager
-
-# Build the application
-go build -o awsmgr
-
-# Run the application
-./awsmgr
-```
-
-You should see the interactive menu interface, allowing you to navigate AWS services.
-
-#### Option 3: Windows Installation
-
-For Windows users, follow these steps:
-
-**Quick Run (Local Build):**
-
-```powershell
-# Clone the repository
-git clone https://github.com/DragonEmperor9480/aws_cli_manager
-cd aws_cli_manager
-
-# Build the application
-go build -o awsmgr.exe
-
-# Run the application
-.\awsmgr.exe
-```
-
-**To install globally (add to PATH):**
-
-```powershell
-# Clone the repository
-git clone https://github.com/DragonEmperor9480/aws_cli_manager
-cd aws_cli_manager
-
-# Build the application
-go build -o awsmgr.exe
-
-# Create awsmgr directory in Program Files
-mkdir "C:\Program Files\awsmgr"
-
-# Move the executable
-move awsmgr.exe "C:\Program Files\awsmgr\"
-
-# Add to User PATH (run as administrator for System PATH)
-$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-[Environment]::SetEnvironmentVariable("Path", "$userPath;C:\Program Files\awsmgr", "User")
-
-# Restart your terminal and verify
-awsmgr --version
-```
-
-After adding to PATH, you can run `awsmgr` from any directory.
+### ✨ Core Capabilities
+- **Cross-Platform:** Native experience on Android, Windows, and Linux.
+- **Secure Storage:** AWS credentials are encrypted and stored locally.
+- **Multi-Region Support:** Manage resources across different AWS regions.
 
 ---
 
-## Usage
+## 🔑 Getting Started – AWS Credentials Setup
 
-- Choose the service you want to manage (IAM, EC2, S3).
-- Navigate submenus to perform tasks like creating users, managing buckets, etc.
-- Use the menus to return to previous screens or exit the program.
+To use **AethrOps**, AWS Access Keys are required.
 
----
-
-## Contributing
-
-Contributions and improvements are welcome! Feel free to open issues or submit pull requests.
-
----
-
-## License
-
-This project is open source and available under the MIT License.
+### Step 1: Create an IAM User
+1. Log in to the AWS Management Console  
+2. Navigate to **IAM → Users → Create user**  
+3. Enter a username and proceed  
+4. Attach appropriate policies  
+   - `AdministratorAccess` for full access  
+   - Or specific policies for limited permissions  
+5. Create the user
 
 ---
 
-## Acknowledgments
+### Step 2: Generate Access Keys
+1. Go to **IAM → Users → Select your user**  
+2. Open **Security credentials**  
+3. Under **Access keys**, click **Create access key**  
+4. Select **Application running outside AWS**  
+5. Complete the process
 
-This project is ported and inspired by the original bash-based AWS manager available at:  
-[https://github.com/DragonEmperor9480/awsmgr](https://github.com/DragonEmperor9480/awsmgr)
+⚠️ **Important:**  
+Save the **Access Key ID** and **Secret Access Key** immediately.  
+The secret key is shown only once.
 
 ---
+
+### Step 3: Configure AethrOps
+1. Open the **AethrOps** application  
+2. Enter the following:
+   - **Access Key ID**
+   - **Secret Access Key**
+   - **AWS Region** (e.g., `us-east-1`, `ap-south-1`)
+3. Save the configuration
+
+🎉 You’re now ready to manage your AWS resources using AethrOps.
+
+---
+
+📘 **Documentation & Guides**  
+Detailed documentation and step-by-step guides will be added soon.
+
+---
+
+## AethrBuild – The Builder of AethrOps
+
+**AethrBuild** is an automated GitHub Actions workflow that:
+- Builds AethrOps for all supported platforms
+- Manages releases
+- Updates the official website
+- Publishes release announcements on LinkedIn
+
+---
+
+## Project Lineage
+
+AethrOps is the evolution of the earlier CLI-based AWS management tool **awsmgr**:  
+https://github.com/DragonEmperor9480/awsmgr
+
+This project builds upon the ideas and experience gained from **awsmgr**, expanding them into a full-featured, cross-platform application.
+
+---
+
+**Made by Developers for Developers ❤️**
