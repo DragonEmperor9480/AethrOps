@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:io';
 import '../services/cloudwatch_service.dart';
+import '../services/api_service.dart';
 import '../utils/toast_utils.dart';
 
 class LiveLogViewerScreen extends StatefulWidget {
@@ -19,7 +21,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     with TickerProviderStateMixin {
   final List<LogEntry> _logs = [];
   final ScrollController _scrollController = ScrollController();
-  StreamSubscription<LogEntry>? _logSubscription;
+  StreamSubscription<dynamic>? _logSubscription; // Changed to dynamic
   bool _isPaused = false;
   bool _autoScroll = true;
   bool _isSearchMode = false;
@@ -39,6 +41,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   int _logsPerSecond = 0;
   Timer? _statsTimer;
   final List<int> _recentLogCounts = [];
+  String? _sessionId; // Store session ID for download
 
   @override
   void initState() {
@@ -133,10 +136,20 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
 
     _logSubscription = CloudWatchService.streamLambdaLogs(widget.functionName)
         .listen(
-          (logEntry) {
-            if (!_isPaused) {
+          (event) {
+            // Handle session ID
+            if (event is Map && event['type'] == 'session') {
               setState(() {
-                _logs.add(logEntry);
+                _sessionId = event['sessionId'];
+              });
+              debugPrint('Session ID captured: $_sessionId');
+              return;
+            }
+            
+            // Handle log entries
+            if (event is LogEntry && !_isPaused) {
+              setState(() {
+                _logs.add(event);
                 _lastLogTime = DateTime.now();
                 _recentLogCounts.add(1);
                 if (_recentLogCounts.length > 5) {
@@ -180,6 +193,116 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             }
           },
         );
+  }
+
+  // Helper to check if we can write to a directory
+  Future<bool> _canWriteToDirectory(String path) async {
+    try {
+      final testFile = File('$path/.test_write');
+      await testFile.writeAsString('test');
+      await testFile.delete();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _downloadLogs() async {
+    if (_sessionId == null) {
+      ToastUtils.show(
+        context, 
+        'Session not ready. Please wait for logs to start streaming.', 
+        isError: true,
+      );
+      return;
+    }
+
+    if (_logs.isEmpty) {
+      ToastUtils.show(
+        context,
+        'No logs to download yet. Wait for logs to arrive.',
+        isError: true,
+      );
+      return;
+    }
+
+    try {
+      ToastUtils.show(context, 'Downloading logs...', isError: false);
+      
+      // Call backend API to download logs
+      final logContent = await ApiService.downloadLogs(_sessionId!);
+      
+      // Get platform-specific Downloads directory
+      String downloadsPath;
+      
+      if (Platform.isAndroid) {
+        // Android: Try public Downloads first, fallback to app-specific storage
+        try {
+          downloadsPath = '/storage/emulated/0/Download';
+          final testDir = Directory(downloadsPath);
+          
+          // Test if we can actually write to this directory
+          if (!await testDir.exists() || !(await _canWriteToDirectory(downloadsPath))) {
+            // Fallback to app-specific directory (no permission needed)
+            downloadsPath = '/storage/emulated/0/Android/data/com.amrut.awsmgr/files/Downloads';
+            final appDir = Directory(downloadsPath);
+            if (!await appDir.exists()) {
+              // Last resort: internal storage
+              downloadsPath = '/data/data/com.amrut.awsmgr/files/Downloads';
+            }
+          }
+        } catch (e) {
+          // If all else fails, use app's internal storage
+          downloadsPath = '/data/data/com.amrut.awsmgr/files/Downloads';
+        }
+      } else if (Platform.isLinux) {
+        // Linux: ~/Downloads
+        final home = Platform.environment['HOME'] ?? Platform.environment['USER'];
+        downloadsPath = '$home/Downloads';
+      } else if (Platform.isWindows) {
+        // Windows: C:\Users\{username}\Downloads
+        final userProfile = Platform.environment['USERPROFILE'];
+        downloadsPath = '$userProfile\\Downloads';
+      } else if (Platform.isMacOS) {
+        // macOS: ~/Downloads
+        final home = Platform.environment['HOME'];
+        downloadsPath = '$home/Downloads';
+      } else {
+        // Fallback: current directory
+        downloadsPath = Directory.current.path;
+      }
+      
+      // Generate filename
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final filename = '${widget.functionName}_$timestamp.log';
+      final filePath = '$downloadsPath${Platform.pathSeparator}$filename';
+      
+      // Ensure Downloads directory exists
+      final downloadsDir = Directory(downloadsPath);
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+      }
+      
+      // Write file to Downloads folder
+      final file = File(filePath);
+      await file.writeAsString(logContent);
+      
+      // Show user-friendly message
+      final displayPath = Platform.isAndroid 
+          ? 'Downloads/$filename' 
+          : filePath;
+      
+      ToastUtils.show(
+        context,
+        'Downloaded: $displayPath',
+        isError: false,
+      );
+      
+      debugPrint('Saved ${logContent.length} bytes to $filePath');
+    } catch (e) {
+      ToastUtils.show(context, 'Download failed: $e', isError: true);
+      debugPrint('Download error: $e');
+    }
   }
 
   void _attemptReconnect() {
@@ -368,6 +491,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         foregroundColor: const Color(0xFFC9D1D9),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _sessionId != null ? _downloadLogs : null,
+            tooltip: _sessionId != null 
+                ? 'Download ${_logs.length} logs' 
+                : 'Waiting for session...',
+            color: _sessionId != null ? Colors.greenAccent : const Color(0xFF8B949E),
+          ),
           IconButton(
             icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
             onPressed: _togglePause,

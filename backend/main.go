@@ -100,6 +100,7 @@ func main() {
 	// CloudWatch
 	r.HandleFunc("/api/cloudwatch/lambda/functions", api.ListLambdaFunctions).Methods("GET")
 	r.HandleFunc("/api/cloudwatch/lambda/{function}/logs", api.StreamLambdaLogs).Methods("GET")
+	r.HandleFunc("/api/cloudwatch/logs/download/{sessionId}", api.DownloadLogs).Methods("GET")
 
 	// EC2 Instances
 	// Gin router for EC2 Launch

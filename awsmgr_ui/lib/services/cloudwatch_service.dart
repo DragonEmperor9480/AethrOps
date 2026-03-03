@@ -25,21 +25,9 @@ class LogEntry {
 class CloudWatchService {
   static const String baseUrl = 'http://localhost:9480/api';
 
-  // List all Lambda functions
-  static Future<List<String>> listLambdaFunctions() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/cloudwatch/lambda/functions'),
-    );
-    
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return List<String>.from(data['functions'] ?? []);
-    }
-    throw Exception('Failed to load Lambda functions');
-  }
-
   // Stream Lambda logs using Server-Sent Events with proper SSE parsing
-  static Stream<LogEntry> streamLambdaLogs(String functionName) async* {
+  // Yields either LogEntry or Map with sessionId
+  static Stream<dynamic> streamLambdaLogs(String functionName) async* {
     final url = '$baseUrl/cloudwatch/lambda/$functionName/logs';
     
     try {
@@ -85,6 +73,8 @@ class CloudWatchService {
                 throw Exception(jsonData['error']);
               } else if (jsonData['type'] == 'connected') {
                 debugPrint('Connected to log stream: ${jsonData['function']}');
+                // Yield session ID as a special event
+                yield {'type': 'session', 'sessionId': jsonData['sessionId']};
               }
             } catch (e) {
               if (e is Exception) rethrow;

@@ -663,4 +663,31 @@ class ApiService {
       throw Exception('Failed to configure AWS: ${response.body}');
     }
   }
+
+  // ==================== CloudWatch APIs ====================
+  
+  // List all Lambda functions
+  static Future<List<String>> listLambdaFunctions() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/cloudwatch/lambda/functions'),
+    );
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<String>.from(data['functions'] ?? []);
+    }
+    throw Exception('Failed to load Lambda functions');
+  }
+
+  // Download logs for a session
+  static Future<String> downloadLogs(String sessionId) async {
+    final url = '$baseUrl/cloudwatch/logs/download/$sessionId';
+    
+    final response = await http.get(Uri.parse(url));
+    
+    if (response.statusCode == 200) {
+      return response.body; // Return the log file content
+    }
+    throw Exception('Failed to download logs: ${response.statusCode}');
+  }
 }

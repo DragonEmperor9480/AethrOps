@@ -30,12 +30,13 @@ func ListLambdaFunctions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	respondJSON(w, http.StatusOK, map[string]any{
 		"functions": functions,
 	})
 }
 
 // StreamLambdaLogs streams Lambda logs using Server-Sent Events (SSE)
+// and simultaneously writes them to a temporary file for download
 func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	functionName := vars["function"]
@@ -47,6 +48,14 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("X-Accel-Buffering", "no") // Disable proxy buffering (nginx)
+
+	// Create log session for this stream
+	session, err := service.CreateLogSession(functionName)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to create log session: "+err.Error())
+		return
+	}
+	defer service.CloseLogSession(session.SessionID)
 
 	// Create channels for log streaming
 	logChan := make(chan cloudwatch_model.LogEntry, 200)
@@ -74,9 +83,10 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 		fmt.Sscanf(lastEventID, "%d", &eventID)
 	}
 
-	// Send initial connection message
+	// Send initial connection message with session ID
 	eventID++
-	if _, err := fmt.Fprintf(w, "id: %d\ndata: {\"type\":\"connected\",\"function\":\"%s\"}\n\n", eventID, functionName); err != nil {
+	if _, err := fmt.Fprintf(w, "id: %d\ndata: {\"type\":\"connected\",\"function\":\"%s\",\"sessionId\":\"%s\"}\n\n",
+		eventID, functionName, session.SessionID); err != nil {
 		return // Client already disconnected
 	}
 	flusher.Flush()
@@ -104,6 +114,9 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 			flusher.Flush()
 
 		case logEntry := <-logChan:
+			// Write to file asynchronously (non-blocking)
+			go service.WriteLogToFile(session, logEntry)
+
 			// First event received — start batching
 			if err := writeLogSSE(w, &eventID, logEntry); err != nil {
 				return // Client disconnected
@@ -119,6 +132,9 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 					drainTimer.Stop()
 					return
 				case entry := <-logChan:
+					// Write to file asynchronously
+					go service.WriteLogToFile(session, entry)
+
 					if err := writeLogSSE(w, &eventID, entry); err != nil {
 						drainTimer.Stop()
 						return
@@ -141,7 +157,7 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 		case err := <-errChan:
 			if err != nil {
 				eventID++
-				data, _ := json.Marshal(map[string]interface{}{
+				data, _ := json.Marshal(map[string]any{
 					"type":  "error",
 					"error": err.Error(),
 				})
@@ -157,7 +173,7 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 // Returns an error if the write fails (client disconnected).
 func writeLogSSE(w http.ResponseWriter, eventID *uint64, entry cloudwatch_model.LogEntry) error {
 	*eventID++
-	data, err := json.Marshal(map[string]interface{}{
+	data, err := json.Marshal(map[string]any{
 		"type":      "log",
 		"message":   entry.Message,
 		"timestamp": entry.Timestamp,
