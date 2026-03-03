@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/backend/api"
+	api "github.com/DragonEmperor9480/aws_cli_manager/backend/controllers"
 	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
 	"github.com/DragonEmperor9480/aws_cli_manager/utils"
 	"github.com/gin-gonic/gin"
