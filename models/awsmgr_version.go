@@ -58,7 +58,7 @@ type GitHubVersionData struct {
 
 // fetchVersionFromGitHub fetches the version from GitHub JSON based on OS
 func fetchVersionFromGitHub(osInfo string) string {
-	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json"
+	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/AethrOps/refs/heads/production/version.json"
 
 	// Create HTTP client with timeout
 	client := &http.Client{
