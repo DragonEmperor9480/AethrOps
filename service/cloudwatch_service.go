@@ -18,7 +18,7 @@ import (
 // Polling interval constants for adaptive polling
 const (
 	idlePollInterval   = 2 * time.Second        // Poll interval when no new logs are arriving
-	activePollInterval = 500 * time.Millisecond // Poll interval when logs are actively flowing
+	activePollInterval = 200 * time.Millisecond // Poll interval when logs are actively flowing (reduced from 500ms)
 
 	// After this many idle cycles, switch to idle polling
 	idleThreshold = 5
@@ -55,10 +55,8 @@ func FetchLambdaFunctions() ([]byte, error) {
 
 // ParseLogLine returns the raw log message without any processing
 func ParseLogLine(line string) cloudwatch_model.LogEntry {
-	// Return raw message as-is, no parsing or color coding
 	return cloudwatch_model.LogEntry{
 		Message: line,
-		Color:   "white",
 	}
 }
 
@@ -86,6 +84,7 @@ func StreamLambdaLogs(ctx context.Context, logGroupName string, logChan chan<- c
 	}()
 
 	wg.Wait()
+	close(logChan) // Close logChan when streaming completes
 }
 
 // pollCloudWatchLogs handles the CloudWatch API polling with adaptive intervals,
@@ -197,8 +196,8 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 		// Handle pagination
 		nextToken = result.NextToken
 
-		// If we finished a full page (no more token), advance startTime
-		if nextToken == nil && newEventsCount > 0 {
+		// Advance startTime after processing events to avoid re-fetching
+		if newEventsCount > 0 {
 			// Advance startTime to (max seen timestamp + 1ms) to avoid re-fetching
 			startTime = maxTimestamp + 1
 			input.StartTime = aws.Int64(startTime)

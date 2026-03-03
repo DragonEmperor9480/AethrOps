@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	cloudwatch_model "github.com/DragonEmperor9480/aws_cli_manager/models/cloudwatch"
@@ -80,12 +81,15 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	flusher.Flush()
 
-	// Stream logs to client with batched flushing
+	// Stream logs to client with adaptive batching
 	keepaliveTicker := time.NewTicker(30 * time.Second)
 	defer keepaliveTicker.Stop()
 
-	// Batch drain timer — collect burst events before flushing
-	const batchDrainDuration = 50 * time.Millisecond
+	// Adaptive batch drain timer — shorter for low volume, longer for bursts
+	const minBatchDuration = 10 * time.Millisecond // Faster for low volume
+	const maxBatchDuration = 50 * time.Millisecond // Cap for high volume
+
+	batchDrainDuration := minBatchDuration
 
 	for {
 		select {
@@ -105,7 +109,8 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 				return // Client disconnected
 			}
 
-			// Drain additional entries that arrived during the batch window
+			// Check if more logs are immediately available
+			batchCount := 1
 			drainTimer := time.NewTimer(batchDrainDuration)
 		drainLoop:
 			for {
@@ -117,6 +122,13 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 					if err := writeLogSSE(w, &eventID, entry); err != nil {
 						drainTimer.Stop()
 						return
+					}
+					batchCount++
+					// Adjust batch duration based on volume
+					if batchCount > 10 {
+						batchDrainDuration = maxBatchDuration
+					} else {
+						batchDrainDuration = minBatchDuration
 					}
 				case <-drainTimer.C:
 					break drainLoop
@@ -146,9 +158,10 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 func writeLogSSE(w http.ResponseWriter, eventID *uint64, entry cloudwatch_model.LogEntry) error {
 	*eventID++
 	data, err := json.Marshal(map[string]interface{}{
-		"type":    "log",
-		"message": entry.Message,
-		"color":   entry.Color,
+		"type":      "log",
+		"message":   entry.Message,
+		"timestamp": entry.Timestamp,
+		"eventId":   entry.EventID,
 	})
 	if err != nil {
 		return nil // Skip malformed entries, not a connection error
@@ -158,18 +171,14 @@ func writeLogSSE(w http.ResponseWriter, eventID *uint64, entry cloudwatch_model.
 }
 
 func splitLines(s string) []string {
-	result := []string{}
-	current := ""
-	for _, ch := range s {
-		if ch == '\n' {
-			result = append(result, current)
-			current = ""
-		} else {
-			current += string(ch)
+	if s == "" {
+		return []string{}
+	}
+	lines := []string{}
+	for _, line := range strings.Split(strings.TrimSpace(s), "\n") {
+		if line != "" {
+			lines = append(lines, line)
 		}
 	}
-	if current != "" {
-		result = append(result, current)
-	}
-	return result
+	return lines
 }

@@ -5,19 +5,19 @@ import 'package:flutter/foundation.dart';
 
 class LogEntry {
   final String message;
-  final String color;
   final DateTime timestamp;
 
   LogEntry({
     required this.message,
-    required this.color,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
   factory LogEntry.fromJson(Map<String, dynamic> json) {
     return LogEntry(
       message: json['message'] ?? '',
-      color: json['color'] ?? 'white',
+      timestamp: json['timestamp'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(json['timestamp'])
+          : null,
     );
   }
 }
@@ -38,7 +38,7 @@ class CloudWatchService {
     throw Exception('Failed to load Lambda functions');
   }
 
-  // Stream Lambda logs using Server-Sent Events
+  // Stream Lambda logs using Server-Sent Events with proper SSE parsing
   static Stream<LogEntry> streamLambdaLogs(String functionName) async* {
     final url = '$baseUrl/cloudwatch/lambda/$functionName/logs';
     
@@ -50,20 +50,44 @@ class CloudWatchService {
         throw Exception('Failed to connect to log stream');
       }
 
+      String buffer = '';
       await for (var chunk in response.stream.transform(utf8.decoder)) {
-        // Parse SSE data
-        final lines = chunk.split('\n');
-        for (var line in lines) {
-          if (line.startsWith('data: ')) {
-            final jsonStr = line.substring(6);
+        buffer += chunk;
+        
+        // Process complete SSE events (ending with \n\n)
+        while (buffer.contains('\n\n')) {
+          final eventEnd = buffer.indexOf('\n\n');
+          final eventBlock = buffer.substring(0, eventEnd);
+          buffer = buffer.substring(eventEnd + 2);
+          
+          // Parse the event block
+          String? eventId;
+          String? data;
+          
+          for (var line in eventBlock.split('\n')) {
+            if (line.startsWith('id: ')) {
+              eventId = line.substring(4);
+            } else if (line.startsWith('data: ')) {
+              data = line.substring(6);
+            } else if (line.startsWith(':')) {
+              // Keepalive comment, ignore
+              continue;
+            }
+          }
+          
+          if (data != null) {
             try {
-              final data = json.decode(jsonStr);
-              if (data['type'] == 'log') {
-                yield LogEntry.fromJson(data);
-              } else if (data['type'] == 'error') {
-                debugPrint('Stream error: ${data['error']}');
+              final jsonData = json.decode(data);
+              if (jsonData['type'] == 'log') {
+                yield LogEntry.fromJson(jsonData);
+              } else if (jsonData['type'] == 'error') {
+                debugPrint('Stream error: ${jsonData['error']}');
+                throw Exception(jsonData['error']);
+              } else if (jsonData['type'] == 'connected') {
+                debugPrint('Connected to log stream: ${jsonData['function']}');
               }
             } catch (e) {
+              if (e is Exception) rethrow;
               debugPrint('Error parsing log entry: $e');
             }
           }

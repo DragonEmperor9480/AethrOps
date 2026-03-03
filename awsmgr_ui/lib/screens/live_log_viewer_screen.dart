@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import '../services/cloudwatch_service.dart';
 import '../utils/toast_utils.dart';
 
@@ -13,7 +15,8 @@ class LiveLogViewerScreen extends StatefulWidget {
   State<LiveLogViewerScreen> createState() => _LiveLogViewerScreenState();
 }
 
-class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
+class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
+    with TickerProviderStateMixin {
   final List<LogEntry> _logs = [];
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<LogEntry>? _logSubscription;
@@ -25,10 +28,63 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   final List<int> _searchMatches = [];
   int _currentMatchIndex = -1;
+  int _reconnectAttempts = 0;
+  bool _isReconnecting = false;
+  late AnimationController _pulseController;
+  late AnimationController _shimmerController;
+  late AnimationController _scanlineController;
+  late AnimationController _glitchController;
+  late Animation<double> _pulseAnimation;
+  DateTime _lastLogTime = DateTime.now();
+  int _logsPerSecond = 0;
+  Timer? _statsTimer;
+  final List<int> _recentLogCounts = [];
 
   @override
   void initState() {
     super.initState();
+    
+    // Pulse animation for live indicator
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    
+    // Shimmer animation for loading state
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat();
+    
+    // Scanline effect for terminal feel
+    _scanlineController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    )..repeat();
+    
+    // Glitch effect for reconnecting state
+    _glitchController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    
+    // Stats timer for logs/sec calculation
+    _statsTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          _logsPerSecond = _recentLogCounts.isEmpty
+              ? 0
+              : _recentLogCounts.reduce((a, b) => a + b) ~/
+                  _recentLogCounts.length;
+          _recentLogCounts.clear();
+        });
+      }
+    });
+    
     _startStreaming();
     _scrollController.addListener(_onScroll);
   }
@@ -39,6 +95,11 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     _scrollController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _pulseController.dispose();
+    _shimmerController.dispose();
+    _scanlineController.dispose();
+    _glitchController.dispose();
+    _statsTimer?.cancel();
     super.dispose();
   }
 
@@ -66,13 +127,27 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
   }
 
   void _startStreaming() {
+    setState(() {
+      _isReconnecting = _reconnectAttempts > 0;
+    });
+
     _logSubscription = CloudWatchService.streamLambdaLogs(widget.functionName)
         .listen(
           (logEntry) {
             if (!_isPaused) {
               setState(() {
                 _logs.add(logEntry);
+                _lastLogTime = DateTime.now();
+                _recentLogCounts.add(1);
+                if (_recentLogCounts.length > 5) {
+                  _recentLogCounts.removeAt(0);
+                }
                 _updateSearchMatches();
+                // Reset reconnect attempts on successful data
+                if (_reconnectAttempts > 0) {
+                  _reconnectAttempts = 0;
+                  _isReconnecting = false;
+                }
               });
 
               if (_autoScroll && _scrollController.hasClients) {
@@ -90,10 +165,45 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
           },
           onError: (error) {
             if (mounted) {
-              ToastUtils.show(context, 'Stream error: $error', isError: true);
+              ToastUtils.show(
+                context,
+                'Stream error: $error',
+                isError: true,
+              );
+              _attemptReconnect();
+            }
+          },
+          onDone: () {
+            // Connection closed normally, attempt reconnect
+            if (mounted) {
+              _attemptReconnect();
             }
           },
         );
+  }
+
+  void _attemptReconnect() {
+    if (!mounted) return;
+
+    _reconnectAttempts++;
+    
+    // Trigger glitch effect
+    _glitchController.forward(from: 0);
+    
+    // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+    final delay = Duration(
+      seconds: (1 << (_reconnectAttempts - 1)).clamp(1, 30),
+    );
+
+    setState(() {
+      _isReconnecting = true;
+    });
+
+    Future.delayed(delay, () {
+      if (mounted) {
+        _startStreaming();
+      }
+    });
   }
 
   void _togglePause() {
@@ -219,60 +329,103 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     );
   }
 
-  Color _getColorFromString(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'red':
-        return Colors.red;
-      case 'yellow':
-        return Colors.yellow.shade700;
-      case 'green':
-        return Colors.green;
-      case 'cyan':
-        return Colors.cyan;
-      case 'blue':
-        return Colors.blue;
-      case 'magenta':
-        return Colors.purple;
-      default:
-        return Colors.white;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF0D1117), // GitHub dark theme
       appBar: AppBar(
-        title: Text(
-          'Live Tail: ${widget.functionName}',
-          style: const TextStyle(fontSize: 16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B22),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFF30363D)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.functions,
+                    size: 16,
+                    color: Colors.greenAccent.shade400,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.functionName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.grey.shade900,
-        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF161B22),
+        foregroundColor: const Color(0xFFC9D1D9),
         elevation: 0,
         actions: [
           IconButton(
             icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
             onPressed: _togglePause,
             tooltip: _isPaused ? 'Resume' : 'Pause',
+            color: _isPaused ? Colors.orange : const Color(0xFFC9D1D9),
           ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _toggleSearchMode,
             tooltip: 'Search',
+            color: _isSearchMode ? Colors.blueAccent : const Color(0xFFC9D1D9),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.delete_sweep),
             onPressed: _resetLogs,
-            tooltip: 'Reset',
+            tooltip: 'Clear',
+            color: const Color(0xFFC9D1D9),
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          if (_isSearchMode) _buildSearchBar(),
-          _buildStatusBar(),
-          Expanded(child: _logs.isEmpty ? _buildEmptyState() : _buildLogList()),
+          // Scanline effect overlay
+          if (!_isPaused)
+            AnimatedBuilder(
+              animation: _scanlineController,
+              builder: (context, child) {
+                return Positioned(
+                  top: _scanlineController.value *
+                      MediaQuery.of(context).size.height,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 2,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.greenAccent.withOpacity(0),
+                          Colors.greenAccent.withOpacity(0.1),
+                          Colors.greenAccent.withOpacity(0),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          Column(
+            children: [
+              if (_isSearchMode) _buildSearchBar(),
+              _buildStatusBar(),
+              Expanded(
+                child: _logs.isEmpty ? _buildEmptyState() : _buildLogList(),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -280,25 +433,43 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.teal.shade900,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.blueAccent.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+      ),
       child: Row(
         children: [
+          Icon(
+            Icons.search,
+            size: 18,
+            color: Colors.blueAccent.shade400,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(
+                color: Color(0xFFC9D1D9),
+                fontFamily: 'monospace',
+                fontSize: 13,
+              ),
               decoration: InputDecoration(
-                hintText: 'Search logs...',
+                hintText: 'Search logs... (regex supported)',
                 hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: const Color(0xFF8B949E).withOpacity(0.5),
+                  fontFamily: 'monospace',
+                  fontSize: 13,
                 ),
                 border: InputBorder.none,
-                suffixText: _searchMatches.isNotEmpty
-                    ? '${_currentMatchIndex + 1}/${_searchMatches.length}'
-                    : null,
-                suffixStyle: const TextStyle(color: Colors.white),
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
               ),
               onChanged: (value) {
                 setState(() {
@@ -308,20 +479,53 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
               },
             ),
           ),
+          if (_searchMatches.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0D1117),
+                borderRadius: BorderRadius.circular(3),
+                border: Border.all(
+                  color: Colors.yellowAccent.withOpacity(0.3),
+                ),
+              ),
+              child: Text(
+                '${_currentMatchIndex + 1}/${_searchMatches.length}',
+                style: TextStyle(
+                  color: Colors.yellowAccent.shade400,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
           IconButton(
-            icon: const Icon(Icons.arrow_upward, color: Colors.white),
+            icon: const Icon(Icons.keyboard_arrow_up, size: 20),
             onPressed: _prevMatch,
-            tooltip: 'Previous match',
+            tooltip: 'Previous match (Shift+Enter)',
+            color: const Color(0xFFC9D1D9),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
+          const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.arrow_downward, color: Colors.white),
+            icon: const Icon(Icons.keyboard_arrow_down, size: 20),
             onPressed: _nextMatch,
-            tooltip: 'Next match',
+            tooltip: 'Next match (Enter)',
+            color: const Color(0xFFC9D1D9),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
+          const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: const Icon(Icons.close, size: 20),
             onPressed: _toggleSearchMode,
-            tooltip: 'Close search',
+            tooltip: 'Close search (Esc)',
+            color: const Color(0xFF8B949E),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
         ],
       ),
@@ -329,47 +533,305 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
   }
 
   Widget _buildStatusBar() {
+    final timeSinceLastLog = DateTime.now().difference(_lastLogTime);
+    final isActive = timeSinceLastLog.inSeconds < 5 && !_isPaused;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: _isPaused ? Colors.red.shade900 : Colors.green.shade900,
-      child: Row(
+      decoration: BoxDecoration(
+        color: const Color(0xFF161B22),
+        border: Border(
+          bottom: BorderSide(
+            color: _isPaused
+                ? Colors.red.withOpacity(0.3)
+                : _isReconnecting
+                    ? Colors.orange.withOpacity(0.3)
+                    : Colors.greenAccent.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+      ),
+      child: Column(
         children: [
+          // Main status bar
           Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: _isPaused ? Colors.red : Colors.green,
-              shape: BoxShape.circle,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                // Status indicator
+                _buildStatusIndicator(),
+                const SizedBox(width: 16),
+                // Always-visible fetching indicator
+                if (!_isPaused) _buildFetchingIndicator(),
+                const Spacer(),
+                // Metrics
+                _buildMetrics(),
+              ],
             ),
           ),
+          // Progress bar for reconnecting
+          if (_isReconnecting) _buildReconnectingProgress(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator() {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D1117),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: (_isPaused
+                      ? Colors.red
+                      : _isReconnecting
+                          ? Colors.orange
+                          : Colors.greenAccent)
+                  .withOpacity(0.5),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: (_isPaused
+                          ? Colors.red
+                          : _isReconnecting
+                              ? Colors.orange
+                              : Colors.greenAccent.shade400)
+                      .withOpacity(_isPaused ? 1.0 : _pulseAnimation.value),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _isPaused
+                    ? 'PAUSED'
+                    : _isReconnecting
+                        ? 'RECONNECTING'
+                        : 'LIVE',
+                style: TextStyle(
+                  color: _isPaused
+                      ? Colors.red
+                      : _isReconnecting
+                          ? Colors.orange
+                          : Colors.greenAccent.shade400,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFetchingIndicator() {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D1117),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: Colors.blueAccent.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Rotating sync icon
+              Transform.rotate(
+                angle: _shimmerController.value * 2 * math.pi,
+                child: Icon(
+                  Icons.sync,
+                  size: 14,
+                  color: Colors.blueAccent.shade400,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Polling CloudWatch',
+                style: TextStyle(
+                  color: Colors.blueAccent.shade400,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Animated dots
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(3, (index) {
+                  final delay = index * 0.3;
+                  final value = (_shimmerController.value + delay) % 1.0;
+                  final opacity = (math.sin(value * math.pi * 2) + 1) / 2;
+                  
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                    width: 3,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.shade400.withOpacity(0.3 + opacity * 0.7),
+                      shape: BoxShape.circle,
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMetrics() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Auto-scroll indicator
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D1117),
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(
+              color: _autoScroll 
+                  ? Colors.blueAccent.withOpacity(0.3)
+                  : const Color(0xFF30363D),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _autoScroll ? Icons.vertical_align_bottom : Icons.pan_tool,
+                size: 12,
+                color: _autoScroll ? Colors.blueAccent.shade400 : const Color(0xFF8B949E),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _autoScroll ? 'AUTO' : 'MANUAL',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  color: _autoScroll ? Colors.blueAccent.shade400 : const Color(0xFF8B949E),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Log count
+        _buildMetricChip(
+          icon: Icons.article_outlined,
+          label: 'LOGS',
+          value: _logs.length.toString(),
+          color: Colors.cyanAccent,
+        ),
+        // Logs per second (only show if > 0)
+        if (_logsPerSecond > 0) ...[
           const SizedBox(width: 8),
+          _buildMetricChip(
+            icon: Icons.speed,
+            label: 'RATE',
+            value: '$_logsPerSecond/s',
+            color: Colors.greenAccent,
+          ),
+        ],
+        // Search matches
+        if (_searchMatches.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          _buildMetricChip(
+            icon: Icons.search,
+            label: 'MATCHES',
+            value: _searchMatches.length.toString(),
+            color: Colors.yellowAccent,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMetricChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1117),
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
           Text(
-            _isPaused ? 'PAUSED' : 'LIVE',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontFamily: 'monospace',
+              color: color.withOpacity(0.7),
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 4),
           Text(
-            '|',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-          ),
-          const SizedBox(width: 16),
-          Text(
-            _autoScroll ? 'AUTO' : 'MANUAL',
-            style: const TextStyle(
-              color: Colors.white,
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              color: color,
               fontWeight: FontWeight.bold,
             ),
-          ),
-          const Spacer(),
-          Text(
-            'Logs: ${_logs.length}',
-            style: const TextStyle(color: Colors.white),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReconnectingProgress() {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        return Container(
+          height: 2,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              stops: [
+                (_shimmerController.value - 0.3).clamp(0.0, 1.0),
+                _shimmerController.value,
+                (_shimmerController.value + 0.3).clamp(0.0, 1.0),
+              ],
+              colors: [
+                Colors.orange.withOpacity(0.0),
+                Colors.orange,
+                Colors.orange.withOpacity(0.0),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -378,25 +840,31 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Simple icon
           Icon(
-            Icons.hourglass_empty,
+            Icons.stream,
             size: 64,
-            color: Colors.white.withValues(alpha: 0.3),
+            color: const Color(0xFF8B949E).withOpacity(0.5),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          // Main message
           Text(
             'Waiting for logs...',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: const Color(0xFFC9D1D9),
               fontSize: 16,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
+          // Hint
           Text(
-            'Invoke the Lambda function to see logs',
+            'Invoke the Lambda function to see logs here',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 14,
+              color: const Color(0xFF8B949E),
+              fontSize: 13,
+              fontFamily: 'monospace',
             ),
           ),
         ],
@@ -404,34 +872,162 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     );
   }
 
-  Widget _buildLogList() {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(8),
-      itemCount: _logs.length,
-      itemBuilder: (context, index) {
-        final log = _logs[index];
-        final isMatch =
-            _searchQuery.isNotEmpty &&
-            log.message.toLowerCase().contains(_searchQuery.toLowerCase());
-        final isCurrentMatch =
-            isMatch &&
-            _searchMatches.isNotEmpty &&
-            _currentMatchIndex >= 0 &&
-            _currentMatchIndex < _searchMatches.length &&
-            _searchMatches[_currentMatchIndex] == index;
-
-        return Container(
-          key: ValueKey('log_$index'),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          color: isCurrentMatch
-              ? Colors.yellow.shade700
-              : isMatch
-              ? Colors.yellow.shade900.withValues(alpha: 0.3)
-              : Colors.transparent,
-          child: _buildLogContent(log, isMatch, isCurrentMatch),
+  Widget _buildWaitingDots() {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(5, (index) {
+            final delay = index * 0.15;
+            final value = (_shimmerController.value + delay) % 1.0;
+            final scale = 0.5 + ((math.sin(value * math.pi * 2) + 1) / 2) * 0.5;
+            final opacity = 0.3 + ((math.sin(value * math.pi * 2) + 1) / 2) * 0.4;
+            
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.greenAccent.withOpacity(opacity),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
         );
       },
+    );
+  }
+
+  Widget _buildLogList() {
+    return Container(
+      color: const Color(0xFF0D1117),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(12),
+        itemCount: _logs.length,
+        itemBuilder: (context, index) {
+          final log = _logs[index];
+          final isMatch =
+              _searchQuery.isNotEmpty &&
+              log.message.toLowerCase().contains(_searchQuery.toLowerCase());
+          final isCurrentMatch =
+              isMatch &&
+              _searchMatches.isNotEmpty &&
+              _currentMatchIndex >= 0 &&
+              _currentMatchIndex < _searchMatches.length &&
+              _searchMatches[_currentMatchIndex] == index;
+
+          // Animate new logs (last 5 entries)
+          final isNewLog = index >= _logs.length - 5 && !_isPaused;
+          
+          return TweenAnimationBuilder<double>(
+            key: ValueKey('log_$index'),
+            duration: isNewLog
+                ? const Duration(milliseconds: 400)
+                : Duration.zero,
+            tween: Tween(begin: isNewLog ? 0.0 : 1.0, end: 1.0),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, (1 - value) * 20),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isCurrentMatch
+                          ? Colors.yellow.shade700.withOpacity(0.3)
+                          : isMatch
+                              ? Colors.yellow.shade900.withOpacity(0.2)
+                              : index % 2 == 0
+                                  ? const Color(0xFF161B22).withOpacity(0.5)
+                                  : Colors.transparent,
+                      border: Border(
+                        left: BorderSide(
+                          color: isNewLog
+                              ? Colors.greenAccent.shade400.withOpacity(value)
+                              : isCurrentMatch
+                                  ? Colors.yellow.shade700
+                                  : Colors.transparent,
+                          width: isNewLog ? 3 : 2,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Line number
+                        Container(
+                          width: 50,
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              color: const Color(0xFF8B949E).withOpacity(0.5),
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                        // Log content
+                        Expanded(
+                          child: _buildLogContent(log, isMatch, isCurrentMatch),
+                        ),
+                        // Copy button
+                        const SizedBox(width: 8),
+                        _buildCopyButton(log.message, index),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCopyButton(String content, int index) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: content));
+          ToastUtils.show(
+            context,
+            'Copied to clipboard',
+            isError: false,
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161B22),
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(
+              color: const Color(0xFF30363D),
+            ),
+          ),
+          child: Icon(
+            Icons.content_copy,
+            size: 14,
+            color: const Color(0xFF8B949E),
+          ),
+        ),
+      ),
     );
   }
 
@@ -441,16 +1037,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
     if (jsonData != null) {
       // It's JSON, render with syntax highlighting
-      return _buildJsonLog(jsonData, log.color, isMatch, isCurrentMatch);
+      return _buildJsonLog(jsonData, isMatch, isCurrentMatch);
     } else if (_searchQuery.isNotEmpty && isMatch) {
       // Regular text with search highlighting
-      return _buildHighlightedText(log.message, log.color, isCurrentMatch);
+      return _buildHighlightedText(log.message, isCurrentMatch);
     } else {
       // Regular text
       return SelectableText(
         log.message,
-        style: TextStyle(
-          color: _getColorFromString(log.color),
+        style: const TextStyle(
+          color: Colors.white,
           fontFamily: 'monospace',
           fontSize: 13,
         ),
@@ -537,7 +1133,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
   Widget _buildJsonLog(
     Map<String, dynamic> data,
-    String color,
     bool isMatch,
     bool isCurrentMatch,
   ) {
@@ -547,13 +1142,13 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
 
     final spans = <TextSpan>[];
 
-    // Add prefix (timestamp, log level, etc.) in original color
+    // Add prefix (timestamp, log level, etc.) in white
     if (prefix.isNotEmpty) {
       spans.add(
         TextSpan(
           text: prefix,
-          style: TextStyle(
-            color: _getColorFromString(color),
+          style: const TextStyle(
+            color: Colors.white,
             fontFamily: 'monospace',
             fontSize: 13,
           ),
@@ -573,7 +1168,57 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
       spans.addAll(_buildJsonSpans(prettyJson, 0));
     }
 
-    return SelectableText.rich(TextSpan(children: spans));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SelectableText.rich(TextSpan(children: spans)),
+        const SizedBox(height: 8),
+        // Copy JSON button
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: prettyJson));
+              ToastUtils.show(
+                context,
+                'JSON copied to clipboard',
+                isError: false,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B22),
+                borderRadius: BorderRadius.circular(3),
+                border: Border.all(
+                  color: Colors.blueAccent.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.code,
+                    size: 12,
+                    color: Colors.blueAccent.shade400,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Copy JSON',
+                    style: TextStyle(
+                      color: Colors.blueAccent.shade400,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   List<TextSpan> _buildJsonSpans(String json, int indent) {
@@ -722,10 +1367,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen> {
     return spans;
   }
 
-  Widget _buildHighlightedText(String text, String color, bool isCurrentMatch) {
-    final textColor = isCurrentMatch
-        ? Colors.black
-        : _getColorFromString(color);
+  Widget _buildHighlightedText(String text, bool isCurrentMatch) {
+    final textColor = isCurrentMatch ? Colors.black : Colors.white;
     final query = _searchQuery.toLowerCase();
     final textLower = text.toLowerCase();
 
