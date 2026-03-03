@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	ec2view "github.com/DragonEmperor9480/aws_cli_manager/views/ec2"
+	ec2view "github.com/DragonEmperor9480/AethrOps/views/ec2"
 )
 
 func EC2_mgr() {

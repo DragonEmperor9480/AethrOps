@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	s3model "github.com/DragonEmperor9480/aws_cli_manager/models/s3"
-	views "github.com/DragonEmperor9480/aws_cli_manager/views/s3"
+	s3model "github.com/DragonEmperor9480/AethrOps/models/s3"
+	views "github.com/DragonEmperor9480/AethrOps/views/s3"
 )
 
 func ListS3Buckets() {

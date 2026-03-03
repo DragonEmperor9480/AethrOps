@@ -7,9 +7,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
-	user_model "github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/db_service"
+	user_model "github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 // validatePassword checks if password meets requirements

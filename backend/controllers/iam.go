@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
-	"github.com/DragonEmperor9480/aws_cli_manager/models/iam/policy"
-	"github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/models/iam/group"
+	"github.com/DragonEmperor9480/AethrOps/models/iam/policy"
+	"github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/service"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/gorilla/mux"
 )

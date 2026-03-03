@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
+	"github.com/DragonEmperor9480/AethrOps/service"
 )
 
 // GetMFADevice gets the stored MFA device

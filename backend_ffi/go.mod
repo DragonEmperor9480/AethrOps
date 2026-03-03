@@ -1,11 +1,11 @@
-module github.com/DragonEmperor9480/aws_cli_manager/backend_ffi
+module github.com/DragonEmperor9480/AethrOps/backend_ffi
 
 go 1.24.3
 
-replace github.com/DragonEmperor9480/aws_cli_manager => ../
+replace github.com/DragonEmperor9480/AethrOps => ../
 
 require (
-	github.com/DragonEmperor9480/aws_cli_manager v0.0.0-00010101000000-000000000000
+	github.com/DragonEmperor9480/AethrOps v0.0.0-00010101000000-000000000000
 	github.com/gorilla/mux v1.8.1
 )
 

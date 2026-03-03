@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/models/s3"
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/models/s3"
+	"github.com/DragonEmperor9480/AethrOps/service"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 	s3sdk "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gorilla/mux"
 )

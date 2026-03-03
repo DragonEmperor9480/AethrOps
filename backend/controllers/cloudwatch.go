@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	cloudwatch_model "github.com/DragonEmperor9480/aws_cli_manager/models/cloudwatch"
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
+	cloudwatch_model "github.com/DragonEmperor9480/AethrOps/models/cloudwatch"
+	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/gorilla/mux"
 )
 

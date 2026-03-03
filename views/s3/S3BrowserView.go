@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/models/s3"
+	"github.com/DragonEmperor9480/AethrOps/models/s3"
 	"github.com/gdamore/tcell/v2"
 )
 

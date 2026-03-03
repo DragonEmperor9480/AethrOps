@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	view "github.com/DragonEmperor9480/aws_cli_manager/views/iam/group"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	view "github.com/DragonEmperor9480/AethrOps/views/iam/group"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 

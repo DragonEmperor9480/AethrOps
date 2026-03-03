@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	groupModel "github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
-	userModel "github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	views "github.com/DragonEmperor9480/aws_cli_manager/views/iam/group"
+	groupModel "github.com/DragonEmperor9480/AethrOps/models/iam/group"
+	userModel "github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	views "github.com/DragonEmperor9480/AethrOps/views/iam/group"
 )
 
 func RemoveUserFromGroupController() {

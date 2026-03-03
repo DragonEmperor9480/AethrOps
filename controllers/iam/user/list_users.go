@@ -3,9 +3,9 @@ package user
 import (
 	"fmt"
 
-	iam "github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	userview "github.com/DragonEmperor9480/aws_cli_manager/views/iam/user"
+	iam "github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	userview "github.com/DragonEmperor9480/AethrOps/views/iam/user"
 )
 
 func ListUsersController() {

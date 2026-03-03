@@ -1,7 +1,7 @@
 package group
 
 import (
-	"github.com/DragonEmperor9480/aws_cli_manager/views"
+	"github.com/DragonEmperor9480/AethrOps/views"
 )
 
 // Display only usernames and group names side-by-side

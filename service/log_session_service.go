@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	cloudwatch_model "github.com/DragonEmperor9480/aws_cli_manager/models/cloudwatch"
+	cloudwatch_model "github.com/DragonEmperor9480/AethrOps/models/cloudwatch"
 )
 
 var (

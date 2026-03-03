@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	iam_group "github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	iam_group "github.com/DragonEmperor9480/AethrOps/models/iam/group"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func CreateIAMGroupController() {

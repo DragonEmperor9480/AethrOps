@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	s3model "github.com/DragonEmperor9480/aws_cli_manager/models/s3"
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	s3model "github.com/DragonEmperor9480/AethrOps/models/s3"
+	"github.com/DragonEmperor9480/AethrOps/service"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func S3BucketMFADeleteController() {

@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	group "github.com/DragonEmperor9480/aws_cli_manager/controllers/iam/group"
-	user "github.com/DragonEmperor9480/aws_cli_manager/controllers/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	iamview "github.com/DragonEmperor9480/aws_cli_manager/views/iam"
+	group "github.com/DragonEmperor9480/AethrOps/controllers/iam/group"
+	user "github.com/DragonEmperor9480/AethrOps/controllers/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	iamview "github.com/DragonEmperor9480/AethrOps/views/iam"
 )
 
 func IAM_mgr() {

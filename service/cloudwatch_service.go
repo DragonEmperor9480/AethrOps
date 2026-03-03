@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	cloudwatch_model "github.com/DragonEmperor9480/aws_cli_manager/models/cloudwatch"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	cloudwatch_model "github.com/DragonEmperor9480/AethrOps/models/cloudwatch"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	cwltypes "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs/types"

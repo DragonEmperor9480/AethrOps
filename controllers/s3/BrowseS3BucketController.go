@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 // BrowseS3BucketController handles the S3 bucket browser TUI

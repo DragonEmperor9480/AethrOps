@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
+	"github.com/DragonEmperor9480/AethrOps/db_service"
 )
 
 // ConfigureAWS configures AWS credentials

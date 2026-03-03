@@ -1,7 +1,7 @@
 package policy
 
 import (
-	"github.com/DragonEmperor9480/aws_cli_manager/models/iam/policy"
+	"github.com/DragonEmperor9480/AethrOps/models/iam/policy"
 )
 
 // AttachUserPolicyController attaches a single policy to a user

@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/models"
+	"github.com/DragonEmperor9480/AethrOps/models"
 )
 
 func GetVersion() {

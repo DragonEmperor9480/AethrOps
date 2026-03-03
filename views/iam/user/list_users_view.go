@@ -3,7 +3,7 @@ package userview
 import (
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/views"
+	"github.com/DragonEmperor9480/AethrOps/views"
 )
 
 func RenderIAMUsersTable(raw string) {

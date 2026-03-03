@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	model "github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
+	model "github.com/DragonEmperor9480/AethrOps/models/iam/user"
 )
 
 func CreateAccessKeyForUserController() {

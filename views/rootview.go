@@ -3,7 +3,7 @@ package views
 import (
 	"fmt"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func ShowMenu() {

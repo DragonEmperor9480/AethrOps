@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	cloudwatch "github.com/DragonEmperor9480/aws_cli_manager/controllers/cloudwatch"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	cloudwatchview "github.com/DragonEmperor9480/aws_cli_manager/views/cloudwatch"
+	cloudwatch "github.com/DragonEmperor9480/AethrOps/controllers/cloudwatch"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	cloudwatchview "github.com/DragonEmperor9480/AethrOps/views/cloudwatch"
 )
 
 func CloudWatch_mgr() {

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	user_model "github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	user_model "github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func ListAccessKeysForUserController() {

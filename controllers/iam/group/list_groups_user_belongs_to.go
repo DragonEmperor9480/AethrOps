@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	controller "github.com/DragonEmperor9480/aws_cli_manager/controllers/iam/user"
-	model "github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	view "github.com/DragonEmperor9480/aws_cli_manager/views/iam/group"
+	controller "github.com/DragonEmperor9480/AethrOps/controllers/iam/user"
+	model "github.com/DragonEmperor9480/AethrOps/models/iam/group"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	view "github.com/DragonEmperor9480/AethrOps/views/iam/group"
 )
 
 func ListUserGroupsController() {

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	iam_user "github.com/DragonEmperor9480/aws_cli_manager/models/iam/user"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	iam_user "github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func DeleteIAMUserController() {

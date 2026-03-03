@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	s3model "github.com/DragonEmperor9480/aws_cli_manager/models/s3"
-	s3view "github.com/DragonEmperor9480/aws_cli_manager/views/s3"
+	s3model "github.com/DragonEmperor9480/AethrOps/models/s3"
+	s3view "github.com/DragonEmperor9480/AethrOps/views/s3"
 	"github.com/gdamore/tcell/v2"
 )
 

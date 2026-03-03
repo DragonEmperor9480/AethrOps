@@ -3,9 +3,9 @@ package group
 import (
 	"fmt"
 
-	model "github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	view "github.com/DragonEmperor9480/aws_cli_manager/views/iam/group"
+	model "github.com/DragonEmperor9480/AethrOps/models/iam/group"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	view "github.com/DragonEmperor9480/AethrOps/views/iam/group"
 )
 
 func ListGroupsController() {

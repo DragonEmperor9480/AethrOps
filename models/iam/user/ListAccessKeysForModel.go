@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	user_view "github.com/DragonEmperor9480/aws_cli_manager/views/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	user_view "github.com/DragonEmperor9480/AethrOps/views/iam/user"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )

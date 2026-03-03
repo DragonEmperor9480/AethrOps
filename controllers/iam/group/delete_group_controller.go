@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	groupModel "github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	groupModel "github.com/DragonEmperor9480/AethrOps/models/iam/group"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func DeleteIamGroupController() {

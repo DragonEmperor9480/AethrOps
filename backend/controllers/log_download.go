@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
+	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/gorilla/mux"
 )
 

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	s3model "github.com/DragonEmperor9480/aws_cli_manager/models/s3"
+	s3model "github.com/DragonEmperor9480/AethrOps/models/s3"
 )
 
 func DeleteS3Bucket() {

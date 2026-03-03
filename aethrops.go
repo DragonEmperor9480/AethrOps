@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/controllers"
-	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	"github.com/DragonEmperor9480/aws_cli_manager/views"
+	"github.com/DragonEmperor9480/AethrOps/controllers"
+	"github.com/DragonEmperor9480/AethrOps/db_service"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/DragonEmperor9480/AethrOps/views"
 )
 
 func main() {

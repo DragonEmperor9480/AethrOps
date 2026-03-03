@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	utils "github.com/DragonEmperor9480/aws_cli_manager/utils"
+	utils "github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 type AccessKeyOutput struct {

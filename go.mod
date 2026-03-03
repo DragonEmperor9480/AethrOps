@@ -1,4 +1,4 @@
-module github.com/DragonEmperor9480/aws_cli_manager
+module github.com/DragonEmperor9480/AethrOps
 
 go 1.24.3
 
@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.90.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.40.2
 	github.com/gdamore/tcell/v2 v2.9.0
+	github.com/gin-gonic/gin v1.11.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jedib0t/go-pretty/v6 v6.7.1
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
@@ -41,7 +42,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
-	github.com/gin-gonic/gin v1.11.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.27.0 // indirect

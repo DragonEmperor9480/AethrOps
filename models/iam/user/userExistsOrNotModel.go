@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"strings"
 
-	utils "github.com/DragonEmperor9480/aws_cli_manager/utils"
+	utils "github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func UserExistsOrNotModel(username string) bool {

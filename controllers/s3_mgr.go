@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	s3controller "github.com/DragonEmperor9480/aws_cli_manager/controllers/s3"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
-	s3view "github.com/DragonEmperor9480/aws_cli_manager/views/s3"
+	s3controller "github.com/DragonEmperor9480/AethrOps/controllers/s3"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	s3view "github.com/DragonEmperor9480/AethrOps/views/s3"
 )
 
 func S3_mgr() {

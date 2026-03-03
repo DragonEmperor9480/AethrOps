@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	group_model "github.com/DragonEmperor9480/aws_cli_manager/models/iam/group"
+	group_model "github.com/DragonEmperor9480/AethrOps/models/iam/group"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 func ListUsersInGroupController(){

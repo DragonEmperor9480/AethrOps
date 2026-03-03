@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	ec2models "github.com/DragonEmperor9480/aws_cli_manager/models/ec2"
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	ec2models "github.com/DragonEmperor9480/AethrOps/models/ec2"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"

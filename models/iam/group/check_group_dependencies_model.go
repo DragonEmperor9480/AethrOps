@@ -3,7 +3,7 @@ package group
 import (
 	"context"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/utils"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 

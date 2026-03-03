@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/DragonEmperor9480/aws_cli_manager/db_service"
-	"github.com/DragonEmperor9480/aws_cli_manager/service"
+	"github.com/DragonEmperor9480/AethrOps/db_service"
+	"github.com/DragonEmperor9480/AethrOps/service"
 )
 
 // SaveEmailConfig saves email configuration to file
