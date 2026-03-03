@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/DragonEmperor9480/AethrOps/db_service"
+	"github.com/DragonEmperor9480/AethrOps/utils"
 )
 
 // ConfigureAWS configures AWS credentials
@@ -56,6 +57,12 @@ output = json
 
 	if err := os.WriteFile(configFile, []byte(configContent), 0600); err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to write config file")
+		return
+	}
+
+	// IMPORTANT: Reload AWS clients with new credentials
+	if err := utils.InitAWSClients(); err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to initialize AWS clients: "+err.Error())
 		return
 	}
 

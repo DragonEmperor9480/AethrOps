@@ -97,6 +97,7 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/aws/config", api.GetAWSConfig).Methods("GET")
 	r.HandleFunc("/api/aws/config", api.ConfigureAWS).Methods("POST")
 	r.HandleFunc("/api/aws/config", api.DeleteAWSConfig).Methods("DELETE")
+	r.HandleFunc("/api/aws/config/reload", api.ReloadAWSCredentials).Methods("POST")
 
 	// Email Configuration
 	r.HandleFunc("/api/email/config", api.GetEmailConfig).Methods("GET")
