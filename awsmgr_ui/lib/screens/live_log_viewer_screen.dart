@@ -34,7 +34,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   bool _isReconnecting = false;
   late AnimationController _pulseController;
   late AnimationController _shimmerController;
-  late AnimationController _scanlineController;
   late AnimationController _glitchController;
   late Animation<double> _pulseAnimation;
   DateTime _lastLogTime = DateTime.now();
@@ -60,12 +59,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     // Shimmer animation for loading state
     _shimmerController = AnimationController(
       duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat();
-    
-    // Scanline effect for terminal feel
-    _scanlineController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
       vsync: this,
     )..repeat();
     
@@ -100,7 +93,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     _searchFocusNode.dispose();
     _pulseController.dispose();
     _shimmerController.dispose();
-    _scanlineController.dispose();
     _glitchController.dispose();
     _statsTimer?.cancel();
     super.dispose();
@@ -525,43 +517,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           ),
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          // Scanline effect overlay
-          if (!_isPaused)
-            AnimatedBuilder(
-              animation: _scanlineController,
-              builder: (context, child) {
-                return Positioned(
-                  top: _scanlineController.value *
-                      MediaQuery.of(context).size.height,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 2,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.greenAccent.withOpacity(0),
-                          Colors.greenAccent.withOpacity(0.1),
-                          Colors.greenAccent.withOpacity(0),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          Column(
-            children: [
-              if (_isSearchMode) _buildSearchBar(),
-              _buildStatusBar(),
-              Expanded(
-                child: _logs.isEmpty ? _buildEmptyState() : _buildLogList(),
-              ),
-            ],
+          if (_isSearchMode) _buildSearchBar(),
+          _buildStatusBar(),
+          Expanded(
+            child: _logs.isEmpty ? _buildEmptyState() : _buildLogList(),
           ),
         ],
       ),
@@ -982,16 +943,21 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Simple icon
-          Icon(
-            Icons.stream,
-            size: 64,
-            color: const Color(0xFF8B949E).withOpacity(0.5),
+          // Loading animation
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Colors.greenAccent.shade400,
+              ),
+            ),
           ),
           const SizedBox(height: 24),
           // Main message
           Text(
-            'Waiting for logs...',
+            'Fetching logs...',
             style: TextStyle(
               color: const Color(0xFFC9D1D9),
               fontSize: 16,
