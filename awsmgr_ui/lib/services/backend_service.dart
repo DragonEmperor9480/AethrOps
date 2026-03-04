@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
@@ -186,8 +187,11 @@ class BackendService {
       final response = await http.post(
         Uri.parse('$baseUrl/api/aws/config'),
         headers: {'Content-Type': 'application/json'},
-        body:
-            '{"access_key_id":"$accessKey","secret_access_key":"$secretKey","region":"$region"}',
+        body: json.encode({
+          'access_key_id': accessKey,
+          'secret_access_key': secretKey,
+          'region': region,
+        }),
       );
 
       return response.statusCode == 200;

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,34 +15,34 @@ class DownloadService {
       return true; // No permission needed on other platforms
     }
 
-    print('Checking Android storage permissions...');
+    debugPrint('Checking Android storage permissions...');
 
     // Try manageExternalStorage first (for Android 11+)
     PermissionStatus status = await Permission.manageExternalStorage.status;
-    print('manageExternalStorage status: $status');
+    debugPrint('manageExternalStorage status: $status');
 
     if (!status.isGranted) {
       status = await Permission.manageExternalStorage.request();
-      print('manageExternalStorage after request: $status');
+      debugPrint('manageExternalStorage after request: $status');
 
       if (!status.isGranted) {
         // Fallback to regular storage permission for older Android versions
         status = await Permission.storage.status;
-        print('storage status: $status');
+        debugPrint('storage status: $status');
 
         if (!status.isGranted) {
           status = await Permission.storage.request();
-          print('storage after request: $status');
+          debugPrint('storage after request: $status');
         }
 
         if (!status.isGranted) {
-          print('Storage permission denied');
+          debugPrint('Storage permission denied');
           return false;
         }
       }
     }
 
-    print('Storage permission granted');
+    debugPrint('Storage permission granted');
     return true;
   }
 
@@ -60,12 +61,12 @@ class DownloadService {
         const publicDownloadsPath = '/storage/emulated/0/Download';
         filePath = '$publicDownloadsPath/$fileName';
         displayPath = 'Downloads/$fileName';
-        print('Attempting to save to: $filePath');
+        debugPrint('Attempting to save to: $filePath');
 
         try {
           final file = File(filePath);
           await file.writeAsBytes(bytes);
-          print('Successfully saved to public Downloads');
+          debugPrint('Successfully saved to public Downloads');
 
           // Scan the file to make it visible in gallery/file manager
           await _scanFile(filePath);
@@ -76,7 +77,7 @@ class DownloadService {
             'displayPath': displayPath,
           };
         } catch (e) {
-          print('Failed to save to public Downloads: $e');
+          debugPrint('Failed to save to public Downloads: $e');
           // Fallback to app storage
           final directory = await getExternalStorageDirectory();
           if (directory == null) {
@@ -84,7 +85,7 @@ class DownloadService {
           }
           filePath = '${directory.path}/$fileName';
           displayPath = 'App storage/$fileName (not visible in file manager)';
-          print('Saving to app storage instead: $filePath');
+          debugPrint('Saving to app storage instead: $filePath');
 
           final file = File(filePath);
           await file.writeAsBytes(bytes);
@@ -103,7 +104,7 @@ class DownloadService {
         }
         filePath = '${directory.path}/$fileName';
         displayPath = fileName;
-        print('Saving to: $filePath');
+        debugPrint('Saving to: $filePath');
 
         final file = File(filePath);
         await file.writeAsBytes(bytes);
@@ -115,7 +116,7 @@ class DownloadService {
         };
       }
     } catch (e) {
-      print('Error saving file: $e');
+      debugPrint('Error saving file: $e');
       return {
         'success': false,
         'error': e.toString(),
@@ -127,11 +128,11 @@ class DownloadService {
   static Future<void> _scanFile(String filePath) async {
     if (Platform.isAndroid) {
       try {
-        print('Scanning file for MediaStore: $filePath');
+        debugPrint('Scanning file for MediaStore: $filePath');
         await _mediaScanner.invokeMethod('scanFile', {'path': filePath});
-        print('File scanned successfully');
+        debugPrint('File scanned successfully');
       } catch (e) {
-        print('Failed to scan file: $e');
+        debugPrint('Failed to scan file: $e');
         // Not critical, file is still saved
       }
     }

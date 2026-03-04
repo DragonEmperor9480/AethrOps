@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'backend_service.dart';
 
 class LogEntry {
   final String message;
@@ -23,7 +24,7 @@ class LogEntry {
 }
 
 class CloudWatchService {
-  static const String baseUrl = 'http://localhost:9480/api';
+  static String get baseUrl => '${BackendService.baseUrl}/api';
 
   // Stream Lambda logs using Server-Sent Events with proper SSE parsing
   // Yields either LogEntry or Map with sessionId

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../models/bucket_info.dart';
+import '../models/s3_object.dart';
 import '../services/api_service.dart';
 import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
@@ -15,12 +18,6 @@ class S3Screen extends StatefulWidget {
   State<S3Screen> createState() => _S3ScreenState();
 }
 
-class BucketInfo {
-  final String name;
-  final String creationDate;
-
-  BucketInfo({required this.name, required this.creationDate});
-}
 
 class _S3ScreenState extends State<S3Screen> {
   List<BucketInfo> _buckets = [];
@@ -409,106 +406,8 @@ class BucketObjectsScreen extends StatefulWidget {
   State<BucketObjectsScreen> createState() => _BucketObjectsScreenState();
 }
 
-class S3Object {
-  final String key;
-  final String lastModified;
-  final int size;
 
-  S3Object({required this.key, required this.lastModified, required this.size});
 
-  String get extension {
-    final parts = key.split('.');
-    return parts.length > 1 ? parts.last.toLowerCase() : '';
-  }
-
-  IconData get icon {
-    switch (extension) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'zip':
-      case 'rar':
-      case '7z':
-      case 'tar':
-      case 'gz':
-        return Icons.folder_zip;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'bmp':
-      case 'svg':
-        return Icons.image;
-      case 'mp4':
-      case 'avi':
-      case 'mov':
-      case 'mkv':
-        return Icons.video_file;
-      case 'mp3':
-      case 'wav':
-      case 'flac':
-        return Icons.audio_file;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'xls':
-      case 'xlsx':
-        return Icons.table_chart;
-      case 'ppt':
-      case 'pptx':
-        return Icons.slideshow;
-      case 'txt':
-      case 'md':
-        return Icons.text_snippet;
-      case 'json':
-      case 'xml':
-      case 'yaml':
-      case 'yml':
-        return Icons.code;
-      default:
-        return Icons.insert_drive_file;
-    }
-  }
-
-  Color get iconColor {
-    switch (extension) {
-      case 'pdf':
-        return Colors.red;
-      case 'zip':
-      case 'rar':
-      case '7z':
-        return Colors.orange;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return Colors.purple;
-      case 'mp4':
-      case 'avi':
-      case 'mov':
-        return Colors.blue;
-      case 'mp3':
-      case 'wav':
-        return Colors.green;
-      case 'doc':
-      case 'docx':
-        return Colors.blue.shade700;
-      case 'xls':
-      case 'xlsx':
-        return Colors.green.shade700;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String get formattedSize {
-    if (size < 1024) return '$size B';
-    if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
-    if (size < 1024 * 1024 * 1024) {
-      return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-}
 
 class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
   List<S3Object> _objects = [];
@@ -521,6 +420,12 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
     super.initState();
     _loadObjects();
     _loadVersioningStatus();
+  }
+
+  @override
+  void dispose() {
+    // Ensure no setState calls happen after widget is unmounted
+    super.dispose();
   }
 
   Future<void> _loadObjects() async {
@@ -579,7 +484,7 @@ class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
   }
 
   Future<void> _downloadObject(S3Object object) async {
-    print('===== _downloadObject called for: ${object.key} =====');
+    debugPrint('===== _downloadObject called for: ${object.key} =====');
     setState(() => _downloadingKey = object.key);
 
     try {

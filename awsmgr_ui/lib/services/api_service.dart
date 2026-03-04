@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../screens/s3_browser_screen.dart';
+import '../models/s3_item.dart';
+import 'backend_service.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:9480/api';
+  static String get baseUrl => '${BackendService.baseUrl}/api';
+  static const _timeout = Duration(seconds: 30);
 
   // IAM Caller Identity
   static Future<Map<String, dynamic>> getCallerIdentity() async {
-    final response = await http.get(Uri.parse('$baseUrl/iam/caller-identity'));
+    final response = await http.get(Uri.parse('$baseUrl/iam/caller-identity')).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -16,7 +18,7 @@ class ApiService {
 
   // IAM Users
   static Future<List<dynamic>> listIAMUsers() async {
-    final response = await http.get(Uri.parse('$baseUrl/iam/users'));
+    final response = await http.get(Uri.parse('$baseUrl/iam/users')).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['users'] ?? [];
@@ -31,7 +33,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/users/batch'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'users': users}),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -59,7 +61,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/users'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(body),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -70,7 +72,7 @@ class ApiService {
   static Future<Map<String, dynamic>> checkUserDependencies(String username) async {
     final response = await http.get(
       Uri.parse('$baseUrl/iam/users/$username/dependencies'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -80,7 +82,7 @@ class ApiService {
   static Future<List<dynamic>> getUserGroups(String username) async {
     final response = await http.get(
       Uri.parse('$baseUrl/iam/users/$username/groups'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['groups'] ?? [];
@@ -93,7 +95,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/users/$username/policies'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'policy_arn': policyArn}),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to attach policy');
@@ -107,7 +109,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/users/policies/batch'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'attachments': attachments}),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -129,7 +131,7 @@ class ApiService {
         'desired_arns': desiredArns,
         'current_arns': currentArns,
       }),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -153,7 +155,7 @@ class ApiService {
         'email': email,
         // console_url and email_config are now automatically handled by the backend
       }),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -163,7 +165,7 @@ class ApiService {
 
   // Email Configuration
   static Future<Map<String, dynamic>> getEmailConfig() async {
-    final response = await http.get(Uri.parse('$baseUrl/email/config'));
+    final response = await http.get(Uri.parse('$baseUrl/email/config')).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -187,7 +189,7 @@ class ApiService {
         'sender_pass': senderPass,
         'sender_name': senderName,
       }),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -210,7 +212,7 @@ class ApiService {
         'sender_email': senderEmail,
         'sender_pass': senderPass,
       }),
-    );
+    ).timeout(_timeout);
 
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -219,7 +221,7 @@ class ApiService {
   }
 
   static Future<void> deleteEmailConfig() async {
-    final response = await http.delete(Uri.parse('$baseUrl/email/config'));
+    final response = await http.delete(Uri.parse('$baseUrl/email/config')).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to delete email config');
@@ -228,7 +230,7 @@ class ApiService {
 
   // MFA Device Configuration
   static Future<Map<String, dynamic>> getMFADevice() async {
-    final response = await http.get(Uri.parse('$baseUrl/settings/mfa'));
+    final response = await http.get(Uri.parse('$baseUrl/settings/mfa')).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -246,7 +248,7 @@ class ApiService {
         'device_name': deviceName,
         'device_arn': deviceArn,
       }),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -255,7 +257,7 @@ class ApiService {
   }
 
   static Future<void> deleteMFADevice() async {
-    final response = await http.delete(Uri.parse('$baseUrl/settings/mfa'));
+    final response = await http.delete(Uri.parse('$baseUrl/settings/mfa')).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to delete MFA device');
@@ -266,7 +268,7 @@ class ApiService {
     final url = force 
         ? '$baseUrl/iam/users/$username?force=true'
         : '$baseUrl/iam/users/$username';
-    final response = await http.delete(Uri.parse(url));
+    final response = await http.delete(Uri.parse(url)).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete user');
     }
@@ -277,7 +279,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/users/batch/dependencies'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'usernames': usernames}),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -291,7 +293,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/users/batch/delete'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'users': users}),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -306,7 +308,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/iam/policies').replace(
       queryParameters: {'scope': scope},
     );
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['policies'] ?? [];
@@ -316,7 +318,7 @@ class ApiService {
 
   // IAM Groups
   static Future<List<dynamic>> listIAMGroups() async {
-    final response = await http.get(Uri.parse('$baseUrl/iam/groups'));
+    final response = await http.get(Uri.parse('$baseUrl/iam/groups')).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['groups'] ?? [];
@@ -329,7 +331,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/groups'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'groupname': groupname}),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to create group');
     }
@@ -338,7 +340,7 @@ class ApiService {
   static Future<Map<String, dynamic>> checkGroupDependencies(String groupname) async {
     final response = await http.get(
       Uri.parse('$baseUrl/iam/groups/$groupname/dependencies'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -347,7 +349,7 @@ class ApiService {
 
   static Future<void> deleteIAMGroup(String groupname, {bool force = false}) async {
     final uri = Uri.parse('$baseUrl/iam/groups/$groupname${force ? '?force=true' : ''}');
-    final response = await http.delete(uri);
+    final response = await http.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete group');
     }
@@ -358,7 +360,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/groups/$groupname/users'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'username': username}),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to add user to group');
     }
@@ -367,7 +369,7 @@ class ApiService {
   static Future<List<dynamic>> listGroupPolicies(String groupname) async {
     final response = await http.get(
       Uri.parse('$baseUrl/iam/groups/$groupname/policies'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['policies'] ?? [];
@@ -380,7 +382,7 @@ class ApiService {
       Uri.parse('$baseUrl/iam/groups/$groupname/policies'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'policy_arn': policyArn}),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to attach policy to group');
     }
@@ -390,7 +392,7 @@ class ApiService {
     final encodedArn = Uri.encodeComponent(policyArn);
     final response = await http.delete(
       Uri.parse('$baseUrl/iam/groups/$groupname/policies/$encodedArn'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to detach policy from group');
     }
@@ -398,7 +400,7 @@ class ApiService {
 
   // S3 Buckets
   static Future<String> listS3Buckets() async {
-    final response = await http.get(Uri.parse('$baseUrl/s3/buckets'));
+    final response = await http.get(Uri.parse('$baseUrl/s3/buckets')).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['buckets'] ?? '';
@@ -411,7 +413,7 @@ class ApiService {
       Uri.parse('$baseUrl/s3/buckets'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'bucketname': bucketname}),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to create bucket');
     }
@@ -420,7 +422,7 @@ class ApiService {
   static Future<void> deleteS3Bucket(String bucketname) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/s3/buckets/$bucketname'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete bucket');
     }
@@ -429,7 +431,7 @@ class ApiService {
   static Future<String> listS3Objects(String bucketname) async {
     final response = await http.get(
       Uri.parse('$baseUrl/s3/buckets/$bucketname/objects'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['objects'] ?? '';
@@ -440,7 +442,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getBucketVersioning(String bucketname) async {
     final response = await http.get(
       Uri.parse('$baseUrl/s3/buckets/$bucketname/versioning'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -452,7 +454,7 @@ class ApiService {
       Uri.parse('$baseUrl/s3/buckets/$bucketname/versioning'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'status': status}),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -463,7 +465,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getBucketMFADelete(String bucketname) async {
     final response = await http.get(
       Uri.parse('$baseUrl/s3/buckets/$bucketname/mfa-delete'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -482,7 +484,7 @@ class ApiService {
         'status': status,
         'mfa_token': mfaToken,
       }),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
@@ -522,7 +524,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/s3/buckets/$bucketname/items').replace(
       queryParameters: {'prefix': prefix},
     );
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final items = data['items'];
@@ -551,7 +553,7 @@ class ApiService {
   static Future<void> deleteS3Object(String bucketname, String objectkey) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/s3/buckets/$bucketname/objects/$objectkey'),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete object');
     }
@@ -562,7 +564,7 @@ class ApiService {
       Uri.parse('$baseUrl/s3/buckets/$bucketname/folder'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'folder_path': folderPath}),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to create folder');
     }
@@ -576,7 +578,7 @@ class ApiService {
           )
         : Uri.parse('$baseUrl/ec2/instances');
     
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
@@ -585,7 +587,7 @@ class ApiService {
   }
 
   static Future<List<dynamic>> listEC2InstancesAllRegions() async {
-    final response = await http.get(Uri.parse('$baseUrl/ec2/instances/all-regions'));
+    final response = await http.get(Uri.parse('$baseUrl/ec2/instances/all-regions')).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
@@ -594,96 +596,15 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getEC2Dashboard() async {
-    final response = await http.get(Uri.parse('$baseUrl/ec2/dashboard'));
+    final response = await http.get(Uri.parse('$baseUrl/ec2/dashboard')).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
     throw Exception('Failed to load EC2 dashboard');
   }
 
-  static Future<List<String>> listAWSRegions() async {
-    final response = await http.get(Uri.parse('$baseUrl/ec2/regions'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return List<String>.from(data['regions'] ?? []);
-    }
-    throw Exception('Failed to load AWS regions');
-  }
-
-  static Future<List<dynamic>> listAMIs({String? region}) async {
-    final uri = region != null
-        ? Uri.parse('$baseUrl/ec2/amis').replace(
-            queryParameters: {'region': region},
-          )
-        : Uri.parse('$baseUrl/ec2/amis');
-    
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['amis'] ?? [];
-    }
-    throw Exception('Failed to load AMIs');
-  }
-
-  static Future<List<dynamic>> listSecurityGroups({String? region}) async {
-    final uri = region != null
-        ? Uri.parse('$baseUrl/ec2/security-groups').replace(
-            queryParameters: {'region': region},
-          )
-        : Uri.parse('$baseUrl/ec2/security-groups');
-    
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['security_groups'] ?? [];
-    }
-    throw Exception('Failed to load security groups');
-  }
-
-  static Future<List<dynamic>> listKeyPairs({String? region}) async {
-    final uri = region != null
-        ? Uri.parse('$baseUrl/ec2/key-pairs').replace(
-            queryParameters: {'region': region},
-          )
-        : Uri.parse('$baseUrl/ec2/key-pairs');
-    
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['key_pairs'] ?? [];
-    }
-    throw Exception('Failed to load key pairs');
-  }
-
-  static Future<List<dynamic>> listSubnets({String? region}) async {
-    final uri = region != null
-        ? Uri.parse('$baseUrl/ec2/subnets').replace(
-            queryParameters: {'region': region},
-          )
-        : Uri.parse('$baseUrl/ec2/subnets');
-    
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['subnets'] ?? [];
-    }
-    throw Exception('Failed to load subnets');
-  }
-
-  static Future<List<dynamic>> listVPCs({String? region}) async {
-    final uri = region != null
-        ? Uri.parse('$baseUrl/ec2/vpcs').replace(
-            queryParameters: {'region': region},
-          )
-        : Uri.parse('$baseUrl/ec2/vpcs');
-    
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['vpcs'] ?? [];
-    }
-    throw Exception('Failed to load VPCs');
-  }
+  // REMOVED: listAWSRegions, listAMIs, listSecurityGroups, listKeyPairs, listSubnets, listVPCs
+  // These duplicate Ec2Service methods. Use Ec2Service instead.
 
   static Future<Map<String, dynamic>> getEC2Instance(String instanceId, {String? region}) async {
     final uri = region != null
@@ -692,7 +613,7 @@ class ApiService {
           )
         : Uri.parse('$baseUrl/ec2/instances/$instanceId');
     
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -706,7 +627,7 @@ class ApiService {
           )
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/start');
     
-    final response = await http.post(uri);
+    final response = await http.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to start instance');
@@ -720,7 +641,7 @@ class ApiService {
           )
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/stop');
     
-    final response = await http.post(uri);
+    final response = await http.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to stop instance');
@@ -734,7 +655,7 @@ class ApiService {
           )
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/reboot');
     
-    final response = await http.post(uri);
+    final response = await http.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to reboot instance');
@@ -748,7 +669,7 @@ class ApiService {
           )
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/terminate');
     
-    final response = await http.delete(uri);
+    final response = await http.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to terminate instance');
@@ -764,7 +685,7 @@ class ApiService {
     final uri = Uri.parse('$baseUrl/ec2/instances/by-state').replace(
       queryParameters: queryParams,
     );
-    final response = await http.get(uri);
+    final response = await http.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
@@ -774,7 +695,7 @@ class ApiService {
 
   // AWS Configuration
   static Future<Map<String, dynamic>> getAWSConfig() async {
-    final response = await http.get(Uri.parse('$baseUrl/aws/config'));
+    final response = await http.get(Uri.parse('$baseUrl/aws/config')).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -790,7 +711,7 @@ class ApiService {
         'secret_access_key': secretAccessKey,
         'region': region,
       }),
-    );
+    ).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to configure AWS: ${response.body}');
     }
@@ -802,7 +723,7 @@ class ApiService {
   static Future<List<String>> listLambdaFunctions() async {
     final response = await http.get(
       Uri.parse('$baseUrl/cloudwatch/lambda/functions'),
-    );
+    ).timeout(_timeout);
     
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -815,7 +736,7 @@ class ApiService {
   static Future<String> downloadLogs(String sessionId) async {
     final url = '$baseUrl/cloudwatch/logs/download/$sessionId';
     
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url)).timeout(_timeout);
     
     if (response.statusCode == 200) {
       return response.body; // Return the log file content

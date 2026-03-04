@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _shimmerController;
+  Timer? _loadingMessageTimer;
 
   String _username = 'User';
   String _region = '';
@@ -94,16 +96,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _cycleLoadingMessages() {
     final messages = AppConstants.userLoadingMessages;
     int index = 0;
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 2));
-      if (_isLoadingUserInfo && mounted) {
-        setState(() {
-          index = (index + 1) % messages.length;
-          _loadingMessage = messages[index];
-        });
-        return true;
+    _loadingMessageTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!_isLoadingUserInfo || !mounted) {
+        timer.cancel();
+        return;
       }
-      return false;
+      setState(() {
+        index = (index + 1) % messages.length;
+        _loadingMessage = messages[index];
+      });
     });
   }
 
@@ -159,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _loadingMessageTimer?.cancel();
     _shimmerController.dispose();
     super.dispose();
   }

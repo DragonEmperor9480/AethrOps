@@ -122,6 +122,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   }
 
   void _startStreaming() {
+    // Cancel any existing subscription before creating a new one
+    _logSubscription?.cancel();
+
     setState(() {
       _isReconnecting = _reconnectAttempts > 0;
     });
@@ -142,6 +145,10 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             if (event is LogEntry && !_isPaused) {
               setState(() {
                 _logs.add(event);
+                // Cap log buffer at 10,000 entries to prevent unbounded memory growth
+                if (_logs.length > 10000) {
+                  _logs.removeRange(0, _logs.length - 10000);
+                }
                 _lastLogTime = DateTime.now();
                 _recentLogCounts.add(1);
                 if (_recentLogCounts.length > 5) {

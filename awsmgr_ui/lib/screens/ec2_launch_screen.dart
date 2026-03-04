@@ -59,6 +59,12 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
     _loadInitialData();
   }
 
+  @override
+  void dispose() {
+    // Ensure no setState calls happen after widget is unmounted
+    super.dispose();
+  }
+
   Future<void> _loadInitialData() async {
     setState(() => _isLoadingData = true);
     try {

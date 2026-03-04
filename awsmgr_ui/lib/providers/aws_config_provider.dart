@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import '../services/api_service.dart';
+import '../services/ec2_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AwsConfigProvider extends ChangeNotifier {
@@ -23,7 +24,7 @@ class AwsConfigProvider extends ChangeNotifier {
     try {
       // Load regions and config in parallel
       final results = await Future.wait([
-        ApiService.listAWSRegions(),
+        Ec2Service.listRegions(),
         ApiService.getAWSConfig(),
       ]);
       
