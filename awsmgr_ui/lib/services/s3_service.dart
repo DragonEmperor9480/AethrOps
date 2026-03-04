@@ -9,6 +9,10 @@ class S3Service {
     baseUrl: '${BackendService.baseUrl}/api',
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(minutes: 5),
+    sendTimeout: const Duration(minutes: 10),
+    // Optimize for large file transfers
+    receiveDataWhenStatusError: false,
+    validateStatus: (status) => status != null && status < 500,
   ));
 
   /// Download S3 object with progress tracking
@@ -25,16 +29,17 @@ class S3Service {
         options: Options(
           responseType: ResponseType.bytes,
           receiveTimeout: const Duration(minutes: 5),
+          // Disable compression for binary data
+          headers: {'Accept-Encoding': 'identity'},
         ),
         onReceiveProgress: (received, total) {
-          debugPrint('Progress: $received / $total bytes');
           if (total != -1) {
             onProgress(received, total);
           }
         },
       );
 
-      debugPrint('Download complete');
+      debugPrint('Download complete: ${response.data?.length ?? 0} bytes');
       return response.data ?? [];
     } catch (e) {
       debugPrint('Download error: $e');

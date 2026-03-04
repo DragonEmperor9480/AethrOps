@@ -55,7 +55,18 @@ func main() {
 	}).Methods("GET")
 
 	log.Println("Server running on http://127.0.0.1:9480")
-	if err := http.ListenAndServe("127.0.0.1:9480", corsMiddleware(r)); err != nil {
+
+	// Create HTTP server with optimized settings for large file transfers
+	server := &http.Server{
+		Addr:           "127.0.0.1:9480",
+		Handler:        corsMiddleware(r),
+		ReadTimeout:    0, // No timeout for large file transfers
+		WriteTimeout:   0, // No timeout for large file transfers
+		IdleTimeout:    0,
+		MaxHeaderBytes: 1 << 20, // 1MB
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal("Server error:", err)
 	}
 }

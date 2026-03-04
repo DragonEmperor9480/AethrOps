@@ -13,6 +13,7 @@ import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import 's3_file_viewer_screen.dart';
 
 class S3BrowserScreen extends StatefulWidget {
   final String bucketName;
@@ -491,6 +492,28 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  bool _canPreviewFile(String fileName) {
+    final ext = fileName.toLowerCase().split('.').last;
+    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'txt', 'md', 
+            'log', 'json', 'xml', 'yaml', 'yml', 'csv', 'html', 'css', 
+            'js', 'ts', 'dart', 'py', 'java', 'go', 'c', 'cpp', 'h', 
+            'sh', 'bat', 'sql', 'env', 'pdf'].contains(ext);
+  }
+
+  void _viewFile(S3Item item) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => S3FileViewerScreen(
+          bucketName: widget.bucketName,
+          objectKey: item.key,
+          fileName: item.displayName,
+        ),
+      ),
+    );
+    // File viewer closed, data is automatically cleared when screen is disposed
+  }
+
   Future<void> _downloadFile(S3Item item) async {
     // Request storage permission first
     final hasPermission = await DownloadService.requestStoragePermission();
@@ -502,15 +525,82 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
     // Create progress stream controller
     final progressController = StreamController<double>();
+    int bytesReceived = 0;
+    int totalBytes = 0;
 
     // Show animated progress dialog with real progress
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AnimatedProgressDialog(
-        title: 'Downloading File',
-        message: '${item.displayName} (${item.formattedSize})',
-        progressStream: progressController.stream,
+      builder: (context) => StreamBuilder<double>(
+        stream: progressController.stream,
+        builder: (context, snapshot) {
+          final progress = snapshot.data ?? 0.0;
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        height: 100,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 8,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.primaryPurple,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryPurple,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Downloading File',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.displayName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (totalBytes > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_formatBytes(bytesReceived)} / ${_formatBytes(totalBytes)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
 
@@ -520,6 +610,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         item.key,
         (received, total) {
           if (total > 0) {
+            bytesReceived = received;
+            totalBytes = total;
             progressController.add(received / total);
           }
         },
@@ -969,7 +1061,9 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                               child: InkWell(
                                 onTap: item.isFolder
                                     ? () => _navigateToFolder(item.key)
-                                    : null,
+                                    : (_canPreviewFile(item.displayName)
+                                        ? () => _viewFile(item)
+                                        : null),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),

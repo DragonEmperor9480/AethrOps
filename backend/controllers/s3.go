@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/DragonEmperor9480/AethrOps/models/s3"
 	"github.com/DragonEmperor9480/AethrOps/service"
@@ -220,20 +219,18 @@ func DownloadS3Object(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	// Stream the data in small chunks with slight delay for progress visibility
-	buffer := make([]byte, 16*1024) // 16KB chunks
+	// Stream the data with maximum speed - use 1MB chunks for localhost performance
+	buffer := make([]byte, 1024*1024) // 1MB chunks for maximum throughput
 	for {
 		n, err := result.Body.Read(buffer)
 		if n > 0 {
 			if _, writeErr := w.Write(buffer[:n]); writeErr != nil {
 				return
 			}
-			// Flush immediately to send data to client
+			// Flush to send data immediately
 			if flusher, ok := w.(http.Flusher); ok {
 				flusher.Flush()
 			}
-			// Small delay to allow progress updates (10ms per chunk)
-			time.Sleep(10 * time.Millisecond)
 		}
 		if err == io.EOF {
 			break
@@ -304,7 +301,7 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	if tempDir == "" {
 		tempDir = os.TempDir()
 	}
-	
+
 	// Create temp file in the appropriate directory
 	tempFile, err := os.CreateTemp(tempDir, "s3upload-*-"+header.Filename)
 	if err != nil {
@@ -333,13 +330,12 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	// Upload to S3 with progress tracking
 	progressSent := int64(0)
 	err = s3.UploadS3ObjectWithProgress(bucketname, objectKey, tempFilePath, func(current, total int64) {
-		// Only send progress updates every 5% to avoid flooding
-		if current-progressSent > total/20 || current == total {
+		// Send progress updates every 10% to avoid flooding while maintaining responsiveness
+		if current-progressSent > total/10 || current == total {
 			progressSent = current
 			fmt.Fprintf(w, "\n{\"progress\":%d,\"total\":%d}", current, total)
 			flusher.Flush()
-			// Small delay to make progress visible
-			time.Sleep(10 * time.Millisecond)
+			// No artificial delay - let it upload at full speed
 		}
 	})
 
