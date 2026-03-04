@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -16,18 +15,37 @@ import (
 var (
 	logSessions      = make(map[string]*cloudwatch_model.LogSession)
 	logSessionsMutex sync.RWMutex
-	logDir           = "/tmp/awsmgr_logs"
+	logDir           string
 )
 
 // Initialize cleanup goroutine and log directory
 func init() {
-	// Create log directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0755); err != nil {
-		log.Printf("Failed to create log directory: %v", err)
-	}
-
 	// Start cleanup goroutine
 	go cleanupOldSessions()
+}
+
+// InitLogDirectory initializes the log directory (call after setting AWSMGR_DATA_DIR)
+func InitLogDirectory() error {
+	// Use platform-appropriate log directory
+	logDir = getLogDirectory()
+
+	// Create log directory if it doesn't exist
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		return fmt.Errorf("failed to create log directory: %w", err)
+	}
+
+	return nil
+}
+
+// getLogDirectory returns the appropriate log directory for the platform
+func getLogDirectory() string {
+	// Check if data directory is set (mobile platforms)
+	if dataDir := os.Getenv("AWSMGR_DATA_DIR"); dataDir != "" {
+		return filepath.Join(dataDir, "logs")
+	}
+
+	// Fallback to /tmp for desktop platforms
+	return "/tmp/awsmgr_logs"
 }
 
 // generateSessionID creates a unique session ID
@@ -63,7 +81,6 @@ func CreateLogSession(functionName string) (*cloudwatch_model.LogSession, error)
 	logSessions[sessionID] = session
 	logSessionsMutex.Unlock()
 
-	log.Printf("Created log session: %s for function: %s", sessionID, functionName)
 	return session, nil
 }
 
@@ -81,7 +98,6 @@ func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model
 	logLine := fmt.Sprintf("[%s] %s\n", timestamp, entry.Message)
 
 	if _, err := session.File.WriteString(logLine); err != nil {
-		log.Printf("Failed to write log to file: %v", err)
 		return
 	}
 
@@ -105,9 +121,7 @@ func CloseLogSession(sessionID string) {
 		session.File = nil
 	}
 	session.Mutex.Unlock()
-
-	log.Printf("Closed log session: %s (%d logs captured)", sessionID, session.LogCount)
-}
+}build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
 // GetLogSession retrieves a log session by ID
 func GetLogSession(sessionID string) (*cloudwatch_model.LogSession, bool) {
@@ -141,11 +155,9 @@ func DeleteLogSession(sessionID string) error {
 	}
 
 	if err := os.Remove(session.FilePath); err != nil {
-		log.Printf("Failed to delete log file: %v", err)
 		return err
 	}
 
-	log.Printf("Deleted log session: %s", sessionID)
 	return nil
 }
 
@@ -170,10 +182,6 @@ func cleanupOldSessions() {
 
 		for _, sessionID := range toDelete {
 			DeleteLogSession(sessionID)
-		}
-
-		if len(toDelete) > 0 {
-			log.Printf("Cleaned up %d old log sessions", len(toDelete))
 		}
 	}
 }

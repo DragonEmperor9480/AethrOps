@@ -178,17 +178,22 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           },
           onError: (error) {
             if (mounted) {
-              ToastUtils.show(
-                context,
-                'Stream error: $error',
-                isError: true,
-              );
+              debugPrint('Stream error: $error');
+              // Only show toast on first error, not on reconnect attempts
+              if (_reconnectAttempts == 0) {
+                ToastUtils.show(
+                  context,
+                  'Connection failed. Retrying...',
+                  isError: true,
+                );
+              }
               _attemptReconnect();
             }
           },
           onDone: () {
             // Connection closed normally, attempt reconnect
             if (mounted) {
+              debugPrint('Stream closed, reconnecting...');
               _attemptReconnect();
             }
           },
@@ -244,16 +249,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           // Test if we can actually write to this directory
           if (!await testDir.exists() || !(await _canWriteToDirectory(downloadsPath))) {
             // Fallback to app-specific directory (no permission needed)
-            downloadsPath = '/storage/emulated/0/Android/data/com.amrut.awsmgr/files/Downloads';
+            downloadsPath = '/storage/emulated/0/Android/data/com.amrut.aethrops/files/Downloads';
             final appDir = Directory(downloadsPath);
             if (!await appDir.exists()) {
               // Last resort: internal storage
-              downloadsPath = '/data/data/com.amrut.awsmgr/files/Downloads';
+              downloadsPath = '/data/data/com.amrut.aethrops/files/Downloads';
             }
           }
         } catch (e) {
           // If all else fails, use app's internal storage
-          downloadsPath = '/data/data/com.amrut.awsmgr/files/Downloads';
+          downloadsPath = '/data/data/com.amrut.aethrops/files/Downloads';
         }
       } else if (Platform.isLinux) {
         // Linux: ~/Downloads
@@ -457,35 +462,36 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117), // GitHub dark theme
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: const Color(0xFF30363D)),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161B22),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: const Color(0xFF30363D)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.functions,
+                size: 16,
+                color: Colors.greenAccent.shade400,
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.functions,
-                    size: 16,
-                    color: Colors.greenAccent.shade400,
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  widget.functionName,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    widget.functionName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         backgroundColor: const Color(0xFF161B22),
         foregroundColor: const Color(0xFFC9D1D9),
@@ -690,12 +696,17 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               children: [
                 // Status indicator
                 _buildStatusIndicator(),
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
                 // Always-visible fetching indicator
                 if (!_isPaused) _buildFetchingIndicator(),
-                const Spacer(),
-                // Metrics
-                _buildMetrics(),
+                const SizedBox(width: 8),
+                // Metrics - wrapped in Expanded to prevent overflow
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _buildMetrics(),
+                  ),
+                ),
               ],
             ),
           ),

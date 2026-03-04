@@ -52,6 +52,8 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	// Create log session for this stream
 	session, err := service.CreateLogSession(functionName)
 	if err != nil {
+		// Log the actual error for debugging
+		fmt.Printf("ERROR: Failed to create log session: %v\n", err)
 		respondError(w, http.StatusInternalServerError, "Failed to create log session: "+err.Error())
 		return
 	}

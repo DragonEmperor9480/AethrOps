@@ -11,6 +11,7 @@ import (
 
 	"github.com/DragonEmperor9480/AethrOps/db_service"
 	"github.com/DragonEmperor9480/AethrOps/routes"
+	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/gorilla/mux"
 )
@@ -42,6 +43,12 @@ func SetDataDirectory(dir *C.char) int {
 	// Set environment variable so other packages can access it
 	os.Setenv("AWSMGR_DATA_DIR", dataDir)
 	log.Printf("Data directory set to: %s", dataDir)
+
+	// Initialize log directory after setting data directory
+	if err := service.InitLogDirectory(); err != nil {
+		log.Printf("Warning: Failed to initialize log directory: %v", err)
+	}
+
 	return 0
 }
 
