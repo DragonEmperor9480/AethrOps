@@ -44,20 +44,3 @@ class Ec2LaunchRequest {
     };
   }
 }
-
-class AmiOption {
-  final String name;
-  final String imageId;
-  final String description;
-  final String architecture;
-
-  final String? assetPath;
-
-  const AmiOption({
-    required this.name,
-    required this.imageId,
-    required this.description,
-    required this.architecture,
-    this.assetPath,
-  });
-}

@@ -86,12 +86,14 @@ func RegisterRoutes(r *mux.Router) {
 	ginRouter.GET("/api/ec2/key-pairs", api.ListKeyPairs)
 	ginRouter.GET("/api/ec2/subnets", api.ListSubnets)
 	ginRouter.GET("/api/ec2/vpcs", api.ListVPCs)
+	ginRouter.GET("/api/ec2/amis", api.ListAMIs)
 
 	r.Handle("/api/ec2/instances", ginRouter).Methods("POST")
 	r.Handle("/api/ec2/security-groups", ginRouter).Methods("GET")
 	r.Handle("/api/ec2/key-pairs", ginRouter).Methods("GET")
 	r.Handle("/api/ec2/subnets", ginRouter).Methods("GET")
 	r.Handle("/api/ec2/vpcs", ginRouter).Methods("GET")
+	r.Handle("/api/ec2/amis", ginRouter).Methods("GET")
 
 	// Settings
 	r.HandleFunc("/api/settings/mfa", api.GetMFADevice).Methods("GET")

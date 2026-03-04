@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../providers/aws_config_provider.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
@@ -115,39 +117,26 @@ class _EC2ScreenState extends State<EC2Screen> {
 
   Future<void> _loadSettings() async {
     // Set loading state at the start
-    setState(() => _loading = true);
-    
-    final prefs = await SharedPreferences.getInstance();
-    
-    // First, get the current region from backend
-    try {
-      final config = await ApiService.getAWSConfig();
-      final currentRegion = config['region'] as String?;
-      
-      setState(() {
-        _showDashboard = prefs.getBool('ec2_show_dashboard') ?? false;
-        _showAllRegions = prefs.getBool('ec2_show_all_regions') ?? false;
-        
-        // Always use current region from backend as default
-        // Ignore saved region if it doesn't match current config
-        _selectedRegion = currentRegion;
-      });
-      
-      // Save the current region
-      if (currentRegion != null) {
-        await prefs.setString('ec2_selected_region', currentRegion);
-      }
-    } catch (e) {
-      // Fallback to saved settings if API fails
-      setState(() {
-        _showDashboard = prefs.getBool('ec2_show_dashboard') ?? false;
-        _showAllRegions = prefs.getBool('ec2_show_all_regions') ?? false;
-        _selectedRegion = prefs.getString('ec2_selected_region');
-      });
+    if (mounted) {
+      setState(() => _loading = true);
     }
     
-    // Load available regions
-    await _loadAvailableRegions();
+    final prefs = await SharedPreferences.getInstance();
+    final awsConfig = Provider.of<AwsConfigProvider>(context, listen: false);
+    
+    // Initialize AWS config provider if not already done
+    if (awsConfig.currentRegion == null) {
+      await awsConfig.initialize();
+    }
+    
+    if (mounted) {
+      setState(() {
+        _showDashboard = prefs.getBool('ec2_show_dashboard') ?? false;
+        _showAllRegions = prefs.getBool('ec2_show_all_regions') ?? false;
+        _selectedRegion = awsConfig.currentRegion;
+        _availableRegions = awsConfig.availableRegions;
+      });
+    }
     
     // Load both dashboard and instances in parallel
     final futures = <Future>[];
@@ -165,21 +154,6 @@ class _EC2ScreenState extends State<EC2Screen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('ec2_show_dashboard', _showDashboard);
     await prefs.setBool('ec2_show_all_regions', _showAllRegions);
-    if (_selectedRegion != null) {
-      await prefs.setString('ec2_selected_region', _selectedRegion!);
-    }
-  }
-
-  Future<void> _loadAvailableRegions() async {
-    try {
-      final regions = await ApiService.listAWSRegions();
-      
-      setState(() {
-        _availableRegions = regions;
-      });
-    } catch (e) {
-      // Silently fail, regions will be empty
-    }
   }
 
   void _filterInstances() {
@@ -224,16 +198,20 @@ class _EC2ScreenState extends State<EC2Screen> {
       
       // Only hide loading if dashboard is not enabled or not loading
       if (!_showDashboard || !_dashboardLoading) {
-        setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+        }
       }
     } catch (e) {
       // Don't show error toast, just set empty list
       // The UI will show "No instances found" message
-      setState(() {
-        _instances = [];
-        _filteredInstances = [];
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _instances = [];
+          _filteredInstances = [];
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -1036,7 +1014,11 @@ class _EC2ScreenState extends State<EC2Screen> {
                       // Close modal first
                       Navigator.pop(context);
                       
-                      // Then update state
+                      // Update global provider
+                      final awsConfig = Provider.of<AwsConfigProvider>(context, listen: false);
+                      await awsConfig.setRegion(region);
+                      
+                      // Then update local state
                       setState(() {
                         _selectedRegion = region;
                       });
@@ -1061,21 +1043,27 @@ class _EC2ScreenState extends State<EC2Screen> {
   }
 
   Future<void> _loadDashboard() async {
-    setState(() => _dashboardLoading = true);
+    if (mounted) {
+      setState(() => _dashboardLoading = true);
+    }
     try {
       final dashboard = await ApiService.getEC2Dashboard();
-      setState(() {
-        _dashboardData = dashboard;
-        _dashboardLoading = false;
-        // Hide main loading when dashboard is done
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _dashboardData = dashboard;
+          _dashboardLoading = false;
+          // Hide main loading when dashboard is done
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _dashboardLoading = false;
-        _loading = false;
-      });
-      _showError('Failed to load dashboard: $e');
+      if (mounted) {
+        setState(() {
+          _dashboardLoading = false;
+          _loading = false;
+        });
+        _showError('Failed to load dashboard: $e');
+      }
     }
   }
 }

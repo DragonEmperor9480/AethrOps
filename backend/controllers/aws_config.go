@@ -144,8 +144,33 @@ func GetAWSConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Read config file to get region
+	configContent, err := os.ReadFile(configFile)
+	if err != nil {
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"configured": true,
+			"message":    "AWS credentials configured",
+		})
+		return
+	}
+
+	// Parse region from config file
+	region := ""
+	configStr := string(configContent)
+	for _, line := range strings.Split(configStr, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "region") {
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				region = strings.TrimSpace(parts[1])
+				break
+			}
+		}
+	}
+
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"configured": true,
 		"message":    "AWS credentials configured",
+		"region":     region,
 	})
 }

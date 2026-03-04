@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -16,9 +17,29 @@ class AWSCredentialsService {
     required String secretKey,
     required String region,
   }) async {
+    // Save to secure storage
     await _storage.write(key: _keyAccessKey, value: accessKey);
     await _storage.write(key: _keySecretKey, value: secretKey);
     await _storage.write(key: _keyRegion, value: region);
+    
+    // Also save to backend (creates credential files)
+    try {
+      final response = await http.post(
+        Uri.parse('${BackendService.baseUrl}/api/aws/config'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'access_key_id': accessKey,
+          'secret_access_key': secretKey,
+          'region': region,
+        }),
+      );
+      
+      if (response.statusCode != 200) {
+        debugPrint('Warning: Failed to save credentials to backend: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Warning: Failed to call backend config endpoint: $e');
+    }
   }
 
   // Get AWS credentials

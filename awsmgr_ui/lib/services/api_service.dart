@@ -610,6 +610,81 @@ class ApiService {
     throw Exception('Failed to load AWS regions');
   }
 
+  static Future<List<dynamic>> listAMIs({String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/amis').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/amis');
+    
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['amis'] ?? [];
+    }
+    throw Exception('Failed to load AMIs');
+  }
+
+  static Future<List<dynamic>> listSecurityGroups({String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/security-groups').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/security-groups');
+    
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['security_groups'] ?? [];
+    }
+    throw Exception('Failed to load security groups');
+  }
+
+  static Future<List<dynamic>> listKeyPairs({String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/key-pairs').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/key-pairs');
+    
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['key_pairs'] ?? [];
+    }
+    throw Exception('Failed to load key pairs');
+  }
+
+  static Future<List<dynamic>> listSubnets({String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/subnets').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/subnets');
+    
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['subnets'] ?? [];
+    }
+    throw Exception('Failed to load subnets');
+  }
+
+  static Future<List<dynamic>> listVPCs({String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/vpcs').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/vpcs');
+    
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['vpcs'] ?? [];
+    }
+    throw Exception('Failed to load VPCs');
+  }
+
   static Future<Map<String, dynamic>> getEC2Instance(String instanceId, {String? region}) async {
     final uri = region != null
         ? Uri.parse('$baseUrl/ec2/instances/$instanceId').replace(
@@ -680,9 +755,14 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getEC2InstancesByState(String state) async {
+  static Future<List<dynamic>> getEC2InstancesByState(String state, {String? region}) async {
+    final queryParams = {'state': state};
+    if (region != null) {
+      queryParams['region'] = region;
+    }
+    
     final uri = Uri.parse('$baseUrl/ec2/instances/by-state').replace(
-      queryParameters: {'state': state},
+      queryParameters: queryParams,
     );
     final response = await http.get(uri);
     if (response.statusCode == 200) {

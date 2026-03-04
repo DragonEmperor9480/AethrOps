@@ -5,6 +5,7 @@ import 'package:window_manager/window_manager.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
+import 'providers/aws_config_provider.dart';
 import 'services/backend_service.dart';
 import 'utils/exit_handler.dart';
 
@@ -35,8 +36,11 @@ void main() async {
   }
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => AwsConfigProvider()),
+      ],
       child: const MyApp(),
     ),
   );

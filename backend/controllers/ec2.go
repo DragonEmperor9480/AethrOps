@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"net/http"
+	"sort"
 	"time"
 
 	ec2models "github.com/DragonEmperor9480/AethrOps/models/ec2"
@@ -429,6 +430,9 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for optional region parameter
+	region := r.URL.Query().Get("region")
+
 	// Validate state
 	var instanceState types.InstanceStateName
 	switch state {
@@ -449,7 +453,20 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := utils.GetEC2Client()
+	var client *ec2.Client
+	var err error
+
+	if region != "" {
+		client, err = utils.GetEC2ClientForRegion(region)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
+			return
+		}
+	} else {
+		client = utils.GetEC2Client()
+		region = utils.GetCurrentRegion()
+	}
+
 	ctx := context.TODO()
 
 	input := &ec2.DescribeInstancesInput{
@@ -486,6 +503,7 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 				"launch_time":   aws.ToTime(instance.LaunchTime).Format("2006-01-02 15:04:05"),
 				"public_ip":     aws.ToString(instance.PublicIpAddress),
 				"private_ip":    aws.ToString(instance.PrivateIpAddress),
+				"region":        region,
 			})
 		}
 	}
@@ -494,6 +512,7 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 		"instances": instances,
 		"count":     len(instances),
 		"state":     state,
+		"region":    region,
 	})
 }
 
@@ -644,7 +663,22 @@ func LaunchEC2Instance(c *gin.Context) {
 
 // ListSecurityGroups returns all security groups
 func ListSecurityGroups(c *gin.Context) {
-	client := utils.GetEC2Client()
+	// Check for optional region parameter
+	region := c.Query("region")
+
+	var client *ec2.Client
+	var err error
+
+	if region != "" {
+		client, err = utils.GetEC2ClientForRegion(region)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			return
+		}
+	} else {
+		client = utils.GetEC2Client()
+	}
+
 	ctx := context.TODO()
 
 	input := &ec2.DescribeSecurityGroupsInput{}
@@ -672,7 +706,22 @@ func ListSecurityGroups(c *gin.Context) {
 
 // ListKeyPairs returns all key pairs
 func ListKeyPairs(c *gin.Context) {
-	client := utils.GetEC2Client()
+	// Check for optional region parameter
+	region := c.Query("region")
+
+	var client *ec2.Client
+	var err error
+
+	if region != "" {
+		client, err = utils.GetEC2ClientForRegion(region)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			return
+		}
+	} else {
+		client = utils.GetEC2Client()
+	}
+
 	ctx := context.TODO()
 
 	input := &ec2.DescribeKeyPairsInput{}
@@ -699,7 +748,22 @@ func ListKeyPairs(c *gin.Context) {
 
 // ListSubnets returns all subnets
 func ListSubnets(c *gin.Context) {
-	client := utils.GetEC2Client()
+	// Check for optional region parameter
+	region := c.Query("region")
+
+	var client *ec2.Client
+	var err error
+
+	if region != "" {
+		client, err = utils.GetEC2ClientForRegion(region)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			return
+		}
+	} else {
+		client = utils.GetEC2Client()
+	}
+
 	ctx := context.TODO()
 
 	input := &ec2.DescribeSubnetsInput{}
@@ -736,7 +800,22 @@ func ListSubnets(c *gin.Context) {
 
 // ListVPCs returns all VPCs
 func ListVPCs(c *gin.Context) {
-	client := utils.GetEC2Client()
+	// Check for optional region parameter
+	region := c.Query("region")
+
+	var client *ec2.Client
+	var err error
+
+	if region != "" {
+		client, err = utils.GetEC2ClientForRegion(region)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			return
+		}
+	} else {
+		client = utils.GetEC2Client()
+	}
+
 	ctx := context.TODO()
 
 	input := &ec2.DescribeVpcsInput{}
@@ -768,6 +847,98 @@ func ListVPCs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"vpcs":  vpcs,
 		"count": len(vpcs),
+	})
+}
+
+// ListAMIs returns popular AMIs for a region
+func ListAMIs(c *gin.Context) {
+	// Check for optional region parameter
+	region := c.Query("region")
+
+	var client *ec2.Client
+	var err error
+
+	if region != "" {
+		client, err = utils.GetEC2ClientForRegion(region)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			return
+		}
+	} else {
+		client = utils.GetEC2Client()
+		region = utils.GetCurrentRegion()
+	}
+
+	ctx := context.TODO()
+
+	// Query for popular AMIs with specific name patterns
+	input := &ec2.DescribeImagesInput{
+		Owners: []string{"amazon", "099720109477"}, // Amazon and Canonical (Ubuntu)
+		Filters: []types.Filter{
+			{
+				Name:   aws.String("state"),
+				Values: []string{"available"},
+			},
+			{
+				Name:   aws.String("architecture"),
+				Values: []string{"x86_64"},
+			},
+			{
+				Name:   aws.String("root-device-type"),
+				Values: []string{"ebs"},
+			},
+			{
+				Name:   aws.String("virtualization-type"),
+				Values: []string{"hvm"},
+			},
+			{
+				Name: aws.String("name"),
+				Values: []string{
+					"al2023-ami-2023*",                          // Amazon Linux 2023
+					"amzn2-ami-hvm-*",                           // Amazon Linux 2
+					"ubuntu/images/hvm-ssd/ubuntu-jammy-22.04*", // Ubuntu 22.04
+					"ubuntu/images/hvm-ssd/ubuntu-focal-20.04*", // Ubuntu 20.04
+				},
+			},
+		},
+	}
+
+	result, err := client.DescribeImages(ctx, input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "Failed to list AMIs: " + err.Error(),
+			"region": region,
+		})
+		return
+	}
+
+	// Sort by creation date (newest first) and limit to 10
+	images := result.Images
+	sort.Slice(images, func(i, j int) bool {
+		return aws.ToString(images[i].CreationDate) > aws.ToString(images[j].CreationDate)
+	})
+
+	limit := 10
+	if len(images) > limit {
+		images = images[:limit]
+	}
+
+	var amis []map[string]interface{}
+	for _, image := range images {
+		amis = append(amis, map[string]interface{}{
+			"image_id":      aws.ToString(image.ImageId),
+			"name":          aws.ToString(image.Name),
+			"description":   aws.ToString(image.Description),
+			"architecture":  string(image.Architecture),
+			"creation_date": aws.ToString(image.CreationDate),
+			"owner_id":      aws.ToString(image.OwnerId),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"amis":   amis,
+		"count":  len(amis),
+		"region": region,
 	})
 }
 
