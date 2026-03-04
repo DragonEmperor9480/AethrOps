@@ -21,6 +21,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
   List<dynamic> _subnets = [];
   List<dynamic> _vpcs = [];
   List<dynamic> _securityGroups = [];
+  List<String> _regions = [];
 
   // Selections
   AmiOption? _selectedAmi;
@@ -30,6 +31,9 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
   String? _selectedVpc;
   String? _selectedSubnet;
   final List<String> _selectedSecurityGroups = [];
+  String? _selectedRegion;
+  String _customAmiId = '';
+  bool _useCustomAmi = false;
 
   String _userData = '';
   int _storageSize = 8; // Default 8 GB
@@ -80,6 +84,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         Ec2Service.listVpcs(),
         Ec2Service.listSubnets(),
         Ec2Service.listSecurityGroups(),
+        Ec2Service.listRegions(),
       ]);
 
       setState(() {
@@ -87,6 +92,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         _vpcs = results[1];
         _subnets = results[2];
         _securityGroups = results[3];
+        _regions = List<String>.from(results[4]);
         _isLoadingData = false;
 
         // Auto-select Default VPC, or first available
@@ -112,16 +118,28 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
 
   Future<void> _launchInstance() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedAmi == null) {
-      ToastUtils.show(context, 'Please select an AMI', isError: true);
-      return;
+    
+    // Determine which AMI to use
+    String amiId;
+    if (_useCustomAmi) {
+      if (_customAmiId.isEmpty) {
+        ToastUtils.show(context, 'Please enter an AMI ID', isError: true);
+        return;
+      }
+      amiId = _customAmiId;
+    } else {
+      if (_selectedAmi == null) {
+        ToastUtils.show(context, 'Please select an AMI', isError: true);
+        return;
+      }
+      amiId = _selectedAmi!.imageId;
     }
 
     setState(() => _isLoading = true);
 
     try {
       final request = Ec2LaunchRequest(
-        imageId: _selectedAmi!.imageId,
+        imageId: amiId,
         instanceType: _instanceType,
         keyName: _selectedKeyPair,
         subnetId: _selectedSubnet,
@@ -134,6 +152,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         volumeType: _volumeType,
         minCount: 1,
         maxCount: 1,
+        region: _selectedRegion,
       );
 
       final result = await Ec2Service.launchInstance(request);
@@ -200,106 +219,173 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 220,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _amiOptions.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final ami = _amiOptions[index];
-                          final isSelected = _selectedAmi == ami;
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedAmi = ami),
-                            child: Container(
-                              width: 180,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? primaryColor.withOpacity(0.1)
-                                    : Theme.of(context).cardColor,
-                                border: Border.all(
-                                  color: isSelected
-                                      ? primaryColor
-                                      : Theme.of(context).dividerColor,
-                                  width: isSelected ? 2 : 1,
+                    
+                    // Warning for non-default region
+                    if (_selectedRegion != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.warningAmber.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.warningAmber.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: AppTheme.warningAmber,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'AMI IDs are region-specific. The pre-selected AMIs may not work in ${_selectedRegion}. Use custom AMI ID for other regions.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.warningAmber,
                                 ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.05),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ami.assetPath != null
-                                        ? Image.asset(
-                                            ami.assetPath!,
-                                            fit: BoxFit.contain,
-                                          )
-                                        : Icon(
-                                            Icons.computer,
-                                            color: isSelected
-                                                ? primaryColor
-                                                : Colors.grey,
-                                            size: 28,
-                                          ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    ami.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Expanded(
-                                    child: Center(
-                                      child: Text(
-                                        ami.description,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 4,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(fontSize: 10),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Chip(
-                                    label: Text(ami.architecture),
-                                    labelStyle: const TextStyle(fontSize: 10),
-                                    visualDensity: VisualDensity.compact,
-                                    backgroundColor: isSelected
-                                        ? primaryColor.withOpacity(0.2)
-                                        : null,
-                                  ),
-                                ],
                               ),
                             ),
-                          );
-                        },
+                          ],
+                        ),
                       ),
+                    
+                    // Toggle for custom AMI
+                    SwitchListTile(
+                      title: const Text('Use Custom AMI ID'),
+                      subtitle: const Text('Enter AMI ID manually'),
+                      value: _useCustomAmi,
+                      onChanged: (value) => setState(() => _useCustomAmi = value),
+                      contentPadding: EdgeInsets.zero,
                     ),
+                    const SizedBox(height: 12),
+                    
+                    if (_useCustomAmi)
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'AMI ID',
+                          hintText: 'ami-xxxxxxxxxxxxxxxxx',
+                          border: const OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: primaryColor, width: 2),
+                          ),
+                          prefixIcon: const Icon(Icons.image),
+                        ),
+                        onChanged: (val) => _customAmiId = val,
+                        validator: (val) {
+                          if (_useCustomAmi && (val == null || val.isEmpty)) {
+                            return 'Please enter an AMI ID';
+                          }
+                          if (_useCustomAmi && !val!.startsWith('ami-')) {
+                            return 'AMI ID must start with "ami-"';
+                          }
+                          return null;
+                        },
+                      )
+                    else
+                      SizedBox(
+                        height: 220,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _amiOptions.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final ami = _amiOptions[index];
+                            final isSelected = _selectedAmi == ami;
+                            return GestureDetector(
+                              onTap: () => setState(() => _selectedAmi = ami),
+                              child: Container(
+                                width: 180,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? primaryColor.withOpacity(0.1)
+                                      : Theme.of(context).cardColor,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? primaryColor
+                                        : Theme.of(context).dividerColor,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 48,
+                                      height: 48,
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.05),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ami.assetPath != null
+                                          ? Image.asset(
+                                              ami.assetPath!,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : Icon(
+                                              Icons.computer,
+                                              color: isSelected
+                                                  ? primaryColor
+                                                  : Colors.grey,
+                                              size: 28,
+                                            ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      ami.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Expanded(
+                                      child: Center(
+                                        child: Text(
+                                          ami.description,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 4,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(fontSize: 10),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Chip(
+                                      label: Text(ami.architecture),
+                                      labelStyle: const TextStyle(fontSize: 10),
+                                      visualDensity: VisualDensity.compact,
+                                      backgroundColor: isSelected
+                                          ? primaryColor.withOpacity(0.2)
+                                          : null,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     const SizedBox(height: 32),
 
                     // === 2. Instance Type ===
@@ -329,6 +415,39 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                         );
                       }).toList(),
                       onChanged: (val) => setState(() => _instanceType = val!),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // === 2.5. Region Selection ===
+                    Text(
+                      'Region',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String?>(
+                      value: _selectedRegion,
+                      decoration: InputDecoration(
+                        labelText: 'Launch Region',
+                        helperText: 'Leave empty to use current region',
+                        border: const OutlineInputBorder(),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                        prefixIcon: const Icon(Icons.public),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Current Region (Default)'),
+                        ),
+                        ..._regions.map((region) {
+                          return DropdownMenuItem<String>(
+                            value: region,
+                            child: Text(region),
+                          );
+                        }),
+                      ],
+                      onChanged: (val) => setState(() => _selectedRegion = val),
                     ),
                     const SizedBox(height: 32),
 

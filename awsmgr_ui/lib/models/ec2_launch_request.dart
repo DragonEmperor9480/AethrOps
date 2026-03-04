@@ -10,6 +10,7 @@ class Ec2LaunchRequest {
   final String? userData;
   final int? volumeSize;
   final String? volumeType;
+  final String? region;
 
   Ec2LaunchRequest({
     required this.imageId,
@@ -23,6 +24,7 @@ class Ec2LaunchRequest {
     this.userData,
     this.volumeSize,
     this.volumeType,
+    this.region,
   });
 
   Map<String, dynamic> toJson() {
@@ -38,6 +40,7 @@ class Ec2LaunchRequest {
       if (userData != null) 'user_data': userData,
       if (volumeSize != null) 'volume_size': volumeSize,
       if (volumeType != null) 'volume_type': volumeType,
+      if (region != null) 'region': region,
     };
   }
 }

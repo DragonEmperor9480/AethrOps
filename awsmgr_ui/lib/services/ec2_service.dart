@@ -58,4 +58,13 @@ class Ec2Service {
     }
     throw Exception('Failed to load VPCs');
   }
+
+  static Future<List<String>> listRegions() async {
+    final response = await http.get(Uri.parse('$baseUrl/ec2/regions'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<String>.from(data['regions'] ?? []);
+    }
+    throw Exception('Failed to load regions');
+  }
 }

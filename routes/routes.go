@@ -64,6 +64,12 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/cloudwatch/lambda/{function}/logs", api.StreamLambdaLogs).Methods("GET")
 	r.HandleFunc("/api/cloudwatch/logs/download/{sessionId}", api.DownloadLogs).Methods("GET")
 
+	// EC2 Multi-Region (must be before {instance_id} routes to avoid conflicts)
+	r.HandleFunc("/api/ec2/regions", api.ListAWSRegions).Methods("GET")
+	r.HandleFunc("/api/ec2/dashboard", api.GetEC2Dashboard).Methods("GET")
+	r.HandleFunc("/api/ec2/instances/all-regions", api.ListEC2InstancesAllRegions).Methods("GET")
+	r.HandleFunc("/api/ec2/instances/by-state", api.GetInstanceStateChanges).Methods("GET")
+
 	// EC2 Instances (Mux routes)
 	r.HandleFunc("/api/ec2/instances", api.ListEC2Instances).Methods("GET")
 	r.HandleFunc("/api/ec2/instances/{instance_id}", api.GetEC2Instance).Methods("GET")
@@ -71,7 +77,6 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/ec2/instances/{instance_id}/stop", api.StopEC2Instance).Methods("POST")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/reboot", api.RebootEC2Instance).Methods("POST")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/terminate", api.TerminateEC2Instance).Methods("DELETE")
-	r.HandleFunc("/api/ec2/instances/by-state", api.GetInstanceStateChanges).Methods("GET")
 
 	// EC2 Launch & Configuration (Gin Router)
 	gin.SetMode(gin.ReleaseMode)

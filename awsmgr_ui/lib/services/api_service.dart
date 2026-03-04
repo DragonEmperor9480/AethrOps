@@ -569,8 +569,14 @@ class ApiService {
   }
 
   // EC2 Instances
-  static Future<List<dynamic>> listEC2Instances() async {
-    final response = await http.get(Uri.parse('$baseUrl/ec2/instances'));
+  static Future<List<dynamic>> listEC2Instances({String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/instances').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/instances');
+    
+    final response = await http.get(uri);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
@@ -578,50 +584,96 @@ class ApiService {
     throw Exception('Failed to load EC2 instances');
   }
 
-  static Future<Map<String, dynamic>> getEC2Instance(String instanceId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/ec2/instances/$instanceId'),
-    );
+  static Future<List<dynamic>> listEC2InstancesAllRegions() async {
+    final response = await http.get(Uri.parse('$baseUrl/ec2/instances/all-regions'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['instances'] ?? [];
+    }
+    throw Exception('Failed to load EC2 instances from all regions');
+  }
+
+  static Future<Map<String, dynamic>> getEC2Dashboard() async {
+    final response = await http.get(Uri.parse('$baseUrl/ec2/dashboard'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to load EC2 dashboard');
+  }
+
+  static Future<List<String>> listAWSRegions() async {
+    final response = await http.get(Uri.parse('$baseUrl/ec2/regions'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<String>.from(data['regions'] ?? []);
+    }
+    throw Exception('Failed to load AWS regions');
+  }
+
+  static Future<Map<String, dynamic>> getEC2Instance(String instanceId, {String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/instances/$instanceId').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/instances/$instanceId');
+    
+    final response = await http.get(uri);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
     throw Exception('Failed to get instance details');
   }
 
-  static Future<void> startEC2Instance(String instanceId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/ec2/instances/$instanceId/start'),
-    );
+  static Future<void> startEC2Instance(String instanceId, {String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/instances/$instanceId/start').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/instances/$instanceId/start');
+    
+    final response = await http.post(uri);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to start instance');
     }
   }
 
-  static Future<void> stopEC2Instance(String instanceId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/ec2/instances/$instanceId/stop'),
-    );
+  static Future<void> stopEC2Instance(String instanceId, {String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/instances/$instanceId/stop').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/instances/$instanceId/stop');
+    
+    final response = await http.post(uri);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to stop instance');
     }
   }
 
-  static Future<void> rebootEC2Instance(String instanceId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/ec2/instances/$instanceId/reboot'),
-    );
+  static Future<void> rebootEC2Instance(String instanceId, {String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/instances/$instanceId/reboot').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/instances/$instanceId/reboot');
+    
+    final response = await http.post(uri);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to reboot instance');
     }
   }
 
-  static Future<void> terminateEC2Instance(String instanceId) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/ec2/instances/$instanceId/terminate'),
-    );
+  static Future<void> terminateEC2Instance(String instanceId, {String? region}) async {
+    final uri = region != null
+        ? Uri.parse('$baseUrl/ec2/instances/$instanceId/terminate').replace(
+            queryParameters: {'region': region},
+          )
+        : Uri.parse('$baseUrl/ec2/instances/$instanceId/terminate');
+    
+    final response = await http.delete(uri);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to terminate instance');

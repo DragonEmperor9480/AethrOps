@@ -13,4 +13,5 @@ type LaunchInstanceRequest struct {
 	UserData         string            `json:"user_data,omitempty"`
 	VolumeSize       int32             `json:"volume_size,omitempty"`
 	VolumeType       string            `json:"volume_type,omitempty"`
+	Region           string            `json:"region,omitempty"`
 }

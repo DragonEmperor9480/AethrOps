@@ -2,10 +2,12 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -22,6 +24,7 @@ var (
 	LambdaClient *lambda.Client
 	S3Client     *s3.Client
 	STSClient    *sts.Client
+	awsConfig    aws.Config // Store config for creating region-specific clients
 )
 
 // InitAWSClients initializes AWS SDK clients
@@ -41,6 +44,9 @@ func InitAWSClients() error {
 	if err != nil {
 		return err
 	}
+
+	// Store config for creating region-specific clients
+	awsConfig = cfg
 
 	EC2Client = ec2.NewFromConfig(cfg)
 	IAMClient = iam.NewFromConfig(cfg)
@@ -140,4 +146,45 @@ func GetConsoleSignInURL() (string, error) {
 	}
 
 	return "https://" + accountID + ".signin.aws.amazon.com/console", nil
+}
+
+// GetEC2ClientForRegion creates an EC2 client for a specific region
+func GetEC2ClientForRegion(region string) (*ec2.Client, error) {
+	if awsConfig.Region == "" {
+		return nil, fmt.Errorf("AWS config not initialized")
+	}
+
+	// Load config with the specified region
+	ctx := context.TODO()
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config for region %s: %w", region, err)
+	}
+
+	return ec2.NewFromConfig(cfg), nil
+}
+
+// GetAllAWSRegions returns list of all AWS regions
+func GetAllAWSRegions() ([]string, error) {
+	ctx := context.TODO()
+
+	// Use the default EC2 client to describe regions
+	result, err := EC2Client.DescribeRegions(ctx, &ec2.DescribeRegionsInput{
+		AllRegions: aws.Bool(true), // Include opt-in regions
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	regions := make([]string, 0, len(result.Regions))
+	for _, region := range result.Regions {
+		regions = append(regions, aws.ToString(region.RegionName))
+	}
+
+	return regions, nil
+}
+
+// GetCurrentRegion returns the configured default region
+func GetCurrentRegion() string {
+	return awsConfig.Region
 }

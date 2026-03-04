@@ -9,12 +9,14 @@ class EC2InstanceDetailsScreen extends StatefulWidget {
   final String instanceId;
   final String instanceName;
   final String state;
+  final String? region;
 
   const EC2InstanceDetailsScreen({
     super.key,
     required this.instanceId,
     required this.instanceName,
     required this.state,
+    this.region,
   });
 
   @override
@@ -41,7 +43,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     });
 
     try {
-      final details = await ApiService.getEC2Instance(widget.instanceId);
+      final details = await ApiService.getEC2Instance(
+        widget.instanceId,
+        region: widget.region,
+      );
       setState(() {
         _instanceDetails = details;
         _loading = false;
@@ -78,7 +83,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.startEC2Instance(widget.instanceId);
+        await ApiService.startEC2Instance(widget.instanceId, region: widget.region);
         _showSuccess('Instance start initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -101,7 +106,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.stopEC2Instance(widget.instanceId);
+        await ApiService.stopEC2Instance(widget.instanceId, region: widget.region);
         _showSuccess('Instance stop initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -124,7 +129,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.rebootEC2Instance(widget.instanceId);
+        await ApiService.rebootEC2Instance(widget.instanceId, region: widget.region);
         _showSuccess('Instance reboot initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -149,7 +154,7 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.terminateEC2Instance(widget.instanceId);
+        await ApiService.terminateEC2Instance(widget.instanceId, region: widget.region);
         _showSuccess('Instance termination initiated');
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
