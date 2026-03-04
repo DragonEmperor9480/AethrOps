@@ -121,7 +121,7 @@ func CloseLogSession(sessionID string) {
 		session.File = nil
 	}
 	session.Mutex.Unlock()
-}build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+}
 
 // GetLogSession retrieves a log session by ID
 func GetLogSession(sessionID string) (*cloudwatch_model.LogSession, bool) {
