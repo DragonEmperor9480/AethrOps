@@ -170,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen> {
             SizedBox(
               height: 250,
               child: Lottie.asset(
-                'assets/animations/App update animation.json',
+                'assets/animations/Rocket in space.json',
                 fit: BoxFit.contain,
                 repeat: true,
               ),

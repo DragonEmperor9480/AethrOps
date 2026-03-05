@@ -15,19 +15,17 @@ class PinLockScreen extends StatefulWidget {
   State<PinLockScreen> createState() => _PinLockScreenState();
 }
 
-class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProviderStateMixin {
+class _PinLockScreenState extends State<PinLockScreen> {
   String _pin = '';
   String _confirmPin = '';
   bool _isConfirming = false;
   bool _showBiometric = false;
   final FocusNode _focusNode = FocusNode();
-  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _checkBiometric();
-    _animationController = AnimationController(vsync: this);
     // Request focus for keyboard input
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -37,7 +35,6 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
   @override
   void dispose() {
     _focusNode.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
@@ -62,14 +59,6 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
   }
 
   void _onNumberPressed(String number) {
-    // Animate when user starts typing (before adding digit)
-    final currentPin = _isConfirming ? _confirmPin : _pin;
-    if (currentPin.isEmpty) {
-      // About to enter first digit - play animation forward fast (cover eyes)
-      _animationController.forward(from: 0.0);
-      _animationController.duration = const Duration(milliseconds: 300);
-    }
-    
     if (widget.isSetup) {
       _handleSetupMode(number);
     } else {
@@ -122,9 +111,6 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
         _confirmPin = '';
         _isConfirming = false;
       });
-      // Reset animation fast
-      _animationController.duration = const Duration(milliseconds: 300);
-      _animationController.reverse();
     }
   }
 
@@ -135,9 +121,6 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
     } else {
       ToastUtils.show(context, 'Invalid PIN', isError: true);
       setState(() => _pin = '');
-      // Reset animation fast
-      _animationController.duration = const Duration(milliseconds: 300);
-      _animationController.reverse();
     }
   }
 
@@ -145,22 +128,10 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
     setState(() {
       if (_isConfirming && _confirmPin.isNotEmpty) {
         _confirmPin = _confirmPin.substring(0, _confirmPin.length - 1);
-        // If all digits removed, reverse animation fast (uncover eyes)
-        if (_confirmPin.isEmpty) {
-          _animationController.duration = const Duration(milliseconds: 300);
-          _animationController.reverse();
-        }
       } else if (!_isConfirming && _pin.isNotEmpty) {
         _pin = _pin.substring(0, _pin.length - 1);
-        // If all digits removed, reverse animation fast (uncover eyes)
-        if (_pin.isEmpty) {
-          _animationController.duration = const Duration(milliseconds: 300);
-          _animationController.reverse();
-        }
       } else if (_isConfirming && _confirmPin.isEmpty) {
         _isConfirming = false;
-        _animationController.duration = const Duration(milliseconds: 300);
-        _animationController.reverse();
       }
     });
   }
@@ -249,37 +220,14 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Lottie animation with circular clip
-                    Container(
-                      width: 180,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.primaryPurple.withValues(alpha: 0.1),
-                            AppTheme.primaryBlue.withValues(alpha: 0.1),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryPurple.withValues(alpha: 0.2),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Lottie.asset(
-                          'assets/animations/Login character_Hello.json',
-                          controller: _animationController,
-                          fit: BoxFit.cover,
-                          onLoaded: (composition) {
-                            _animationController.duration = composition.duration;
-                          },
-                        ),
+                    // Security animation
+                    SizedBox(
+                      width: 200,
+                      height: 200,
+                      child: Lottie.asset(
+                        'assets/animations/Security.json',
+                        fit: BoxFit.contain,
+                        repeat: true,
                       ),
                     ),
                     const SizedBox(height: 16),
