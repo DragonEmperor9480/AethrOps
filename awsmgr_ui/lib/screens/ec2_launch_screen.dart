@@ -5,6 +5,7 @@ import '../services/ec2_service.dart';
 import '../services/api_service.dart';
 import '../providers/aws_config_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/oneui_widgets.dart';
 import '../utils/toast_utils.dart';
 
 class Ec2LaunchScreen extends StatefulWidget {
@@ -318,40 +319,26 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Instance Name (full width)
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Instance Name',
-                        hintText: 'My-Web-Server',
-                        border: const OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: primaryColor, width: 2),
-                        ),
-                        prefixIcon: const Icon(Icons.label_outline),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                      ),
+                    // Instance Name
+                    OneUIPillTextField(
+                      controller: TextEditingController(text: _instanceName),
+                      label: 'Instance Name',
+                      hint: 'My-Web-Server',
+                      icon: Icons.label_outline,
                       onChanged: (val) => _instanceName = val,
                     ),
                     const SizedBox(height: 16),
                     
-                    // Region and Instance Type side by side
+                    // Region and Instance Type
                     Row(
                       children: [
                         // Region
                         Expanded(
-                          child: DropdownButtonFormField<String>(
+                          child: OneUIPillDropdown<String>(
                             value: _selectedRegion,
-                            isExpanded: true,
-                            menuMaxHeight: 300,
-                            decoration: InputDecoration(
-                              labelText: 'Region',
-                              border: const OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: primaryColor, width: 2),
-                              ),
-                              prefixIcon: Icon(Icons.public, size: 20),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            ),
+                            label: 'Region',
+                            hint: 'Select region',
+                            icon: Icons.public,
                             items: _regions.map((region) {
                               return DropdownMenuItem<String>(
                                 value: region,
@@ -366,30 +353,18 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         // Instance Type
                         Expanded(
-                          child: DropdownButtonFormField<String>(
+                          child: OneUIPillDropdown<String>(
                             value: _instanceType,
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              labelText: 'Instance Type',
-                              border: const OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: primaryColor, width: 2),
-                              ),
-                              prefixIcon: Icon(Icons.memory, size: 20),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                            ),
+                            label: 'Instance Type',
+                            hint: 'Select type',
+                            icon: Icons.memory,
                             items: _instanceTypes.map((type) {
                               return DropdownMenuItem(
                                 value: type,
-                                child: Text(
-                                  type,
-                                  style: const TextStyle(fontSize: 13),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                child: Text(type, style: const TextStyle(fontSize: 13)),
                               );
                             }).toList(),
                             onChanged: (val) => setState(() => _instanceType = val!),
@@ -417,17 +392,11 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (_useCustomAmi)
-                                TextFormField(
-                                  decoration: InputDecoration(
-                                    labelText: 'AMI ID',
-                                    hintText: 'ami-xxxxx',
-                                    border: const OutlineInputBorder(),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(color: primaryColor, width: 2),
-                                    ),
-                                    prefixIcon: const Icon(Icons.image, size: 20),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                                  ),
+                                OneUIPillTextField(
+                                  controller: TextEditingController(text: _customAmiId),
+                                  label: 'AMI ID',
+                                  hint: 'ami-xxxxx',
+                                  icon: Icons.image,
                                   onChanged: (val) => _customAmiId = val,
                                   validator: (val) {
                                     if (_useCustomAmi && (val == null || val.isEmpty)) {
@@ -460,19 +429,11 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                         ],
                                       ),
                                     )
-                                  : DropdownButtonFormField<String>(
+                                  : OneUIPillDropdown<String>(
                                       value: _selectedAmiId,
-                                      isExpanded: true,
-                                      menuMaxHeight: 300,
-                                      decoration: InputDecoration(
-                                        labelText: 'AMI',
-                                        border: const OutlineInputBorder(),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: primaryColor, width: 2),
-                                        ),
-                                        prefixIcon: const Icon(Icons.image, size: 20),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                                      ),
+                                      label: 'AMI',
+                                      hint: 'Select AMI',
+                                      icon: Icons.image,
                                       items: _amis.map((ami) {
                                         return DropdownMenuItem<String>(
                                           value: ami['image_id'],
@@ -523,19 +484,11 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              DropdownButtonFormField<String>(
+                              OneUIPillDropdown<String>(
                                 value: _selectedKeyPair,
-                                isExpanded: true,
-                                menuMaxHeight: 300,
-                                decoration: InputDecoration(
-                                  labelText: 'Key Pair',
-                                  border: const OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: primaryColor, width: 2),
-                                  ),
-                                  prefixIcon: const Icon(Icons.vpn_key, size: 20),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                                ),
+                                label: 'Key Pair',
+                                hint: 'Select key pair',
+                                icon: Icons.vpn_key,
                                 items: [
                                   const DropdownMenuItem<String>(
                                     value: null,
@@ -607,99 +560,54 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Size (GiB)',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.labelMedium,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextFormField(
-                                        initialValue: _storageSize.toString(),
-                                        keyboardType: TextInputType.number,
-                                        decoration: const InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          suffixText: 'GiB',
-                                          helperText:
-                                              'Free tier eligible up to 30 GiB',
-                                        ),
-                                        onChanged: (val) {
-                                          final size = int.tryParse(val);
-                                          if (size != null) {
-                                            setState(() => _storageSize = size);
-                                          }
-                                        },
-                                        validator: (val) {
-                                          final size = int.tryParse(val ?? '');
-                                          if (size == null || size < 8) {
-                                            return 'Min 8 GiB';
-                                          }
-                                          if (size > 16384) {
-                                            return 'Max 16 TiB';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ],
+                                  child: OneUIPillTextField(
+                                    controller: TextEditingController(text: _storageSize.toString()),
+                                    label: 'Size (GiB)',
+                                    hint: '8',
+                                    icon: Icons.storage,
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (val) {
+                                      final size = int.tryParse(val);
+                                      if (size != null) {
+                                        setState(() => _storageSize = size);
+                                      }
+                                    },
+                                    validator: (val) {
+                                      final size = int.tryParse(val ?? '');
+                                      if (size == null || size < 8) {
+                                        return 'Min 8 GiB';
+                                      }
+                                      if (size > 16384) {
+                                        return 'Max 16 TiB';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Volume Type',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.labelMedium,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      DropdownButtonFormField<String>(
-                                        value: _volumeType,
-                                        isExpanded: true,
-                                        decoration: const InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          helperText: ' ', // Maintain alignment
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical:
-                                                16, // Match height of TextFormField
-                                          ),
-                                        ),
-                                        items:
-                                            [
-                                                  'gp3',
-                                                  'gp2',
-                                                  'io1',
-                                                  'io2',
-                                                  'sc1',
-                                                  'st1',
-                                                  'standard',
-                                                ]
-                                                .map(
-                                                  (type) => DropdownMenuItem(
-                                                    value: type,
-                                                    child: Text(
-                                                      type,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
-                                        onChanged: (val) {
-                                          if (val != null) {
-                                            setState(() => _volumeType = val);
-                                          }
-                                        },
-                                      ),
-                                    ],
+                                  child: OneUIPillDropdown<String>(
+                                    value: _volumeType,
+                                    label: 'Volume Type',
+                                    hint: 'Select type',
+                                    icon: Icons.storage,
+                                    items: [
+                                      'gp3',
+                                      'gp2',
+                                      'io1',
+                                      'io2',
+                                      'sc1',
+                                      'st1',
+                                      'standard',
+                                    ].map((type) => DropdownMenuItem(
+                                      value: type,
+                                      child: Text(type, style: const TextStyle(fontSize: 13)),
+                                    )).toList(),
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => _volumeType = val);
+                                      }
+                                    },
                                   ),
                                 ),
                               ],
@@ -747,13 +655,11 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                     ],
                                   ),
                                 )
-                              : DropdownButtonFormField<String>(
-                              initialValue: _selectedVpc,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'VPC',
-                                border: OutlineInputBorder(),
-                              ),
+                              : OneUIPillDropdown<String>(
+                              value: _selectedVpc,
+                              label: 'VPC',
+                              hint: 'Select VPC',
+                              icon: Icons.cloud_outlined,
                               items: _vpcs.map((vpc) {
                                 final name = vpc['name'] != ''
                                     ? ' (${vpc['name']})'
@@ -763,34 +669,29 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                   value: vpc['vpc_id'],
                                   child: Text(
                                     '${vpc['vpc_id']}$name${isDefault ? ' (Default)' : ''}',
+                                    style: const TextStyle(fontSize: 13),
                                   ),
                                 );
                               }).toList(),
                               onChanged: (val) {
                                 setState(() {
                                   _selectedVpc = val;
-                                  _selectedSubnet =
-                                      null; // Reset subnet on VPC change
+                                  _selectedSubnet = null;
                                 });
                               },
                             ),
                             const SizedBox(height: 16),
 
                             // Subnet
-                            DropdownButtonFormField<String?>(
-                              initialValue: _selectedSubnet,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Subnet',
-                                helperText:
-                                    'Leave empty for no preference (Auto-assign Public IP)',
-                                border: OutlineInputBorder(),
-                              ),
-                              // Filter subnets by selected VPC
+                            OneUIPillDropdown<String?>(
+                              value: _selectedSubnet,
+                              label: 'Subnet',
+                              hint: 'No preference',
+                              icon: Icons.lan_outlined,
                               items: [
                                 const DropdownMenuItem<String?>(
                                   value: null,
-                                  child: Text('No Preference'),
+                                  child: Text('No Preference', style: TextStyle(fontSize: 13)),
                                 ),
                                 ..._subnets
                                     .where((s) => s['vpc_id'] == _selectedVpc)
@@ -802,12 +703,12 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                         value: sn['subnet_id'],
                                         child: Text(
                                           '${sn['subnet_id']} - ${sn['availability_zone']}$name',
+                                          style: const TextStyle(fontSize: 13),
                                         ),
                                       );
                                     }),
                               ],
-                              onChanged: (val) =>
-                                  setState(() => _selectedSubnet = val),
+                              onChanged: (val) => setState(() => _selectedSubnet = val),
                             ),
                             const SizedBox(height: 16),
 
@@ -889,16 +790,45 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                 // Update parent UI to show correct count
                                 setState(() {});
                               },
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  labelText: 'Security Groups',
-                                  border: OutlineInputBorder(),
-                                  suffixIcon: Icon(Icons.arrow_drop_down),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                                decoration: BoxDecoration(
+                                  color: isDark 
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : Colors.black.withValues(alpha: 0.03),
+                                  borderRadius: BorderRadius.circular(28),
+                                  border: Border.all(
+                                    color: isDark 
+                                        ? Colors.white.withValues(alpha: 0.15)
+                                        : Colors.black.withValues(alpha: 0.15),
+                                    width: 1,
+                                  ),
                                 ),
-                                child: Text(
-                                  _selectedSecurityGroups.isEmpty
-                                      ? 'Select Security Groups'
-                                      : '${_selectedSecurityGroups.length} selected',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.security,
+                                      color: AppTheme.primaryPurple,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _selectedSecurityGroups.isEmpty
+                                            ? 'Select Security Groups'
+                                            : '${_selectedSecurityGroups.length} selected',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_drop_down,
+                                      color: isDark ? Colors.white60 : const Color(0xFF999999),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -914,14 +844,12 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: TextFormField(
+                          child: OneUIPillTextField(
+                            controller: TextEditingController(text: _userData),
+                            label: 'User Data (Optional)',
+                            hint: '#!/bin/bash\nyum update -y',
+                            icon: Icons.code,
                             maxLines: 5,
-                            decoration: const InputDecoration(
-                              labelText: 'User Data (Optional)',
-                              hintText: '#!/bin/bash\nyum update -y',
-                              border: OutlineInputBorder(),
-                              alignLabelWithHint: true,
-                            ),
                             onChanged: (val) => _userData = val,
                           ),
                         ),
@@ -930,32 +858,13 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                     const SizedBox(height: 40),
 
                     // === Launch Button ===
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _launchInstance,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.black, // Dark text on orange
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.black,
-                                  strokeWidth: 3,
-                                ),
-                              )
-                            : const Text(
-                                'Launch Instance',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
+                    OneUIPillButton(
+                      text: 'Launch Instance',
+                      onPressed: _launchInstance,
+                      isLoading: _isLoading,
+                      icon: Icons.rocket_launch,
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.black,
                     ),
                     const SizedBox(height: 20),
                   ],

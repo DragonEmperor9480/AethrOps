@@ -3,6 +3,7 @@ import '../services/email_config_service.dart';
 import '../utils/toast_utils.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/oneui_widgets.dart';
 
 class EmailConfigDialog extends StatefulWidget {
   const EmailConfigDialog({super.key});
@@ -125,32 +126,39 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: Colors.transparent,
       child: Container(
         width: 500,
         constraints: const BoxConstraints(maxHeight: 700),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(28),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primaryPurple, AppTheme.purple700],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
-                  const Icon(Icons.email, color: Colors.white, size: 28),
-                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.email,
+                      color: AppTheme.primaryPurple,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,58 +166,52 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                         Text(
                           'Email Configuration',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
                           ),
                         ),
+                        SizedBox(height: 4),
                         Text(
                           'Configure SMTP settings for sending emails',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.help_outline, color: Colors.white),
+                    icon: const Icon(Icons.help_outline),
                     onPressed: _showHelp,
                     tooltip: 'Help',
+                    color: AppTheme.primaryPurple,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
+                    color: Colors.grey,
                   ),
                 ],
               ),
             ),
 
+            const Divider(height: 1),
+
             // Form
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _smtpHostController,
-                        decoration: InputDecoration(
-                          labelText: 'SMTP Host *',
-                          hintText: 'smtp.gmail.com',
-                          prefixIcon: const Icon(Icons.dns),
-                          prefixIconColor: AppTheme.primaryPurple,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
-                        ),
+                        label: 'SMTP Host',
+                        hint: 'smtp.gmail.com',
+                        icon: Icons.dns,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'SMTP host is required';
@@ -219,24 +221,11 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _smtpPortController,
-                        decoration: InputDecoration(
-                          labelText: 'SMTP Port *',
-                          hintText: '587',
-                          prefixIcon: const Icon(Icons.settings_ethernet),
-                          prefixIconColor: AppTheme.primaryPurple,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
-                        ),
+                        label: 'SMTP Port',
+                        hint: '587',
+                        icon: Icons.settings_ethernet,
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -251,24 +240,11 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _senderEmailController,
-                        decoration: InputDecoration(
-                          labelText: 'Sender Email *',
-                          hintText: 'your-email@gmail.com',
-                          prefixIcon: const Icon(Icons.email),
-                          prefixIconColor: AppTheme.primaryPurple,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
-                        ),
+                        label: 'Sender Email',
+                        hint: 'your-email@gmail.com',
+                        icon: Icons.email,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -282,37 +258,24 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _senderPassController,
+                        label: 'App Password',
+                        hint: 'Enter app password',
+                        icon: Icons.lock,
                         obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'App Password *',
-                          hintText: 'Enter app password',
-                          prefixIcon: const Icon(Icons.lock),
-                          prefixIconColor: AppTheme.primaryPurple,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: AppTheme.primaryPurple,
-                            ),
-                            onPressed: () {
-                              setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              );
-                            },
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            size: 20,
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
+                          onPressed: () {
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
+                          },
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -323,24 +286,11 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _senderNameController,
-                        decoration: InputDecoration(
-                          labelText: 'Sender Name *',
-                          hintText: 'AethrOps',
-                          prefixIcon: const Icon(Icons.person),
-                          prefixIconColor: AppTheme.primaryPurple,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
-                        ),
+                        label: 'Sender Name',
+                        hint: 'AethrOps',
+                        icon: Icons.person,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Sender name is required';
@@ -354,82 +304,45 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
               ),
             ),
 
+            const Divider(height: 1),
+
             // Footer
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.light
-                    ? Colors.grey.shade50
-                    : AppTheme.cardBackgroundDark,
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.grey.shade200
-                        : AppTheme.borderColorDark,
-                  ),
-                ),
-              ),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
                 children: [
-                  Expanded(
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OneUIPillButton(
+                          text: 'Test Email',
+                          onPressed: _testEmail,
+                          isLoading: _isTestLoading,
+                          icon: Icons.send,
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: AppTheme.primaryPurple,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OneUIPillButton(
+                          text: 'Save',
+                          onPressed: _saveConfig,
+                          isLoading: _isSaveLoading,
+                          icon: Icons.save,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface,
+                        foregroundColor: Colors.grey,
                       ),
                       child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: (_isTestLoading || _isSaveLoading)
-                          ? null
-                          : _testEmail,
-                      icon: _isTestLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppTheme.primaryPurple,
-                              ),
-                            )
-                          : const Icon(Icons.send, size: 18),
-                      label: Text(
-                        _isTestLoading ? 'Sending...' : 'Test',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.primaryPurple,
-                        side: const BorderSide(color: AppTheme.primaryPurple),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: (_isTestLoading || _isSaveLoading)
-                          ? null
-                          : _saveConfig,
-                      icon: _isSaveLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.save, size: 18),
-                      label: Text(_isSaveLoading ? 'Saving...' : 'Save'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryPurple,
-                        foregroundColor: Colors.white,
-                      ),
                     ),
                   ),
                 ],
