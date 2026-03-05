@@ -45,6 +45,7 @@ dependencies:
   flutter_svg: ^2.2.3
   local_auth: ^2.3.0
   crypto: ^3.0.3
+  lottie: ^3.1.0
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,7 @@ flutter:
     - assets/how_to_get_access_credentials/
     - assets/ami-assets/
     - assets/icons/
+    - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
