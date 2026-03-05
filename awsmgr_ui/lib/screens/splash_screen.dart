@@ -167,12 +167,22 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 60),
             
             // Lottie Animation
-            SizedBox(
-              height: 250,
-              child: Lottie.asset(
-                'assets/animations/Rocket in space.json',
-                fit: BoxFit.contain,
-                repeat: true,
+            ColorFiltered(
+              colorFilter: isDark 
+                  ? const ColorFilter.matrix([
+                      -1, 0, 0, 0, 255,  // Invert red
+                      0, -1, 0, 0, 255,  // Invert green
+                      0, 0, -1, 0, 255,  // Invert blue
+                      0, 0, 0, 1, 0,     // Keep alpha
+                    ])
+                  : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+              child: SizedBox(
+                height: 250,
+                child: Lottie.asset(
+                  'assets/animations/Rocket in space.json',
+                  fit: BoxFit.contain,
+                  repeat: true,
+                ),
               ),
             ),
             
