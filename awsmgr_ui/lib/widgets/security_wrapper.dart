@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../services/security_service.dart';
 import '../screens/pin_lock_screen.dart';
 
@@ -15,7 +16,9 @@ class SecurityWrapper extends StatefulWidget {
 class _SecurityWrapperState extends State<SecurityWrapper> with WidgetsBindingObserver {
   bool _isUnlocked = false;
   bool _isChecking = true;
-  bool _hasCompletedInitialAuth = false; // Track if user has authenticated once
+  bool _hasCompletedInitialAuth = false;
+  DateTime? _lastPausedTime;
+  static const _lockTimeout = Duration(minutes: 5); // Lock after 5 minutes of inactivity
 
   @override
   void initState() {
@@ -32,16 +35,21 @@ class _SecurityWrapperState extends State<SecurityWrapper> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Only lock app when going to background if user has completed initial authentication
     if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      // Record when app was paused
       if (_isUnlocked && _hasCompletedInitialAuth) {
-        setState(() => _isUnlocked = false);
+        _lastPausedTime = DateTime.now();
       }
     }
-    // Re-check security when app comes back to foreground (only if already authenticated once)
     else if (state == AppLifecycleState.resumed) {
-      if (!_isUnlocked && _hasCompletedInitialAuth) {
-        _checkSecurity();
+      // Check if enough time has passed to lock the app
+      if (_isUnlocked && _hasCompletedInitialAuth && _lastPausedTime != null) {
+        final timeSincePause = DateTime.now().difference(_lastPausedTime!);
+        if (timeSincePause > _lockTimeout) {
+          // Lock the app if timeout exceeded
+          setState(() => _isUnlocked = false);
+          _checkSecurity();
+        }
       }
     }
   }
@@ -52,7 +60,6 @@ class _SecurityWrapperState extends State<SecurityWrapper> with WidgetsBindingOb
     final securityEnabled = await SecurityService.isSecurityEnabled();
     
     if (!securityEnabled) {
-      // No security enabled, allow access
       setState(() {
         _isUnlocked = true;
         _isChecking = false;
@@ -61,7 +68,6 @@ class _SecurityWrapperState extends State<SecurityWrapper> with WidgetsBindingOb
       return;
     }
 
-    // Security enabled, show PIN screen
     setState(() => _isChecking = false);
     
     if (mounted) {
@@ -80,10 +86,9 @@ class _SecurityWrapperState extends State<SecurityWrapper> with WidgetsBindingOb
     if (result == true) {
       setState(() {
         _isUnlocked = true;
-        _hasCompletedInitialAuth = true; // Mark as authenticated
+        _hasCompletedInitialAuth = true;
       });
     } else {
-      // User cancelled or failed - show again
       if (mounted) {
         _showPinScreen();
       }
