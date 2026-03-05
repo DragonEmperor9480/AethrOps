@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:io';
 import '../services/security_service.dart';
 import '../theme/app_theme.dart';
@@ -14,17 +15,19 @@ class PinLockScreen extends StatefulWidget {
   State<PinLockScreen> createState() => _PinLockScreenState();
 }
 
-class _PinLockScreenState extends State<PinLockScreen> {
+class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProviderStateMixin {
   String _pin = '';
   String _confirmPin = '';
   bool _isConfirming = false;
   bool _showBiometric = false;
   final FocusNode _focusNode = FocusNode();
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _checkBiometric();
+    _animationController = AnimationController(vsync: this);
     // Request focus for keyboard input
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -34,6 +37,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -62,6 +66,13 @@ class _PinLockScreenState extends State<PinLockScreen> {
       _handleSetupMode(number);
     } else {
       _handleVerifyMode(number);
+    }
+    
+    // Animate when user starts typing
+    final currentPin = _isConfirming ? _confirmPin : _pin;
+    if (currentPin.length == 1) {
+      // First digit entered - play animation forward (cover eyes)
+      _animationController.forward();
     }
   }
 
@@ -110,6 +121,8 @@ class _PinLockScreenState extends State<PinLockScreen> {
         _confirmPin = '';
         _isConfirming = false;
       });
+      // Reset animation
+      _animationController.reverse();
     }
   }
 
@@ -120,6 +133,8 @@ class _PinLockScreenState extends State<PinLockScreen> {
     } else {
       ToastUtils.show(context, 'Invalid PIN', isError: true);
       setState(() => _pin = '');
+      // Reset animation
+      _animationController.reverse();
     }
   }
 
@@ -127,10 +142,19 @@ class _PinLockScreenState extends State<PinLockScreen> {
     setState(() {
       if (_isConfirming && _confirmPin.isNotEmpty) {
         _confirmPin = _confirmPin.substring(0, _confirmPin.length - 1);
+        // If all digits removed, reverse animation (uncover eyes)
+        if (_confirmPin.isEmpty) {
+          _animationController.reverse();
+        }
       } else if (!_isConfirming && _pin.isNotEmpty) {
         _pin = _pin.substring(0, _pin.length - 1);
+        // If all digits removed, reverse animation (uncover eyes)
+        if (_pin.isEmpty) {
+          _animationController.reverse();
+        }
       } else if (_isConfirming && _confirmPin.isEmpty) {
         _isConfirming = false;
+        _animationController.reverse();
       }
     });
   }
@@ -208,52 +232,87 @@ class _PinLockScreenState extends State<PinLockScreen> {
           child: GestureDetector(
             onTap: () => _focusNode.requestFocus(),
             behavior: HitTestBehavior.opaque,
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.lock_outline,
-                    size: 80,
-                    color: AppTheme.primaryPurple,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    widget.isSetup
-                        ? (_isConfirming ? 'Confirm PIN' : 'Set PIN')
-                        : 'Enter PIN',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height - 
+                             MediaQuery.of(context).padding.top - 
+                             MediaQuery.of(context).padding.bottom - 48,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Lottie animation with circular clip
+                    Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.primaryPurple.withValues(alpha: 0.1),
+                            AppTheme.primaryBlue.withValues(alpha: 0.1),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Lottie.asset(
+                          'assets/animations/Login character_Hello.json',
+                          controller: _animationController,
+                          fit: BoxFit.cover,
+                          onLoaded: (composition) {
+                            _animationController.duration = composition.duration;
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.isSetup
-                        ? (_isConfirming
-                            ? 'Re-enter your 6-digit PIN'
-                            : 'Create a 6-digit PIN')
-                        : 'Enter your 6-digit PIN to unlock',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.isSetup
+                          ? (_isConfirming ? 'Confirm PIN' : 'Set PIN')
+                          : 'Enter PIN',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 48),
-                  _buildPinDots(currentPin),
-                  const SizedBox(height: 48),
-                  _buildNumberPad(),
-                  if (_showBiometric) ...[
-                    const SizedBox(height: 24),
-                    IconButton(
-                      onPressed: _authenticateWithBiometric,
-                      icon: const Icon(Icons.fingerprint, size: 48),
-                      color: AppTheme.primaryPurple,
-                      tooltip: 'Use biometric',
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.isSetup
+                          ? (_isConfirming
+                              ? 'Re-enter your 6-digit PIN'
+                              : 'Create a 6-digit PIN')
+                          : 'Enter your 6-digit PIN to unlock',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
                     ),
+                    const SizedBox(height: 32),
+                    _buildPinDots(currentPin),
+                    const SizedBox(height: 32),
+                    _buildNumberPad(),
+                    if (_showBiometric) ...[
+                      const SizedBox(height: 16),
+                      IconButton(
+                        onPressed: _authenticateWithBiometric,
+                        icon: const Icon(Icons.fingerprint, size: 40),
+                        color: AppTheme.primaryPurple,
+                        tooltip: 'Use biometric',
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
