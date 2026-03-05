@@ -62,17 +62,18 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
   }
 
   void _onNumberPressed(String number) {
+    // Animate when user starts typing (before adding digit)
+    final currentPin = _isConfirming ? _confirmPin : _pin;
+    if (currentPin.isEmpty) {
+      // About to enter first digit - play animation forward fast (cover eyes)
+      _animationController.forward(from: 0.0);
+      _animationController.duration = const Duration(milliseconds: 300);
+    }
+    
     if (widget.isSetup) {
       _handleSetupMode(number);
     } else {
       _handleVerifyMode(number);
-    }
-    
-    // Animate when user starts typing
-    final currentPin = _isConfirming ? _confirmPin : _pin;
-    if (currentPin.length == 1) {
-      // First digit entered - play animation forward (cover eyes)
-      _animationController.forward();
     }
   }
 
@@ -121,7 +122,8 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
         _confirmPin = '';
         _isConfirming = false;
       });
-      // Reset animation
+      // Reset animation fast
+      _animationController.duration = const Duration(milliseconds: 300);
       _animationController.reverse();
     }
   }
@@ -133,7 +135,8 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
     } else {
       ToastUtils.show(context, 'Invalid PIN', isError: true);
       setState(() => _pin = '');
-      // Reset animation
+      // Reset animation fast
+      _animationController.duration = const Duration(milliseconds: 300);
       _animationController.reverse();
     }
   }
@@ -142,18 +145,21 @@ class _PinLockScreenState extends State<PinLockScreen> with SingleTickerProvider
     setState(() {
       if (_isConfirming && _confirmPin.isNotEmpty) {
         _confirmPin = _confirmPin.substring(0, _confirmPin.length - 1);
-        // If all digits removed, reverse animation (uncover eyes)
+        // If all digits removed, reverse animation fast (uncover eyes)
         if (_confirmPin.isEmpty) {
+          _animationController.duration = const Duration(milliseconds: 300);
           _animationController.reverse();
         }
       } else if (!_isConfirming && _pin.isNotEmpty) {
         _pin = _pin.substring(0, _pin.length - 1);
-        // If all digits removed, reverse animation (uncover eyes)
+        // If all digits removed, reverse animation fast (uncover eyes)
         if (_pin.isEmpty) {
+          _animationController.duration = const Duration(milliseconds: 300);
           _animationController.reverse();
         }
       } else if (_isConfirming && _confirmPin.isEmpty) {
         _isConfirming = false;
+        _animationController.duration = const Duration(milliseconds: 300);
         _animationController.reverse();
       }
     });
