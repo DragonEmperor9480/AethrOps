@@ -43,6 +43,8 @@ dependencies:
   shared_preferences: ^2.2.2
   window_manager: ^0.5.1
   flutter_svg: ^2.2.3
+  local_auth: ^2.3.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

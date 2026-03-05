@@ -4,6 +4,7 @@ import '../services/aws_credentials_service.dart';
 import '../services/backend_service.dart';
 import '../screens/home_screen.dart';
 import '../screens/credentials_setup_screen.dart';
+import '../widgets/security_wrapper.dart';
 import '../theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -115,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => hasCredentials
-                ? const HomeScreen()
+                ? const SecurityWrapper(child: HomeScreen())
                 : const CredentialsSetupScreen(),
           ),
         );

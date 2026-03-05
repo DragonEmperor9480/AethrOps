@@ -2,11 +2,11 @@ package com.amrut.aethrops
 
 import android.media.MediaScannerConnection
 import android.net.Uri
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val CHANNEL = "com.amrut.aethrops/media_scanner"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
