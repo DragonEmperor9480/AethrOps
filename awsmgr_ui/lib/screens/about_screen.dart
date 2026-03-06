@@ -237,6 +237,7 @@ class _AboutScreenState extends State<AboutScreen>
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Quantify',
                     color: Colors.white,
                     letterSpacing: 2,
                   ),

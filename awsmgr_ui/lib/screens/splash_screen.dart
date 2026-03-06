@@ -159,6 +159,7 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(
                 fontSize: 40,
                 fontWeight: FontWeight.w700,
+                fontFamily: 'Quantify',
                 color: isDark ? Colors.white : const Color(0xFF1A1A1A),
                 letterSpacing: -0.5,
               ),
