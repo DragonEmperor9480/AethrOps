@@ -90,3 +90,24 @@ flutter:
     - family: RubikGlitch
       fonts:
         - asset: assets/fonts/RubikGlitch-Regular.ttf
+    - family: Aquire
+      fonts:
+        - asset: assets/fonts/Aquire-BW0ox.otf
+        - asset: assets/fonts/AquireBold-8Ma60.otf
+          weight: 700
+        - asset: assets/fonts/AquireLight-YzE0o.otf
+          weight: 300
+    - family: Blanka
+      fonts:
+        - asset: assets/fonts/Blanka-Regular.otf
+    - family: OdibeeSans
+      fonts:
+        - asset: assets/fonts/OdibeeSans-Regular.ttf
+    - family: Potra
+      fonts:
+        - asset: assets/fonts/Potra-E0Ye.ttf
+    - family: Quantify
+      fonts:
+        - asset: assets/fonts/Quantify.ttf
+        - asset: assets/fonts/Quantify Bold.ttf
+          weight: 700
