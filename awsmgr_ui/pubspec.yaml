@@ -46,6 +46,7 @@ dependencies:
   local_auth: ^2.3.0
   crypto: ^3.0.3
   lottie: ^3.1.0
+  scrollable_positioned_list: ^0.3.8
 
 dev_dependencies:
   flutter_test:

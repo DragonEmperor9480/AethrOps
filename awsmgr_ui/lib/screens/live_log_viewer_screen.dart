@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -20,7 +21,8 @@ class LiveLogViewerScreen extends StatefulWidget {
 class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     with TickerProviderStateMixin {
   final List<LogEntry> _logs = [];
-  final ScrollController _scrollController = ScrollController();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
   StreamSubscription<dynamic>? _logSubscription; // Changed to dynamic
   bool _isPaused = false;
   bool _autoScroll = true;
@@ -82,13 +84,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     });
     
     _startStreaming();
-    _scrollController.addListener(_onScroll);
+    _itemPositionsListener.itemPositions.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _logSubscription?.cancel();
-    _scrollController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     _pulseController.dispose();
@@ -99,24 +100,25 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   }
 
   void _onScroll() {
-    if (_scrollController.hasClients) {
-      final maxScroll = _scrollController.position.maxScrollExtent;
-      final currentScroll = _scrollController.position.pixels;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty || _logs.isEmpty) return;
 
-      // Enable auto-scroll if user scrolls to bottom
-      if (currentScroll >= maxScroll - 50) {
-        if (!_autoScroll) {
-          setState(() {
-            _autoScroll = true;
-          });
-        }
-      } else {
-        // Disable auto-scroll if user scrolls up
-        if (_autoScroll) {
-          setState(() {
-            _autoScroll = false;
-          });
-        }
+    // Check if the last item is visible (i.e. user is at the bottom)
+    final lastVisible = positions.where(
+      (pos) => pos.index == _logs.length - 1,
+    );
+
+    if (lastVisible.isNotEmpty) {
+      if (!_autoScroll) {
+        setState(() {
+          _autoScroll = true;
+        });
+      }
+    } else {
+      if (_autoScroll) {
+        setState(() {
+          _autoScroll = false;
+        });
       }
     }
   }
@@ -147,7 +149,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 _logs.add(event);
                 // Cap log buffer at 10,000 entries to prevent unbounded memory growth
                 if (_logs.length > 10000) {
-                  _logs.removeRange(0, _logs.length - 10000);
+                  final removeCount = _logs.length - 10000;
+                  _logs.removeRange(0, removeCount);
+                  // Adjust search match indices
+                  _searchMatches.removeWhere((i) => i < removeCount);
+                  for (int i = 0; i < _searchMatches.length; i++) {
+                    _searchMatches[i] -= removeCount;
+                  }
+                  if (_currentMatchIndex >= _searchMatches.length) {
+                    _currentMatchIndex = _searchMatches.isEmpty ? -1 : _searchMatches.length - 1;
+                  }
                 }
                 _lastLogTime = DateTime.now();
                 _recentLogCounts.add(1);
@@ -162,11 +173,11 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 }
               });
 
-              if (_autoScroll && _scrollController.hasClients) {
+              if (_autoScroll && _itemScrollController.isAttached) {
                 Future.delayed(const Duration(milliseconds: 100), () {
-                  if (_scrollController.hasClients) {
-                    _scrollController.animateTo(
-                      _scrollController.position.maxScrollExtent,
+                  if (_itemScrollController.isAttached && _logs.isNotEmpty) {
+                    _itemScrollController.scrollTo(
+                      index: _logs.length - 1,
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeOut,
                     );
@@ -424,36 +435,21 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
       return;
     }
 
-    if (!_scrollController.hasClients) return;
-
-    final matchLine = _searchMatches[_currentMatchIndex];
-
     // Disable auto-scroll when searching
     _autoScroll = false;
 
-    // Calculate scroll position to center the match (like TUI does)
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+    final matchIndex = _searchMatches[_currentMatchIndex];
 
-    final viewportHeight = _scrollController.position.viewportDimension;
-    final estimatedLineHeight =
-        40.0; // Conservative estimate for variable height logs
-
-    // Center the match in viewport
-    final targetPosition =
-        (matchLine * estimatedLineHeight) - (viewportHeight / 2);
-
-    // Clamp to valid range
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final minScroll = _scrollController.position.minScrollExtent;
-    final clampedPosition = targetPosition.clamp(minScroll, maxScroll);
-
-    // Scroll to position
-    _scrollController.animateTo(
-      clampedPosition,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    // Use ItemScrollController for pixel-perfect index-based scrolling
+    // alignment: 0.5 centers the matched item in the viewport (nano-style)
+    if (_itemScrollController.isAttached) {
+      _itemScrollController.scrollTo(
+        index: matchIndex,
+        alignment: 0.3, // Position match ~30% from the top for visibility
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -557,31 +553,58 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              style: const TextStyle(
-                color: Color(0xFFC9D1D9),
-                fontFamily: 'monospace',
-                fontSize: 13,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search logs... (regex supported)',
-                hintStyle: TextStyle(
-                  color: const Color(0xFF8B949E).withOpacity(0.5),
+            child: KeyboardListener(
+              focusNode: FocusNode(), // transparent wrapper
+              onKeyEvent: (event) {
+                if (event is KeyDownEvent || event is KeyRepeatEvent) {
+                  // Escape → close search
+                  if (event.logicalKey == LogicalKeyboardKey.escape) {
+                    _toggleSearchMode();
+                  }
+                  // Down arrow → next match
+                  else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    _nextMatch();
+                  }
+                  // Up arrow → previous match
+                  else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                    _prevMatch();
+                  }
+                  // Enter → next match, Shift+Enter → previous match
+                  else if (event.logicalKey == LogicalKeyboardKey.enter) {
+                    if (HardwareKeyboard.instance.isShiftPressed) {
+                      _prevMatch();
+                    } else {
+                      _nextMatch();
+                    }
+                  }
+                }
+              },
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                style: const TextStyle(
+                  color: Color(0xFFC9D1D9),
                   fontFamily: 'monospace',
                   fontSize: 13,
                 ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
+                decoration: InputDecoration(
+                  hintText: 'Search logs... (↑↓ navigate, Enter next, Esc close)',
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF8B949E).withOpacity(0.5),
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                    _updateSearchMatches();
+                  });
+                },
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  _updateSearchMatches();
-                });
-              },
             ),
           ),
           if (_searchMatches.isNotEmpty) ...[
@@ -1022,8 +1045,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   Widget _buildLogList() {
     return Container(
       color: const Color(0xFF0D1117),
-      child: ListView.builder(
-        controller: _scrollController,
+      child: ScrollablePositionedList.builder(
+        itemScrollController: _itemScrollController,
+        itemPositionsListener: _itemPositionsListener,
         padding: const EdgeInsets.all(12),
         itemCount: _logs.length,
         itemBuilder: (context, index) {
@@ -1040,7 +1064,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
 
           // Animate new logs (last 5 entries)
           final isNewLog = index >= _logs.length - 5 && !_isPaused;
-          
+
           return TweenAnimationBuilder<double>(
             key: ValueKey('log_$index'),
             duration: isNewLog
