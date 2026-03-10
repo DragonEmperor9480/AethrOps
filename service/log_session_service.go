@@ -105,22 +105,35 @@ func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model
 	session.LastAccess = time.Now()
 }
 
-// CloseLogSession closes a log session and its file
+// CloseLogSession closes a log session, deletes the log file, and removes the session.
+// Users can download logs via the download endpoint while the session is active,
+// so the file is no longer needed once the stream ends.
 func CloseLogSession(sessionID string) {
 	logSessionsMutex.Lock()
-	defer logSessionsMutex.Unlock()
-
 	session, exists := logSessions[sessionID]
 	if !exists {
+		logSessionsMutex.Unlock()
 		return
 	}
+	delete(logSessions, sessionID)
+	logSessionsMutex.Unlock()
 
 	session.Mutex.Lock()
+	defer session.Mutex.Unlock()
+
 	if session.File != nil {
 		session.File.Close()
 		session.File = nil
 	}
-	session.Mutex.Unlock()
+
+	// Delete the log file from disk
+	if session.FilePath != "" {
+		if err := os.Remove(session.FilePath); err != nil {
+			fmt.Printf("Warning: failed to delete log file %s: %v\n", session.FilePath, err)
+		} else {
+			fmt.Printf("Deleted log file: %s\n", session.FilePath)
+		}
+	}
 }
 
 // GetLogSession retrieves a log session by ID

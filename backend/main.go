@@ -7,6 +7,7 @@ import (
 
 	"github.com/DragonEmperor9480/AethrOps/db_service"
 	"github.com/DragonEmperor9480/AethrOps/routes"
+	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/gorilla/mux"
 )
@@ -33,6 +34,11 @@ func main() {
 	// Initialize database
 	if err := db_service.InitDB(); err != nil {
 		log.Fatal("Error initializing database:", err)
+	}
+
+	// Initialize log directory for CloudWatch log sessions
+	if err := service.InitLogDirectory(); err != nil {
+		log.Printf("Warning: Log directory not initialized: %v", err)
 	}
 
 	// Try to initialize AWS SDK clients (don't fail if credentials not available)
