@@ -2,7 +2,6 @@ package routes
 
 import (
 	api "github.com/DragonEmperor9480/AethrOps/backend/controllers"
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
@@ -72,28 +71,19 @@ func RegisterRoutes(r *mux.Router) {
 
 	// EC2 Instances (Mux routes)
 	r.HandleFunc("/api/ec2/instances", api.ListEC2Instances).Methods("GET")
+	r.HandleFunc("/api/ec2/instances", api.LaunchEC2Instance).Methods("POST")
 	r.HandleFunc("/api/ec2/instances/{instance_id}", api.GetEC2Instance).Methods("GET")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/start", api.StartEC2Instance).Methods("POST")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/stop", api.StopEC2Instance).Methods("POST")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/reboot", api.RebootEC2Instance).Methods("POST")
 	r.HandleFunc("/api/ec2/instances/{instance_id}/terminate", api.TerminateEC2Instance).Methods("DELETE")
 
-	// EC2 Launch & Configuration (Gin Router)
-	gin.SetMode(gin.ReleaseMode)
-	ginRouter := gin.New()
-	ginRouter.POST("/api/ec2/instances", api.LaunchEC2Instance)
-	ginRouter.GET("/api/ec2/security-groups", api.ListSecurityGroups)
-	ginRouter.GET("/api/ec2/key-pairs", api.ListKeyPairs)
-	ginRouter.GET("/api/ec2/subnets", api.ListSubnets)
-	ginRouter.GET("/api/ec2/vpcs", api.ListVPCs)
-	ginRouter.GET("/api/ec2/amis", api.ListAMIs)
-
-	r.Handle("/api/ec2/instances", ginRouter).Methods("POST")
-	r.Handle("/api/ec2/security-groups", ginRouter).Methods("GET")
-	r.Handle("/api/ec2/key-pairs", ginRouter).Methods("GET")
-	r.Handle("/api/ec2/subnets", ginRouter).Methods("GET")
-	r.Handle("/api/ec2/vpcs", ginRouter).Methods("GET")
-	r.Handle("/api/ec2/amis", ginRouter).Methods("GET")
+	// EC2 Configuration
+	r.HandleFunc("/api/ec2/security-groups", api.ListSecurityGroups).Methods("GET")
+	r.HandleFunc("/api/ec2/key-pairs", api.ListKeyPairs).Methods("GET")
+	r.HandleFunc("/api/ec2/subnets", api.ListSubnets).Methods("GET")
+	r.HandleFunc("/api/ec2/vpcs", api.ListVPCs).Methods("GET")
+	r.HandleFunc("/api/ec2/amis", api.ListAMIs).Methods("GET")
 
 	// Settings
 	r.HandleFunc("/api/settings/mfa", api.GetMFADevice).Methods("GET")

@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"sort"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 )
 
@@ -517,16 +517,16 @@ func GetInstanceStateChanges(w http.ResponseWriter, r *http.Request) {
 }
 
 // LaunchEC2Instance launches a new EC2 instance
-func LaunchEC2Instance(c *gin.Context) {
+func LaunchEC2Instance(w http.ResponseWriter, r *http.Request) {
 	var req ec2models.LaunchInstanceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
 		return
 	}
 
 	// Validation
 	if req.ImageID == "" || req.InstanceType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "image_id and instance_type are required"})
+		respondError(w, http.StatusBadRequest, "image_id and instance_type are required")
 		return
 	}
 
@@ -544,7 +544,7 @@ func LaunchEC2Instance(c *gin.Context) {
 		var err error
 		client, err = utils.GetEC2ClientForRegion(req.Region)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
 			return
 		}
 		region = req.Region
@@ -562,11 +562,11 @@ func LaunchEC2Instance(c *gin.Context) {
 			ImageIds: []string{req.ImageID},
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to describe image: " + err.Error()})
+			respondError(w, http.StatusInternalServerError, "Failed to describe image: "+err.Error())
 			return
 		}
 		if len(imageOutput.Images) == 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Image not found"})
+			respondError(w, http.StatusBadRequest, "Image not found")
 			return
 		}
 		rootDeviceName = aws.ToString(imageOutput.Images[0].RootDeviceName)
@@ -639,18 +639,18 @@ func LaunchEC2Instance(c *gin.Context) {
 
 	result, err := client.RunInstances(ctx, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to launch instance: " + err.Error()})
+		respondError(w, http.StatusInternalServerError, "Failed to launch instance: "+err.Error())
 		return
 	}
 
 	if len(result.Instances) == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "No instances returned from launch request"})
+		respondError(w, http.StatusInternalServerError, "No instances returned from launch request")
 		return
 	}
 
 	// Return details of the first launched instance
 	instance := result.Instances[0]
-	c.JSON(http.StatusOK, gin.H{
+	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"message":        "Instance launched successfully",
 		"instance_id":    aws.ToString(instance.InstanceId),
 		"launch_time":    aws.ToTime(instance.LaunchTime).Format("2006-01-02 15:04:05"),
@@ -662,9 +662,9 @@ func LaunchEC2Instance(c *gin.Context) {
 }
 
 // ListSecurityGroups returns all security groups
-func ListSecurityGroups(c *gin.Context) {
+func ListSecurityGroups(w http.ResponseWriter, r *http.Request) {
 	// Check for optional region parameter
-	region := c.Query("region")
+	region := r.URL.Query().Get("region")
 
 	var client *ec2.Client
 	var err error
@@ -672,7 +672,7 @@ func ListSecurityGroups(c *gin.Context) {
 	if region != "" {
 		client, err = utils.GetEC2ClientForRegion(region)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
 			return
 		}
 	} else {
@@ -684,7 +684,7 @@ func ListSecurityGroups(c *gin.Context) {
 	input := &ec2.DescribeSecurityGroupsInput{}
 	result, err := client.DescribeSecurityGroups(ctx, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list security groups: " + err.Error()})
+		respondError(w, http.StatusInternalServerError, "Failed to list security groups: "+err.Error())
 		return
 	}
 
@@ -698,16 +698,16 @@ func ListSecurityGroups(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"security_groups": groups,
 		"count":           len(groups),
 	})
 }
 
 // ListKeyPairs returns all key pairs
-func ListKeyPairs(c *gin.Context) {
+func ListKeyPairs(w http.ResponseWriter, r *http.Request) {
 	// Check for optional region parameter
-	region := c.Query("region")
+	region := r.URL.Query().Get("region")
 
 	var client *ec2.Client
 	var err error
@@ -715,7 +715,7 @@ func ListKeyPairs(c *gin.Context) {
 	if region != "" {
 		client, err = utils.GetEC2ClientForRegion(region)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
 			return
 		}
 	} else {
@@ -727,7 +727,7 @@ func ListKeyPairs(c *gin.Context) {
 	input := &ec2.DescribeKeyPairsInput{}
 	result, err := client.DescribeKeyPairs(ctx, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list key pairs: " + err.Error()})
+		respondError(w, http.StatusInternalServerError, "Failed to list key pairs: "+err.Error())
 		return
 	}
 
@@ -740,16 +740,16 @@ func ListKeyPairs(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"key_pairs": keyPairs,
 		"count":     len(keyPairs),
 	})
 }
 
 // ListSubnets returns all subnets
-func ListSubnets(c *gin.Context) {
+func ListSubnets(w http.ResponseWriter, r *http.Request) {
 	// Check for optional region parameter
-	region := c.Query("region")
+	region := r.URL.Query().Get("region")
 
 	var client *ec2.Client
 	var err error
@@ -757,7 +757,7 @@ func ListSubnets(c *gin.Context) {
 	if region != "" {
 		client, err = utils.GetEC2ClientForRegion(region)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
 			return
 		}
 	} else {
@@ -769,7 +769,7 @@ func ListSubnets(c *gin.Context) {
 	input := &ec2.DescribeSubnetsInput{}
 	result, err := client.DescribeSubnets(ctx, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list subnets: " + err.Error()})
+		respondError(w, http.StatusInternalServerError, "Failed to list subnets: "+err.Error())
 		return
 	}
 
@@ -792,16 +792,16 @@ func ListSubnets(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"subnets": subnets,
 		"count":   len(subnets),
 	})
 }
 
 // ListVPCs returns all VPCs
-func ListVPCs(c *gin.Context) {
+func ListVPCs(w http.ResponseWriter, r *http.Request) {
 	// Check for optional region parameter
-	region := c.Query("region")
+	region := r.URL.Query().Get("region")
 
 	var client *ec2.Client
 	var err error
@@ -809,7 +809,7 @@ func ListVPCs(c *gin.Context) {
 	if region != "" {
 		client, err = utils.GetEC2ClientForRegion(region)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
 			return
 		}
 	} else {
@@ -821,7 +821,7 @@ func ListVPCs(c *gin.Context) {
 	input := &ec2.DescribeVpcsInput{}
 	result, err := client.DescribeVpcs(ctx, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list VPCs: " + err.Error()})
+		respondError(w, http.StatusInternalServerError, "Failed to list VPCs: "+err.Error())
 		return
 	}
 
@@ -844,16 +844,16 @@ func ListVPCs(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"vpcs":  vpcs,
 		"count": len(vpcs),
 	})
 }
 
 // ListAMIs returns popular AMIs for a region
-func ListAMIs(c *gin.Context) {
+func ListAMIs(w http.ResponseWriter, r *http.Request) {
 	// Check for optional region parameter
-	region := c.Query("region")
+	region := r.URL.Query().Get("region")
 
 	var client *ec2.Client
 	var err error
@@ -861,7 +861,7 @@ func ListAMIs(c *gin.Context) {
 	if region != "" {
 		client, err = utils.GetEC2ClientForRegion(region)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid region: " + err.Error()})
+			respondError(w, http.StatusBadRequest, "Invalid region: "+err.Error())
 			return
 		}
 	} else {
@@ -905,7 +905,7 @@ func ListAMIs(c *gin.Context) {
 
 	result, err := client.DescribeImages(ctx, input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		respondJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"error":  "Failed to list AMIs: " + err.Error(),
 			"region": region,
 		})
@@ -935,7 +935,7 @@ func ListAMIs(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"amis":   amis,
 		"count":  len(amis),
 		"region": region,
