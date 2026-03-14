@@ -116,10 +116,10 @@ flutter:
 
 msix_config:
   display_name: AethrOps
-  publisher_display_name: Amrut
-  publisher: CN=com.amrut
-  identity_name: com.amrut.aethrops
-  msix_version: 1.0.0.0
+  publisher_display_name: DragonEmperor9480
+  publisher: CN=B01A34F2-E6E3-4364-8CC4-CF2B52A75AE5
+  identity_name: DragonEmperor9480.AethrOps
+  msix_version: 0.9.0
   logo_path: windows/runner/resources/app_icon.png
   capabilities: internetClient
   languages: en-us
