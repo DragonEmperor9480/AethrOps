@@ -49,6 +49,9 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -61,7 +64,9 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: isDark 
+                    ? Colors.green.withValues(alpha: 0.15)
+                    : Colors.green.shade50,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -78,7 +83,7 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
                     child: const Icon(Icons.group_add, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -87,11 +92,15 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                         Text(
                           'Create multiple IAM users at once',
-                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.textTheme.bodyMedium?.color,
+                          ),
                         ),
                       ],
                     ),
@@ -127,8 +136,16 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                color: isDark 
+                    ? theme.cardColor.withValues(alpha: 0.5)
+                    : Colors.grey.shade50,
+                border: Border(
+                  top: BorderSide(
+                    color: isDark 
+                        ? theme.dividerColor
+                        : Colors.grey.shade200,
+                  ),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -150,7 +167,7 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
                       Text(
                         '${_users.length} user(s)',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: theme.textTheme.bodyMedium?.color,
                           fontSize: 13,
                         ),
                       ),
@@ -270,6 +287,9 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -282,14 +302,18 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
+                    color: isDark
+                        ? Colors.blue.withValues(alpha: 0.2)
+                        : Colors.blue.shade100,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     '#${widget.index + 1}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade700,
+                      color: isDark
+                          ? Colors.blue.shade300
+                          : Colors.blue.shade700,
                     ),
                   ),
                 ),
@@ -402,13 +426,28 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
   }
 
   Widget _buildChip(String label, bool met) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: met ? Colors.green.shade50 : Colors.grey.shade100,
+        color: met 
+            ? (isDark 
+                ? Colors.green.withValues(alpha: 0.2)
+                : Colors.green.shade50)
+            : (isDark
+                ? theme.cardColor.withValues(alpha: 0.3)
+                : Colors.grey.shade100),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: met ? Colors.green.shade300 : Colors.grey.shade300,
+          color: met 
+              ? (isDark
+                  ? Colors.green.withValues(alpha: 0.5)
+                  : Colors.green.shade300)
+              : (isDark
+                  ? theme.dividerColor
+                  : Colors.grey.shade300),
         ),
       ),
       child: Row(
@@ -417,14 +456,18 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
           Icon(
             met ? Icons.check : Icons.close,
             size: 12,
-            color: met ? Colors.green : Colors.grey,
+            color: met 
+                ? (isDark ? Colors.green.shade300 : Colors.green)
+                : (isDark ? Colors.grey.shade400 : Colors.grey),
           ),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
-              color: met ? Colors.green.shade700 : Colors.grey.shade600,
+              color: met 
+                  ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
+                  : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             ),
           ),
         ],

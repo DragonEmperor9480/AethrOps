@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/toast_utils.dart';
+import '../theme/app_theme.dart';
 
 class MFADeviceDialog extends StatefulWidget {
   const MFADeviceDialog({super.key});
@@ -70,11 +71,19 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    
     return Dialog(
+      backgroundColor: theme.scaffoldBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 500,
         constraints: const BoxConstraints(maxHeight: 600),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -83,7 +92,10 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.purple.shade400, Colors.purple.shade600],
+                  colors: [
+                    AppTheme.primaryPurple,
+                    AppTheme.primaryPurple.withValues(alpha: 0.8),
+                  ],
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
@@ -132,12 +144,32 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                     children: [
                       TextFormField(
                         controller: _deviceNameController,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Device Name *',
                           hintText: 'My Phone, YubiKey, etc.',
-                          prefixIcon: const Icon(Icons.phone_android),
+                          prefixIcon: Icon(
+                            Icons.phone_android,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -151,12 +183,32 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
 
                       TextFormField(
                         controller: _deviceArnController,
+                        style: TextStyle(color: theme.colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Device ARN *',
                           hintText: 'arn:aws:iam::123456789012:mfa/user',
-                          prefixIcon: const Icon(Icons.vpn_key),
+                          prefixIcon: Icon(
+                            Icons.vpn_key,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppTheme.primaryPurple,
+                              width: 2,
+                            ),
                           ),
                         ),
                         maxLines: 2,
@@ -176,18 +228,30 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: isDark
+                              ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+                              : AppTheme.primaryBlue.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue.shade200),
+                          border: Border.all(
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info, color: Colors.blue.shade900),
+                            Icon(
+                              Icons.info_outline,
+                              color: AppTheme.primaryBlue,
+                              size: 20,
+                            ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'MFA device is required for S3 bucket operations like enabling MFA Delete. You can find your device ARN in the AWS IAM console.',
-                                style: TextStyle(fontSize: 13),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                                ),
                               ),
                             ),
                           ],
@@ -203,14 +267,27 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                color: isDark
+                    ? theme.colorScheme.surface.withValues(alpha: 0.3)
+                    : theme.colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                  ),
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
                       child: const Text('Cancel'),
                     ),
                   ),
@@ -223,13 +300,17 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Icon(Icons.save, size: 18),
                       label: Text(_loading ? 'Saving...' : 'Save Device'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
+                        backgroundColor: AppTheme.primaryPurple,
                         foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ),
