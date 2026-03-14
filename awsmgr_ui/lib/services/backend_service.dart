@@ -118,11 +118,11 @@ class BackendService {
     );
 
     if (Platform.isWindows) {
-      return '$exeDir${Platform.pathSeparator}awsmgr_backend.exe';
+      return '$exeDir${Platform.pathSeparator}aethrops_core.exe';
     } else if (Platform.isMacOS) {
-      return '$exeDir${Platform.pathSeparator}awsmgr_backend_macos';
+      return '$exeDir${Platform.pathSeparator}aethrops_core_macos';
     } else {
-      return '$exeDir${Platform.pathSeparator}awsmgr_backend';
+      return '$exeDir${Platform.pathSeparator}aethrops_core';
     }
   }
 
