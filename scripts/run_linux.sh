@@ -1,10 +1,10 @@
 #!/bin/bash
-# Run AWS Manager on Linux (development mode)
+# Run AethrOps on Linux (development mode)
 
 set -e
 
 echo "=========================================="
-echo "Running AWS Manager on Linux"
+echo "Running AethrOps on Linux"
 echo "=========================================="
 
 # Change to project root
@@ -13,8 +13,8 @@ cd "$(dirname "$0")/.."
 echo ""
 echo "Step 1: Building Go backend..."
 cd backend
-go build -o awsmgr_backend main.go
-chmod +x awsmgr_backend
+go build -o aethrops_core main.go
+chmod +x aethrops_core
 cd ..
 echo "✓ Backend compiled"
 
@@ -33,8 +33,8 @@ sleep 5
 # Copy backend to debug bundle
 echo "Copying backend to Flutter bundle..."
 mkdir -p build/linux/x64/debug/bundle/
-cp ../backend/awsmgr_backend build/linux/x64/debug/bundle/
-chmod +x build/linux/x64/debug/bundle/awsmgr_backend
+cp ../backend/aethrops_core build/linux/x64/debug/bundle/
+chmod +x build/linux/x64/debug/bundle/aethrops_core
 echo "✓ Backend copied"
 
 # Wait for flutter process

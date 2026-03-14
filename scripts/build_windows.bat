@@ -2,7 +2,7 @@
 REM Build Windows desktop app with Go backend and create installer
 
 echo ==========================================
-echo Building AWS Manager for Windows
+echo Building AethrOps for Windows
 echo ==========================================
 
 REM Change to project root (parent of scripts directory)
@@ -30,7 +30,7 @@ echo Step 1: Building Go backend executable...
 cd backend
 set GOOS=windows
 set GOARCH=amd64
-go build -o awsmgr_backend.exe main.go
+go build -o aethrops_core.exe main.go
 
 if %errorlevel% neq 0 (
     echo Failed to build Go backend
@@ -38,7 +38,7 @@ if %errorlevel% neq 0 (
 )
 
 cd ..
-echo Done: Go backend compiled: backend\awsmgr_backend.exe
+echo Done: Go backend compiled: backend\aethrops_core.exe
 
 echo.
 echo Step 2: Building Flutter Windows app...
@@ -55,11 +55,9 @@ if %errorlevel% neq 0 (
 
 echo.
 echo Step 3: Copying backend to Flutter build...
-copy ..\backend\awsmgr_backend.exe build\windows\x64\runner\Release\
+copy ..\backend\aethrops_core.exe build\windows\x64\runner\Release\
 echo Done: Backend copied to bundle
 
-REM Rename executable to aws-manager.exe
-ren build\windows\x64\runner\Release\awsmgr.exe aws-manager.exe
 
 cd ..
 
@@ -100,7 +98,7 @@ if "%ISCC_PATH%"=="" (
     echo.
     echo For now, creating a ZIP file instead...
     
-    set ZIP_NAME=aws-manager-%VERSION%-windows-x64.zip
+    set ZIP_NAME=aethrops-%VERSION%-windows-x64.zip
     if exist "%RELEASE_DIR%\%ZIP_NAME%" del "%RELEASE_DIR%\%ZIP_NAME%"
     powershell -Command "Compress-Archive -Path 'awsmgr_ui\build\windows\x64\runner\Release\*' -DestinationPath '%RELEASE_DIR%\%ZIP_NAME%' -Force"
     
@@ -119,7 +117,7 @@ if %errorlevel% neq 0 (
     echo Failed to create installer!
     echo Creating ZIP as fallback...
     
-    set ZIP_NAME=aws-manager-%VERSION%-windows-x64.zip
+    set ZIP_NAME=aethrops-%VERSION%-windows-x64.zip
     if exist "%RELEASE_DIR%\%ZIP_NAME%" del "%RELEASE_DIR%\%ZIP_NAME%"
     powershell -Command "Compress-Archive -Path 'awsmgr_ui\build\windows\x64\runner\Release\*' -DestinationPath '%RELEASE_DIR%\%ZIP_NAME%' -Force"
     

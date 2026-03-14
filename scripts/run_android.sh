@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build and run AWS Manager on Android device
+# Build and run AethrOps on Android device
 
 set -e
 
 echo "=========================================="
-echo "Running AWS Manager on Android"
+echo "Running AethrOps on Android"
 echo "=========================================="
 
 # Change to project root

@@ -4,7 +4,7 @@
 set -e
 
 echo "=========================================="
-echo "Building AWS Manager for Android"
+echo "Building AethrOps for Android"
 echo "=========================================="
 
 # Change to project root

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build Debian package for AWS Manager
+# Build Debian package for AethrOps
 
 set -e
 
 echo "=========================================="
-echo "Building AWS Manager Debian Package"
+echo "Building AethrOps Debian Package"
 echo "=========================================="
 
 # Change to project root
@@ -14,7 +14,7 @@ PROJECT_ROOT=$(pwd)
 # Fetch version from GitHub
 echo ""
 echo "Fetching version from GitHub..."
-GITHUB_JSON=$(curl -s --max-time 10 "https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json" 2>/dev/null)
+GITHUB_JSON=$(curl -s --max-time 10 "https://raw.githubusercontent.com/DragonEmperor9480/aethrops/awsmgr-gui/version.json" 2>/dev/null)
 
 if [ -n "$GITHUB_JSON" ]; then
     # Try jq first, fall back to python, then grep
@@ -50,7 +50,7 @@ fi
 
 echo "Version: $VERSION"
 
-PACKAGE_NAME="aws-manager"
+PACKAGE_NAME="aethrops"
 ARCH="amd64"
 DEB_DIR="$PROJECT_ROOT/build/debian"
 PACKAGE_DIR="$DEB_DIR/${PACKAGE_NAME}_${VERSION}_${ARCH}"
@@ -82,37 +82,37 @@ echo "Step 3: Creating Debian package structure..."
 
 # Create directories
 mkdir -p "$PACKAGE_DIR/DEBIAN"
-mkdir -p "$PACKAGE_DIR/opt/awsmgr"
+mkdir -p "$PACKAGE_DIR/opt/aethrops"
 mkdir -p "$PACKAGE_DIR/usr/share/applications"
 mkdir -p "$PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps"
 mkdir -p "$PACKAGE_DIR/usr/bin"
 
 # Copy application files
 echo "Copying application files..."
-cp -r awsmgr_ui/build/linux/x64/release/bundle/* "$PACKAGE_DIR/opt/awsmgr/"
+cp -r awsmgr_ui/build/linux/x64/release/bundle/* "$PACKAGE_DIR/opt/aethrops/"
 
 # Create launcher script
 echo "Creating launcher script..."
-cat > "$PACKAGE_DIR/usr/bin/awsmgr" << 'EOF'
+cat > "$PACKAGE_DIR/usr/bin/aethrops" << 'EOF'
 #!/bin/bash
-cd /opt/awsmgr
-exec ./awsmgr "$@"
+cd /opt/aethrops
+exec ./aethrops "$@"
 EOF
-chmod +x "$PACKAGE_DIR/usr/bin/awsmgr"
+chmod +x "$PACKAGE_DIR/usr/bin/aethrops"
 
 # Create desktop entry
 echo "Creating desktop entry..."
-cat > "$PACKAGE_DIR/usr/share/applications/awsmgr.desktop" << EOF
+cat > "$PACKAGE_DIR/usr/share/applications/aethrops.desktop" << EOF
 [Desktop Entry]
-Name=AWS Manager
+Name=AethrOps
 Comment=AWS Resource Management Tool
-Exec=/usr/bin/awsmgr
-Icon=awsmgr
+Exec=/usr/bin/aethrops
+Icon=aethrops
 Terminal=false
 Type=Application
 Categories=Development;Utility;
 Keywords=aws;cloud;management;iam;s3;lambda;
-StartupWMClass=awsmgr
+StartupWMClass=aethrops
 EOF
 
 # Copy or create icon (if you have one)
@@ -125,7 +125,7 @@ fi
 
 # Create control file
 echo "Creating control file..."
-INSTALLED_SIZE=$(du -sk "$PACKAGE_DIR/opt/awsmgr" | cut -f1)
+INSTALLED_SIZE=$(du -sk "$PACKAGE_DIR/opt/aethrops" | cut -f1)
 
 cat > "$PACKAGE_DIR/DEBIAN/control" << EOF
 Package: $PACKAGE_NAME
@@ -136,7 +136,7 @@ Architecture: $ARCH
 Installed-Size: $INSTALLED_SIZE
 Depends: libc6 (>= 2.31), libstdc++6 (>= 10), libglib2.0-0 (>= 2.64), libgtk-3-0 (>= 3.24)
 Maintainer: DragonEmperor9480 <amruteshnaregal1234@gmail.com>
-Homepage: https://github.com/DragonEmperor9480/aws-manager
+Homepage: https://github.com/DragonEmperor9480/aethrops
 Description: AWS Resource Management Tool
  A comprehensive desktop application for managing AWS resources including
  IAM users, groups, policies, S3 buckets, Lambda functions, and more.
@@ -166,8 +166,8 @@ if command -v gtk-update-icon-cache >/dev/null 2>&1; then
     gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 fi
 
-echo "AWS Manager installed successfully!"
-echo "You can launch it from your application menu or run 'awsmgr' in terminal."
+echo "AethrOps installed successfully!"
+echo "You can launch it from your application menu or run 'aethrops' in terminal."
 
 exit 0
 EOF
@@ -180,7 +180,7 @@ cat > "$PACKAGE_DIR/DEBIAN/prerm" << 'EOF'
 set -e
 
 # Stop any running instances
-pkill -f "/opt/awsmgr/awsmgr" || true
+pkill -f "/opt/aethrops/aethrops" || true
 
 exit 0
 EOF
@@ -194,8 +194,8 @@ set -e
 
 if [ "$1" = "purge" ]; then
     # Remove user data if purging
-    rm -rf ~/.config/awsmgr || true
-    rm -rf ~/.local/share/awsmgr || true
+    rm -rf ~/.config/aethrops || true
+    rm -rf ~/.local/share/aethrops || true
 fi
 
 # Update desktop database
@@ -217,11 +217,11 @@ echo "Creating copyright file..."
 mkdir -p "$PACKAGE_DIR/usr/share/doc/$PACKAGE_NAME"
 cat > "$PACKAGE_DIR/usr/share/doc/$PACKAGE_NAME/copyright" << EOF
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: AWS Manager
-Source: https://github.com/DragonEmperor9480/aws-manager
+Upstream-Name: AethrOps
+Source: https://github.com/DragonEmperor9480/aethrops
 
 Files: *
-Copyright: $(date +%Y) AWS Manager Team
+Copyright: $(date +%Y) AethrOps Team
 License: MIT
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -255,7 +255,7 @@ $PACKAGE_NAME ($VERSION) unstable; urgency=medium
   * Email notification system
   * MFA device configuration
 
- -- AWS Manager Team <awsmgr@example.com>  $(date -R)
+ -- AethrOps Team <aethrops@example.com>  $(date -R)
 EOF
 gzip -9 -n "$PACKAGE_DIR/usr/share/doc/$PACKAGE_NAME/changelog.Debian"
 

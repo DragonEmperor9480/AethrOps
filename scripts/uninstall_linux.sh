@@ -1,13 +1,13 @@
 #!/bin/bash
-# Uninstall AWS Manager from Linux
+# Uninstall AethrOps from Linux
 
-APP_NAME="AWS Manager"
-BINARY_NAME="aws-manager"
-INSTALL_DIR="$HOME/.local/share/aws-manager"
+APP_NAME="AethrOps"
+BINARY_NAME="aethrops"
+INSTALL_DIR="$HOME/.local/share/aethrops"
 BIN_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/512x512/apps"
-DATA_DIR="$HOME/.awsmgr"
+DATA_DIR="$HOME/.aethrops"
 
 echo "=========================================="
 echo "Uninstalling $APP_NAME"
@@ -25,8 +25,8 @@ echo ""
 echo "This will remove:"
 echo "  - Application files: $INSTALL_DIR"
 echo "  - Launcher: $BIN_DIR/$BINARY_NAME"
-echo "  - Desktop entry: $DESKTOP_DIR/aws-manager.desktop"
-echo "  - Icon: $ICON_DIR/aws-manager.png"
+echo "  - Desktop entry: $DESKTOP_DIR/aethrops.desktop"
+echo "  - Icon: $ICON_DIR/aethrops.png"
 echo ""
 read -p "Do you want to continue? [y/N] " -n 1 -r
 echo
@@ -38,8 +38,8 @@ fi
 # Stop any running instances
 echo ""
 echo "Step 1: Stopping running instances..."
-pkill -f "$INSTALL_DIR/awsmgr" 2>/dev/null || true
-pkill -f "$INSTALL_DIR/awsmgr_backend" 2>/dev/null || true
+pkill -f "$INSTALL_DIR/aethrops" 2>/dev/null || true
+pkill -f "$INSTALL_DIR/aethrops_core" 2>/dev/null || true
 sleep 1
 echo "✓ Processes stopped"
 
@@ -62,20 +62,20 @@ fi
 # Remove desktop entry
 echo ""
 echo "Step 4: Removing desktop entry..."
-if [ -f "$DESKTOP_DIR/aws-manager.desktop" ]; then
-    rm "$DESKTOP_DIR/aws-manager.desktop"
+if [ -f "$DESKTOP_DIR/aethrops.desktop" ]; then
+    rm "$DESKTOP_DIR/aethrops.desktop"
     echo "✓ Removed desktop entry"
 fi
 
 # Remove icon
 echo ""
 echo "Step 5: Removing icon..."
-if [ -f "$ICON_DIR/aws-manager.png" ]; then
-    rm "$ICON_DIR/aws-manager.png"
+if [ -f "$ICON_DIR/aethrops.png" ]; then
+    rm "$ICON_DIR/aethrops.png"
     echo "✓ Removed icon"
 fi
-if [ -f "$ICON_DIR/aws-manager.svg" ]; then
-    rm "$ICON_DIR/aws-manager.svg"
+if [ -f "$ICON_DIR/aethrops.svg" ]; then
+    rm "$ICON_DIR/aethrops.svg"
     echo "✓ Removed old SVG icon"
 fi
 
