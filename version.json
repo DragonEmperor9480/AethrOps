@@ -4,18 +4,18 @@
         "version": ""
     },
     "linux": {
-        "version": "Preview Beta 2"
+        "version": "Preview Beta 3"
     },
     "windows": {
-        "version": "Preview Beta 2"
+        "version": "Preview Beta 3"
     },
     "android": {
-        "version": "Preview Beta 2"
+        "version": "Preview Beta 3"
     },
     "macos": {
         "version": ""
     },
     "website": {
-        "version": "Preview Beta 2"
+        "version": "Preview Beta 3"
     }
 }
