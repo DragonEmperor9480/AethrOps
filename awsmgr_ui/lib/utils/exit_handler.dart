@@ -2,9 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
 import '../theme/app_theme.dart';
 import '../services/backend_service.dart';
-import '../widgets/loading_animation.dart';
 
 /// Shared exit handler for both Windows close button and Android back button
 class ExitHandler {
@@ -45,43 +46,27 @@ class ExitHandler {
     );
 
     if (shouldExit == true) {
-      // Show shutting down animation
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => PopScope(
-          canPop: false,
-          child: const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LoadingAnimation(
-                  message: 'Shutting down...',
-                  size: 40,
-                  style: LoadingStyle.orbital,
-                  showQuote: false,
-                ),
-                SizedBox(height: 16),
-                Text('Shutting down...', style: TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      // Give the animation a moment to render
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Stop the backend before exiting
-      BackendService.stop();
-
-      // Small delay to show the animation
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      // Perform shutdown with animation and exit - don't return, just exit directly
+      await _performShutdownAndExit(context);
+      // This line won't be reached as app will be closed
       return true;
     }
 
     return false;
+  }
+
+  /// Performs the actual shutdown process and exits immediately
+  static Future<void> _performShutdownAndExit(BuildContext context) async {
+    // Close the UI FIRST - immediately
+    exitApp();
+
+    // Tell backend to shutdown in background (fire and forget)
+    unawaited(
+      http
+          .post(Uri.parse('${BackendService.baseUrl}/api/shutdown'))
+          .timeout(const Duration(milliseconds: 500))
+          .catchError((_) => http.Response('', 500)),
+    );
   }
 
   /// Handles app exit based on platform

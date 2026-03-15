@@ -6,7 +6,6 @@ import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'providers/aws_config_provider.dart';
-import 'services/backend_service.dart';
 import 'utils/exit_handler.dart';
 
 // Global navigator key to access navigator context for dialogs
@@ -78,21 +77,17 @@ class _MyAppState extends State<MyApp> with WindowListener {
     final overlayContext = navigatorKey.currentState?.overlay?.context;
 
     if (overlayContext == null) {
-      // If no proper context available, just close gracefully
-      BackendService.stop();
+      // If no proper context available, just close
       await windowManager.destroy();
       return;
     }
 
     try {
-      final shouldExit = await ExitHandler.showExitConfirmation(overlayContext);
-      if (shouldExit) {
-        await ExitHandler.exitApp();
-      }
+      await ExitHandler.showExitConfirmation(overlayContext);
+      // showExitConfirmation handles shutdown and exit internally
     } catch (e) {
-      // If dialog fails, just close gracefully
+      // If dialog fails, just close
       debugPrint('Failed to show exit dialog: $e');
-      BackendService.stop();
       await windowManager.destroy();
     }
   }

@@ -104,4 +104,7 @@ func RegisterRoutes(r *mux.Router) {
 
 	// Version
 	r.HandleFunc("/api/version", api.GetVersion).Methods("GET")
+
+	// Shutdown
+	r.HandleFunc("/api/shutdown", api.Shutdown).Methods("POST")
 }

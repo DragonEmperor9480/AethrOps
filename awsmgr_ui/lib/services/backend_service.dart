@@ -68,7 +68,7 @@ class BackendService {
           .lookupFunction<SetDataDirectoryNative, SetDataDirectoryDart>(
             'SetDataDirectory',
           );
-      
+
       final dirPtr = appDir.path.toNativeUtf8();
       final setDirResult = setDataDir(dirPtr);
       calloc.free(dirPtr);
@@ -76,7 +76,7 @@ class BackendService {
       // Start backend
       final startBackend = _lib!
           .lookupFunction<StartBackendNative, StartBackendDart>('StartBackend');
-      
+
       final result = startBackend();
 
       if (result != 0) {
@@ -201,18 +201,35 @@ class BackendService {
     }
   }
 
-  static void stop() {
-    if (_lib != null) {
-      try {
+  static Future<void> stop() async {
+    try {
+      // Mobile: Use FFI to stop
+      if (_lib != null) {
         final stopBackend = _lib!
             .lookupFunction<StopBackendNative, StopBackendDart>('StopBackend');
         stopBackend();
-      } catch (e) {
-        debugPrint('Error stopping backend: $e');
+        return;
       }
-    }
 
-    _process?.kill();
-    _process = null;
+      // Desktop: Call graceful shutdown endpoint and wait for process to exit
+      if (_process != null) {
+        await http
+            .post(Uri.parse('$baseUrl/shutdown'))
+            .timeout(const Duration(seconds: 1));
+
+        // Wait for process to exit (backend handles its own cleanup)
+        await _process!.exitCode.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => -1,
+        );
+
+        _process = null;
+      }
+    } catch (e) {
+      debugPrint('Error stopping backend: $e');
+      // Force kill if graceful shutdown fails
+      _process?.kill(ProcessSignal.sigkill);
+      _process = null;
+    }
   }
 }
