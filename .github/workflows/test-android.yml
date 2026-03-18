@@ -32,20 +32,24 @@ jobs:
 
       # Backend Analysis
       - name: Install Go dependencies
-        run: go mod download
+        run: |
+          cd backend && go mod download
+          cd ../backend_ffi && go mod download
 
       - name: Run go vet (Backend)
-        run: go vet ./... 2>&1 | tee govet-report.txt
+        run: go vet ./... 2>&1 | tee ../govet-report.txt
+        working-directory: backend
         continue-on-error: true
 
       - name: Run go fmt check (Backend)
+        working-directory: backend
         run: |
           unformatted=$(go fmt ./...)
           if [ -n "$unformatted" ]; then
             echo "::warning::The following files need formatting: $unformatted"
-            echo "$unformatted" > gofmt-report.txt
+            echo "$unformatted" > ../gofmt-report.txt
           else
-            echo "All files are properly formatted" > gofmt-report.txt
+            echo "All files are properly formatted" > ../gofmt-report.txt
           fi
         continue-on-error: true
 
@@ -53,19 +57,21 @@ jobs:
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
       - name: Run staticcheck (Backend)
+        working-directory: backend
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
-          staticcheck ./... 2>&1 | tee staticcheck-report.txt
+          staticcheck ./... 2>&1 | tee ../staticcheck-report.txt
         continue-on-error: true
 
       - name: Install gosec (Security Scanner)
         run: go install github.com/securego/gosec/v2/cmd/gosec@latest
 
       - name: Run gosec (Backend Security)
+        working-directory: backend
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
-          gosec -fmt=json -out=gosec-report.json ./... || true
-          gosec -fmt=text -out=gosec-report.txt ./... || true
+          gosec -fmt=json -out=../gosec-report.json ./... || true
+          gosec -fmt=text -out=../gosec-report.txt ./... || true
         continue-on-error: true
 
       - name: Rename gosec reports

@@ -1,0 +1,111 @@
+name: Backend Code Analysis
+
+on:
+  workflow_call:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+
+      # Backend Analysis
+      - name: Install Go dependencies
+        run: |
+          cd backend && go mod download
+          cd ../backend_ffi && go mod download
+
+      - name: Run go vet (Backend)
+        run: go vet ./... 2>&1 | tee ../govet-report.txt
+        working-directory: backend
+        continue-on-error: true
+
+      - name: Run go fmt check (Backend)
+        working-directory: backend
+        run: |
+          unformatted=$(go fmt ./...)
+          if [ -n "$unformatted" ]; then
+            echo "::warning::The following files need formatting: $unformatted"
+            echo "$unformatted" > ../gofmt-report.txt
+          else
+            echo "All files are properly formatted" > ../gofmt-report.txt
+          fi
+        continue-on-error: true
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck (Backend)
+        working-directory: backend
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          staticcheck ./... 2>&1 | tee ../staticcheck-report.txt
+        continue-on-error: true
+
+      - name: Install gosec (Security Scanner)
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec (Backend Security)
+        working-directory: backend
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          gosec -fmt=json -out=../gosec-report-backend.json ./... || true
+          gosec -fmt=text -out=../gosec-report-backend.txt ./... || true
+        continue-on-error: true
+
+      # Generate Analysis Report
+      - name: Generate Analysis Summary
+        run: |
+          cat > backend-analysis-report.md << 'EOF'
+          ## Backend Code Analysis Report
+          
+          ### Analysis Results
+          - ✅ Go vet completed
+          - ✅ Go fmt check completed
+          - ✅ Staticcheck completed
+          - ✅ Security scan (gosec) completed
+          
+          #### Go Vet Results
+          ```
+          EOF
+          cat govet-report.txt >> backend-analysis-report.md 2>/dev/null || echo "No issues found" >> backend-analysis-report.md
+          cat >> backend-analysis-report.md << 'EOF'
+          ```
+          
+          #### Go Fmt Results
+          ```
+          EOF
+          cat gofmt-report.txt >> backend-analysis-report.md 2>/dev/null || echo "All files properly formatted" >> backend-analysis-report.md
+          cat >> backend-analysis-report.md << 'EOF'
+          ```
+          
+          #### Staticcheck Results
+          ```
+          EOF
+          cat staticcheck-report.txt >> backend-analysis-report.md 2>/dev/null || echo "No issues found" >> backend-analysis-report.md
+          cat >> backend-analysis-report.md << 'EOF'
+          ```
+          
+          #### Security Scan (gosec) Results
+          ```
+          EOF
+          cat gosec-report-backend.txt >> backend-analysis-report.md 2>/dev/null || echo "No security issues found" >> backend-analysis-report.md
+          cat >> backend-analysis-report.md << 'EOF'
+          ```
+          EOF
+          
+          cat backend-analysis-report.md
+
+      - name: Upload Analysis Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-analysis-report
+          path: |
+            backend-analysis-report.md
+            gosec-report-backend.json
+          retention-days: 7

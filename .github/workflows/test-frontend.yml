@@ -1,0 +1,84 @@
+name: Frontend Code Analysis
+
+on:
+  workflow_call:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # Frontend Analysis
+      - name: Flutter doctor
+        run: flutter doctor -v
+        working-directory: awsmgr_ui
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+        working-directory: awsmgr_ui
+
+      - name: Run Flutter analyze
+        run: flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze-report.txt
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Check Flutter formatting
+        run: dart format --set-exit-if-changed lib/ 2>&1 | tee ../dart-format-report.txt || true
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Run Flutter pub outdated
+        run: flutter pub outdated 2>&1 | tee flutter-outdated-report.txt
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      # Generate Analysis Report
+      - name: Generate Analysis Summary
+        run: |
+          cat > frontend-analysis-report.md << 'EOF'
+          ## Frontend Code Analysis Report
+          
+          ### Analysis Results
+          - ✅ Flutter doctor check completed
+          - ✅ Flutter analyze completed
+          - ✅ Dart format check completed
+          - ✅ Dependency audit completed
+          
+          #### Flutter Analyze Results
+          ```
+          EOF
+          cat awsmgr_ui/flutter-analyze-report.txt >> frontend-analysis-report.md 2>/dev/null || echo "No issues found" >> frontend-analysis-report.md
+          cat >> frontend-analysis-report.md << 'EOF'
+          ```
+          
+          #### Dart Format Results
+          ```
+          EOF
+          cat dart-format-report.txt >> frontend-analysis-report.md 2>/dev/null || echo "All files properly formatted" >> frontend-analysis-report.md
+          cat >> frontend-analysis-report.md << 'EOF'
+          ```
+          
+          #### Flutter Outdated Dependencies
+          ```
+          EOF
+          cat awsmgr_ui/flutter-outdated-report.txt >> frontend-analysis-report.md 2>/dev/null || echo "All dependencies up to date" >> frontend-analysis-report.md
+          cat >> frontend-analysis-report.md << 'EOF'
+          ```
+          EOF
+          
+          cat frontend-analysis-report.md
+
+      - name: Upload Analysis Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-analysis-report
+          path: frontend-analysis-report.md
+          retention-days: 7

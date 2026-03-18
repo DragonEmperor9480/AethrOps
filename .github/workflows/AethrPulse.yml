@@ -9,10 +9,10 @@ on:
       - '**'
 
 jobs:
-  test-android:
-    name: Android Analysis
-    uses: ./.github/workflows/test-android.yml
+  test-backend:
+    name: Backend Analysis
+    uses: ./.github/workflows/test-backend.yml
 
-  test-windows:
-    name: Windows Analysis
-    uses: ./.github/workflows/test-windows.yml
+  test-frontend:
+    name: Frontend Analysis
+    uses: ./.github/workflows/test-frontend.yml
