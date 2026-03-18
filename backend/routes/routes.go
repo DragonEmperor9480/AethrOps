@@ -1,7 +1,7 @@
 package routes
 
 import (
-	api "github.com/DragonEmperor9480/AethrOps/backend/controllers"
+	api "github.com/DragonEmperor9480/AethrOps/controllers"
 	"github.com/gorilla/mux"
 )
 
