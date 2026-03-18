@@ -1,0 +1,204 @@
+name: AethrOps Windows Analysis
+
+on:
+  workflow_call:
+
+jobs:
+  analyze:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: oracle
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      # Backend Analysis
+      - name: Install Go dependencies
+        run: go mod download
+
+      - name: Run go vet (Backend)
+        run: go vet ./... 2>&1 | tee govet-report.txt
+        continue-on-error: true
+
+      - name: Run go fmt check (Backend)
+        shell: pwsh
+        run: |
+          $unformatted = go fmt ./...
+          if ($unformatted) {
+            Write-Host "::warning::The following files need formatting: $unformatted"
+            $unformatted | Out-File -FilePath gofmt-report.txt -Encoding utf8
+          } else {
+            "All files are properly formatted" | Out-File -FilePath gofmt-report.txt -Encoding utf8
+          }
+        continue-on-error: true
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck (Backend)
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:USERPROFILE\go\bin;$env:PATH"
+          staticcheck ./... 2>&1 | Tee-Object -FilePath staticcheck-report.txt
+        continue-on-error: true
+
+      - name: Install gosec (Security Scanner)
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec (Backend Security)
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:USERPROFILE\go\bin;$env:PATH"
+          gosec -fmt=json -out=gosec-report.json ./...
+          gosec -fmt=text -out=gosec-report.txt ./...
+          if ($LASTEXITCODE -ne 0) { exit 0 }
+        continue-on-error: true
+
+      - name: Rename gosec reports
+        shell: pwsh
+        run: |
+          if (Test-Path gosec-report.json) {
+            Move-Item gosec-report.json gosec-report-windows.json
+          }
+          if (Test-Path gosec-report.txt) {
+            Move-Item gosec-report.txt gosec-report-windows.txt
+          }
+
+      - name: Build backend (main)
+        run: go build -o aethrops_backend.exe ./backend/main.go
+
+      - name: Check backend binary size
+        shell: pwsh
+        run: |
+          $size = (Get-Item aethrops_backend.exe).Length / 1MB
+          Write-Host "Backend binary size: $([math]::Round($size, 2)) MB"
+          echo "BACKEND_SIZE=$([math]::Round($size, 2))" >> $env:GITHUB_ENV
+
+      # Frontend Analysis
+      - name: Flutter doctor
+        run: flutter doctor -v
+        working-directory: awsmgr_ui
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+        working-directory: awsmgr_ui
+
+      - name: Run Flutter analyze
+        run: flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze-report.txt
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Check Flutter formatting
+        shell: pwsh
+        run: |
+          dart format --set-exit-if-changed lib/ 2>&1 | Tee-Object -FilePath ..\dart-format-report.txt
+          if ($LASTEXITCODE -ne 0) { exit 0 }
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Run Flutter pub outdated
+        run: flutter pub outdated 2>&1 | tee flutter-outdated-report.txt
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Build Windows release
+        run: flutter build windows --release
+        working-directory: awsmgr_ui
+
+      - name: Check Flutter build size
+        shell: pwsh
+        run: |
+          $bundleSize = (Get-ChildItem -Path awsmgr_ui\build\windows\x64\runner\Release -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+          Write-Host "Windows bundle size: $([math]::Round($bundleSize, 2)) MB"
+          echo "FLUTTER_SIZE=$([math]::Round($bundleSize, 2))" >> $env:GITHUB_ENV
+
+      # Generate Analysis Report
+      - name: Generate Analysis Summary
+        shell: pwsh
+        run: |
+          $report = @"
+          ## Windows Platform Analysis Report
+          
+          ### Backend Analysis
+          - ✅ Go vet completed
+          - ✅ Go fmt check completed
+          - ✅ Staticcheck completed
+          - ✅ Security scan (gosec) completed
+          - ✅ Backend build successful
+          - 📦 Backend binary size: $env:BACKEND_SIZE MB
+          
+          #### Go Vet Results
+          ``````
+          $(Get-Content govet-report.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          #### Go Fmt Results
+          ``````
+          $(Get-Content gofmt-report.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          #### Staticcheck Results
+          ``````
+          $(Get-Content staticcheck-report.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          #### Security Scan (gosec) Results
+          ``````
+          $(Get-Content gosec-report-windows.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          ### Frontend Analysis
+          - ✅ Flutter doctor check completed
+          - ✅ Flutter analyze completed
+          - ✅ Dart format check completed
+          - ✅ Dependency audit completed
+          - ✅ Windows release build successful
+          - 📦 Windows bundle size: $env:FLUTTER_SIZE MB
+          
+          #### Flutter Analyze Results
+          ``````
+          $(Get-Content awsmgr_ui\flutter-analyze-report.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          #### Dart Format Results
+          ``````
+          $(Get-Content dart-format-report.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          #### Flutter Outdated Dependencies
+          ``````
+          $(Get-Content awsmgr_ui\flutter-outdated-report.txt -Raw -ErrorAction SilentlyContinue)
+          ``````
+          
+          ### Build Artifacts
+          - Backend: aethrops_backend.exe
+          - Frontend: awsmgr_ui/build/windows/x64/runner/Release/
+          "@
+          
+          $report | Out-File -FilePath windows-analysis-full-report.md -Encoding utf8
+          Write-Host $report
+
+      - name: Upload Analysis Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-analysis-report
+          path: |
+            windows-analysis-full-report.md
+            gosec-report-windows.json
+          retention-days: 7

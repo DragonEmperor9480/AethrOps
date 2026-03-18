@@ -1,0 +1,295 @@
+name: AethrOps Android Analysis
+
+on:
+  workflow_call:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: oracle
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+
+      - name: Install Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+
+      # Backend Analysis
+      - name: Install Go dependencies
+        run: go mod download
+
+      - name: Run go vet (Backend)
+        run: go vet ./... 2>&1 | tee govet-report.txt
+        continue-on-error: true
+
+      - name: Run go fmt check (Backend)
+        run: |
+          unformatted=$(go fmt ./...)
+          if [ -n "$unformatted" ]; then
+            echo "::warning::The following files need formatting: $unformatted"
+            echo "$unformatted" > gofmt-report.txt
+          else
+            echo "All files are properly formatted" > gofmt-report.txt
+          fi
+        continue-on-error: true
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Run staticcheck (Backend)
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          staticcheck ./... 2>&1 | tee staticcheck-report.txt
+        continue-on-error: true
+
+      - name: Install gosec (Security Scanner)
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec (Backend Security)
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          gosec -fmt=json -out=gosec-report.json ./... || true
+          gosec -fmt=text -out=gosec-report.txt ./... || true
+        continue-on-error: true
+
+      - name: Rename gosec reports
+        run: |
+          [ -f gosec-report.json ] && mv gosec-report.json gosec-report-android.json || true
+          [ -f gosec-report.txt ] && mv gosec-report.txt gosec-report-android.txt || true
+
+      - name: Build Go Backend FFI for Android (Multi-arch)
+        run: |
+          set -e
+          cd backend_ffi
+
+          ARCHS=("arm64-v8a" "armeabi-v7a" "x86_64")
+
+          for arch in "${ARCHS[@]}"; do
+            unset GOARM
+
+            if [ "$arch" = "arm64-v8a" ]; then
+              GOARCH=arm64
+              CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+            elif [ "$arch" = "armeabi-v7a" ]; then
+              GOARCH=arm
+              GOARM=7
+              CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang
+            else
+              GOARCH=amd64
+              CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang
+            fi
+
+            echo "Building for $arch..."
+            CGO_ENABLED=1 GOOS=android GOARCH=$GOARCH GOARM=${GOARM:-} CC=$CC \
+              go build -buildmode=c-shared -o libbackend_$arch.so main.go
+            
+            # Check binary size
+            size=$(du -h libbackend_$arch.so | cut -f1)
+            echo "Backend FFI ($arch) size: $size"
+          done
+
+      - name: Copy native libraries
+        run: |
+          for arch in arm64-v8a armeabi-v7a x86_64; do
+            mkdir -p awsmgr_ui/android/app/src/main/jniLibs/$arch
+            cp backend_ffi/libbackend_$arch.so \
+              awsmgr_ui/android/app/src/main/jniLibs/$arch/libbackend.so
+          done
+
+      - name: Check backend binary sizes
+        run: |
+          echo "## Backend Binary Sizes" > backend_sizes.txt
+          for arch in arm64-v8a armeabi-v7a x86_64; do
+            size=$(du -h backend_ffi/libbackend_$arch.so | cut -f1)
+            echo "- $arch: $size" >> backend_sizes.txt
+          done
+          cat backend_sizes.txt
+
+      # Frontend Analysis
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+        working-directory: awsmgr_ui
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+        working-directory: awsmgr_ui
+
+      - name: Run Flutter analyze
+        run: flutter analyze --no-fatal-infos 2>&1 | tee flutter-analyze-report.txt
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Check Flutter formatting
+        run: dart format --set-exit-if-changed lib/ 2>&1 | tee ../dart-format-report.txt || true
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Run Flutter pub outdated
+        run: flutter pub outdated 2>&1 | tee flutter-outdated-report.txt
+        working-directory: awsmgr_ui
+        continue-on-error: true
+
+      - name: Analyze Android Gradle configuration
+        run: |
+          echo "## Android Gradle Analysis" > gradle_analysis.txt
+          echo "### build.gradle.kts" >> gradle_analysis.txt
+          grep -E "(compileSdk|minSdk|targetSdk|versionCode|versionName)" \
+            awsmgr_ui/android/app/build.gradle.kts >> gradle_analysis.txt || true
+          cat gradle_analysis.txt
+
+      - name: Build Android APK (Debug)
+        run: flutter build apk --debug --split-per-abi
+        working-directory: awsmgr_ui
+
+      - name: Check APK sizes
+        run: |
+          echo "## APK Sizes (Debug)" > apk_sizes.txt
+          APK_DIR="awsmgr_ui/build/app/outputs/flutter-apk"
+          for apk in $APK_DIR/app-*-debug.apk; do
+            if [ -f "$apk" ]; then
+              size=$(du -h "$apk" | cut -f1)
+              name=$(basename "$apk")
+              echo "- $name: $size" >> apk_sizes.txt
+            fi
+          done
+          cat apk_sizes.txt
+
+      - name: Analyze APK contents
+        run: |
+          APK_DIR="awsmgr_ui/build/app/outputs/flutter-apk"
+          for apk in $APK_DIR/app-*-debug.apk; do
+            if [ -f "$apk" ]; then
+              echo "Analyzing $(basename $apk)..."
+              unzip -l "$apk" | grep -E "(\.so|\.dex|flutter_assets)" | head -20
+            fi
+          done
+
+      # Generate Analysis Report
+      - name: Generate Analysis Summary
+        run: |
+          cat > android-analysis-full-report.md << 'EOF'
+          ## Android Platform Analysis Report
+          
+          ### Backend Analysis
+          - ✅ Go vet completed
+          - ✅ Go fmt check completed
+          - ✅ Staticcheck completed
+          - ✅ Security scan (gosec) completed
+          - ✅ Multi-arch FFI build successful (arm64-v8a, armeabi-v7a, x86_64)
+          
+          #### Backend Binary Sizes
+          EOF
+          
+          cat backend_sizes.txt >> android-analysis-full-report.md
+          
+          cat >> android-analysis-full-report.md << 'EOF'
+          
+          #### Go Vet Results
+          ```
+          EOF
+          cat govet-report.txt >> android-analysis-full-report.md 2>/dev/null || echo "No issues found" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          #### Go Fmt Results
+          ```
+          EOF
+          cat gofmt-report.txt >> android-analysis-full-report.md 2>/dev/null || echo "All files properly formatted" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          #### Staticcheck Results
+          ```
+          EOF
+          cat staticcheck-report.txt >> android-analysis-full-report.md 2>/dev/null || echo "No issues found" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          #### Security Scan (gosec) Results
+          ```
+          EOF
+          cat gosec-report-android.txt >> android-analysis-full-report.md 2>/dev/null || echo "No security issues found" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          ### Frontend Analysis
+          - ✅ Flutter doctor check completed
+          - ✅ Flutter analyze completed
+          - ✅ Dart format check completed
+          - ✅ Dependency audit completed
+          - ✅ Android Gradle configuration analyzed
+          - ✅ Multi-arch APK build successful
+          
+          #### APK Sizes
+          EOF
+          
+          cat apk_sizes.txt >> android-analysis-full-report.md
+          
+          cat >> android-analysis-full-report.md << 'EOF'
+          
+          #### Flutter Analyze Results
+          ```
+          EOF
+          cat awsmgr_ui/flutter-analyze-report.txt >> android-analysis-full-report.md 2>/dev/null || echo "No issues found" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          #### Dart Format Results
+          ```
+          EOF
+          cat dart-format-report.txt >> android-analysis-full-report.md 2>/dev/null || echo "All files properly formatted" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          #### Flutter Outdated Dependencies
+          ```
+          EOF
+          cat awsmgr_ui/flutter-outdated-report.txt >> android-analysis-full-report.md 2>/dev/null || echo "All dependencies up to date" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          #### Android Gradle Configuration
+          ```
+          EOF
+          cat gradle_analysis.txt >> android-analysis-full-report.md 2>/dev/null || echo "Configuration OK" >> android-analysis-full-report.md
+          cat >> android-analysis-full-report.md << 'EOF'
+          ```
+          
+          ### Build Artifacts
+          - Backend FFI: libbackend.so (arm64-v8a, armeabi-v7a, x86_64)
+          - Frontend: app-*-debug.apk (split per ABI)
+          
+          ### Native Libraries
+          - ✅ All architectures built successfully
+          - ✅ Libraries copied to jniLibs directories
+          EOF
+          
+          cat android-analysis-full-report.md
+
+      - name: Upload Analysis Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-analysis-report
+          path: |
+            android-analysis-full-report.md
+            gosec-report-android.json
+          retention-days: 7

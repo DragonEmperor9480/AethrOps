@@ -1,0 +1,18 @@
+name: "AethrPulse Build and Test flow"
+
+on:
+  push:
+    branches:
+      - '**'  # Run on all branches
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  test-android:
+    name: Android Analysis
+    uses: ./.github/workflows/test-android.yml
+
+  test-windows:
+    name: Windows Analysis
+    uses: ./.github/workflows/test-windows.yml
