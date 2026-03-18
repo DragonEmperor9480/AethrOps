@@ -25,6 +25,9 @@ jobs:
         with:
           channel: stable
 
+      - name: Setup Visual Studio Build Tools
+        uses: microsoft/setup-msbuild@v2
+
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
