@@ -43,7 +43,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
       final biometricEnabled = await SecurityService.isBiometricEnabled();
       final canUse = await SecurityService.canUseBiometric();
       setState(() => _showBiometric = biometricEnabled && canUse);
-      
+
       // Auto-trigger biometric on launch if enabled
       if (_showBiometric) {
         _authenticateWithBiometric();
@@ -145,41 +145,52 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (key == LogicalKeyboardKey.digit0 || key == LogicalKeyboardKey.numpad0) {
       _onNumberPressed('0');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit1 || key == LogicalKeyboardKey.numpad1) {
+    } else if (key == LogicalKeyboardKey.digit1 ||
+        key == LogicalKeyboardKey.numpad1) {
       _onNumberPressed('1');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit2 || key == LogicalKeyboardKey.numpad2) {
+    } else if (key == LogicalKeyboardKey.digit2 ||
+        key == LogicalKeyboardKey.numpad2) {
       _onNumberPressed('2');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit3 || key == LogicalKeyboardKey.numpad3) {
+    } else if (key == LogicalKeyboardKey.digit3 ||
+        key == LogicalKeyboardKey.numpad3) {
       _onNumberPressed('3');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit4 || key == LogicalKeyboardKey.numpad4) {
+    } else if (key == LogicalKeyboardKey.digit4 ||
+        key == LogicalKeyboardKey.numpad4) {
       _onNumberPressed('4');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit5 || key == LogicalKeyboardKey.numpad5) {
+    } else if (key == LogicalKeyboardKey.digit5 ||
+        key == LogicalKeyboardKey.numpad5) {
       _onNumberPressed('5');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit6 || key == LogicalKeyboardKey.numpad6) {
+    } else if (key == LogicalKeyboardKey.digit6 ||
+        key == LogicalKeyboardKey.numpad6) {
       _onNumberPressed('6');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit7 || key == LogicalKeyboardKey.numpad7) {
+    } else if (key == LogicalKeyboardKey.digit7 ||
+        key == LogicalKeyboardKey.numpad7) {
       _onNumberPressed('7');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit8 || key == LogicalKeyboardKey.numpad8) {
+    } else if (key == LogicalKeyboardKey.digit8 ||
+        key == LogicalKeyboardKey.numpad8) {
       _onNumberPressed('8');
       return KeyEventResult.handled;
-    } else if (key == LogicalKeyboardKey.digit9 || key == LogicalKeyboardKey.numpad9) {
+    } else if (key == LogicalKeyboardKey.digit9 ||
+        key == LogicalKeyboardKey.numpad9) {
       _onNumberPressed('9');
       return KeyEventResult.handled;
     }
     // Handle backspace
-    else if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
+    else if (key == LogicalKeyboardKey.backspace ||
+        key == LogicalKeyboardKey.delete) {
       _onBackspace();
       return KeyEventResult.handled;
     }
     // Handle Enter key (submit PIN)
-    else if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+    else if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter) {
       final currentPin = _isConfirming ? _confirmPin : _pin;
       if (currentPin.length == 6) {
         if (widget.isSetup && !_isConfirming) {
@@ -199,7 +210,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   @override
   Widget build(BuildContext context) {
     final currentPin = _isConfirming ? _confirmPin : _pin;
-    
+
     return Focus(
       focusNode: _focusNode,
       onKeyEvent: _handleKeyEvent,
@@ -213,9 +224,11 @@ class _PinLockScreenState extends State<PinLockScreen> {
               padding: const EdgeInsets.all(24.0),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - 
-                             MediaQuery.of(context).padding.top - 
-                             MediaQuery.of(context).padding.bottom - 48,
+                  minHeight:
+                      MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom -
+                      48,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -244,13 +257,10 @@ class _PinLockScreenState extends State<PinLockScreen> {
                     Text(
                       widget.isSetup
                           ? (_isConfirming
-                              ? 'Re-enter your 6-digit PIN'
-                              : 'Create a 6-digit PIN')
+                                ? 'Re-enter your 6-digit PIN'
+                                : 'Create a 6-digit PIN')
                           : 'Enter your 6-digit PIN to unlock',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 32),
                     _buildPinDots(currentPin),
@@ -287,10 +297,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isFilled ? AppTheme.primaryPurple : Colors.transparent,
-            border: Border.all(
-              color: AppTheme.primaryPurple,
-              width: 2,
-            ),
+            border: Border.all(color: AppTheme.primaryPurple, width: 2),
           ),
         );
       }),
@@ -318,11 +325,11 @@ class _PinLockScreenState extends State<PinLockScreen> {
         if (number.isEmpty) {
           return const SizedBox(width: 80, height: 80);
         }
-        
+
         if (number == 'back') {
           return _buildBackspaceButton();
         }
-        
+
         return _buildNumberButton(number);
       }).toList(),
     );

@@ -34,7 +34,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     final hasConfig = await EmailConfigService.hasEmailConfig();
     if (!hasConfig) {
       if (mounted) {
-        ToastUtils.show(context, 'Please configure email settings first', isError: true);
+        ToastUtils.show(
+          context,
+          'Please configure email settings first',
+          isError: true,
+        );
       }
       return;
     }
@@ -53,7 +57,10 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 color: AppTheme.primaryPurple.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.email_rounded, color: AppTheme.primaryPurple),
+              child: const Icon(
+                Icons.email_rounded,
+                color: AppTheme.primaryPurple,
+              ),
             ),
             const SizedBox(width: 12),
             const Text('Send Credentials'),
@@ -79,7 +86,10 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 ),
                 focusedBorder: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(12)),
-                  borderSide: BorderSide(color: AppTheme.primaryPurple, width: 2),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryPurple,
+                    width: 2,
+                  ),
                 ),
               ),
               keyboardType: TextInputType.emailAddress,
@@ -102,7 +112,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryPurple,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Next'),
           ),
@@ -135,11 +147,16 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
               decoration: BoxDecoration(
                 color: AppTheme.primaryPurple.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.email_outlined, color: AppTheme.primaryPurple),
+                  const Icon(
+                    Icons.email_outlined,
+                    color: AppTheme.primaryPurple,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -168,7 +185,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.successGreen,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ],
@@ -218,7 +237,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     Clipboard.setData(ClipboardData(text: content));
 
     ScaffoldMessenger.of(context).clearSnackBars();
-    ToastUtils.show(context, 'All credentials copied to clipboard!', isError: false);
+    ToastUtils.show(
+      context,
+      'All credentials copied to clipboard!',
+      isError: false,
+    );
   }
 
   void _copyToClipboard(String text, String label) {
@@ -266,38 +289,41 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                       fontFamily: isPassword ? 'monospace' : null,
                       fontSize: 15,
                       letterSpacing: (isPassword && !isVisible) ? 1 : 0,
-                      fontWeight: isPassword ? FontWeight.w500 : FontWeight.w400,
+                      fontWeight: isPassword
+                          ? FontWeight.w500
+                          : FontWeight.w400,
                       color: Colors.grey[900],
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-              Container(
-                width: 1,
-                height: 24,
-                color: Colors.grey.shade300,
-              ),
+              Container(width: 1, height: 24, color: Colors.grey.shade300),
               if (isPassword && onToggleVisibility != null)
                 IconButton(
                   icon: Icon(
-                    isVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    isVisible
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                     size: 18,
                     color: Colors.grey[600],
                   ),
                   tooltip: isVisible ? 'Hide' : 'Show',
                   onPressed: onToggleVisibility,
                   splashRadius: 20,
-                  constraints: const BoxConstraints(minWidth: 40, minHeight: 48),
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 48,
+                  ),
                 ),
               if (isPassword)
-                 Container(
-                  width: 1,
-                  height: 24,
-                  color: Colors.grey.shade300,
-                ),
+                Container(width: 1, height: 24, color: Colors.grey.shade300),
               IconButton(
-                icon: Icon(Icons.copy_rounded, size: 18, color: Colors.grey[600]),
+                icon: Icon(
+                  Icons.copy_rounded,
+                  size: 18,
+                  color: Colors.grey[600],
+                ),
                 tooltip: 'Copy $label',
                 onPressed: onCopy,
                 splashRadius: 20,
@@ -420,7 +446,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 ],
               ),
             ),
-            
+
             const Divider(height: 1),
 
             // Credentials list
@@ -456,7 +482,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                         value: password,
                         isPassword: true,
                         isVisible: isVisible,
-                        onToggleVisibility: () => _togglePasswordVisibility(index),
+                        onToggleVisibility: () =>
+                            _togglePasswordVisibility(index),
                         onCopy: () => _copyToClipboard(password, 'Password'),
                       ),
                     ],
@@ -499,18 +526,24 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                                     await _sendViaEmail(cred);
                                   }
                                 },
-                           icon: _sending
+                          icon: _sending
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.email_outlined, size: 18),
-                          label: Text(_sending ? 'Sending...' : 'Email Credentials'),
-                           style: OutlinedButton.styleFrom(
+                          label: Text(
+                            _sending ? 'Sending...' : 'Email Credentials',
+                          ),
+                          style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             foregroundColor: AppTheme.primaryPurple,
-                            side: const BorderSide(color: AppTheme.primaryPurple),
+                            side: const BorderSide(
+                              color: AppTheme.primaryPurple,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),

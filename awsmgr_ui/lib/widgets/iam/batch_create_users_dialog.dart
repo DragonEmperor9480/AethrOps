@@ -51,7 +51,7 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -64,7 +64,7 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark 
+                color: isDark
                     ? Colors.green.withValues(alpha: 0.15)
                     : Colors.green.shade50,
                 borderRadius: const BorderRadius.only(
@@ -136,14 +136,12 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark 
+                color: isDark
                     ? theme.cardColor.withValues(alpha: 0.5)
                     : Colors.grey.shade50,
                 border: Border(
                   top: BorderSide(
-                    color: isDark 
-                        ? theme.dividerColor
-                        : Colors.grey.shade200,
+                    color: isDark ? theme.dividerColor : Colors.grey.shade200,
                   ),
                 ),
               ),
@@ -289,7 +287,7 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -406,8 +404,7 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
               CheckboxListTile(
                 value: widget.entry.requireReset,
                 onChanged: (value) {
-                  setState(() =>
-                      widget.entry.requireReset = value ?? false);
+                  setState(() => widget.entry.requireReset = value ?? false);
                   widget.onChanged();
                 },
                 title: const Text(
@@ -428,26 +425,24 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
   Widget _buildChip(String label, bool met) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: met 
-            ? (isDark 
-                ? Colors.green.withValues(alpha: 0.2)
-                : Colors.green.shade50)
+        color: met
+            ? (isDark
+                  ? Colors.green.withValues(alpha: 0.2)
+                  : Colors.green.shade50)
             : (isDark
-                ? theme.cardColor.withValues(alpha: 0.3)
-                : Colors.grey.shade100),
+                  ? theme.cardColor.withValues(alpha: 0.3)
+                  : Colors.grey.shade100),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: met 
+          color: met
               ? (isDark
-                  ? Colors.green.withValues(alpha: 0.5)
-                  : Colors.green.shade300)
-              : (isDark
-                  ? theme.dividerColor
-                  : Colors.grey.shade300),
+                    ? Colors.green.withValues(alpha: 0.5)
+                    : Colors.green.shade300)
+              : (isDark ? theme.dividerColor : Colors.grey.shade300),
         ),
       ),
       child: Row(
@@ -456,7 +451,7 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
           Icon(
             met ? Icons.check : Icons.close,
             size: 12,
-            color: met 
+            color: met
                 ? (isDark ? Colors.green.shade300 : Colors.green)
                 : (isDark ? Colors.grey.shade400 : Colors.grey),
           ),
@@ -465,7 +460,7 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: met 
+              color: met
                   ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
                   : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
             ),

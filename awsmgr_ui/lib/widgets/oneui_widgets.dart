@@ -33,7 +33,7 @@ class OneUIPillTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -55,26 +55,22 @@ class OneUIPillTextField extends StatelessWidget {
         ),
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 20, right: 12),
-          child: Icon(
-            icon,
-            color: AppTheme.primaryPurple,
-            size: 20,
-          ),
+          child: Icon(icon, color: AppTheme.primaryPurple, size: 20),
         ),
-        suffixIcon: suffixIcon != null 
+        suffixIcon: suffixIcon != null
             ? Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: suffixIcon,
               )
             : null,
         filled: true,
-        fillColor: isDark 
+        fillColor: isDark
             ? Colors.white.withValues(alpha: 0.05)
             : Colors.black.withValues(alpha: 0.03),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.15),
             width: 1,
@@ -83,7 +79,7 @@ class OneUIPillTextField extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.15),
             width: 1,
@@ -91,35 +87,29 @@ class OneUIPillTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(
-            color: AppTheme.primaryPurple,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: AppTheme.primaryPurple, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(
-            color: AppTheme.errorRed,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppTheme.errorRed, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(
-            color: AppTheme.errorRed,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: AppTheme.errorRed, width: 2),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.08),
             width: 1,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
+        ),
         labelStyle: TextStyle(
           color: isDark ? Colors.white60 : const Color(0xFF999999),
           fontSize: 13,
@@ -160,9 +150,9 @@ class OneUIPillDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: onChanged,
       style: TextStyle(
@@ -179,20 +169,16 @@ class OneUIPillDropdown<T> extends StatelessWidget {
         ),
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 20, right: 12),
-          child: Icon(
-            icon,
-            color: AppTheme.primaryPurple,
-            size: 20,
-          ),
+          child: Icon(icon, color: AppTheme.primaryPurple, size: 20),
         ),
         filled: true,
-        fillColor: isDark 
+        fillColor: isDark
             ? Colors.white.withValues(alpha: 0.05)
             : Colors.black.withValues(alpha: 0.03),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.15),
             width: 1,
@@ -201,7 +187,7 @@ class OneUIPillDropdown<T> extends StatelessWidget {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.15),
             width: 1,
@@ -209,26 +195,20 @@ class OneUIPillDropdown<T> extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(
-            color: AppTheme.primaryPurple,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: AppTheme.primaryPurple, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(
-            color: AppTheme.errorRed,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppTheme.errorRed, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: BorderSide(
-            color: AppTheme.errorRed,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: AppTheme.errorRed, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
+        ),
         labelStyle: TextStyle(
           color: isDark ? Colors.white60 : const Color(0xFF999999),
           fontSize: 13,
@@ -240,7 +220,7 @@ class OneUIPillDropdown<T> extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-      dropdownColor: isDark 
+      dropdownColor: isDark
           ? Colors.black.withValues(alpha: 0.9)
           : Colors.white.withValues(alpha: 0.95),
       validator: validator,
@@ -253,16 +233,12 @@ class OneUIPillContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
 
-  const OneUIPillContainer({
-    super.key,
-    required this.child,
-    this.padding,
-  });
+  const OneUIPillContainer({super.key, required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       padding: padding ?? const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -270,7 +246,7 @@ class OneUIPillContainer extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: isDark 
+            color: isDark
                 ? Colors.black.withValues(alpha: 0.4)
                 : Colors.black.withValues(alpha: 0.08),
             blurRadius: 24,
@@ -306,20 +282,20 @@ class OneUIPillButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isTransparent = backgroundColor == Colors.transparent;
-    
+
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isTransparent 
+          backgroundColor: isTransparent
               ? Colors.transparent
               : (backgroundColor ?? AppTheme.primaryPurple),
           foregroundColor: foregroundColor ?? Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
-            side: isTransparent 
+            side: isTransparent
                 ? BorderSide(
                     color: foregroundColor ?? AppTheme.primaryPurple,
                     width: 2,
@@ -327,11 +303,13 @@ class OneUIPillButton extends StatelessWidget {
                 : BorderSide.none,
           ),
           elevation: isLoading || isTransparent ? 0 : 8,
-          shadowColor: isTransparent 
+          shadowColor: isTransparent
               ? Colors.transparent
-              : (backgroundColor ?? AppTheme.primaryPurple).withValues(alpha: 0.4),
-          disabledBackgroundColor: isDark 
-              ? const Color(0xFF2A2A2A) 
+              : (backgroundColor ?? AppTheme.primaryPurple).withValues(
+                  alpha: 0.4,
+                ),
+          disabledBackgroundColor: isDark
+              ? const Color(0xFF2A2A2A)
               : const Color(0xFFE0E0E0),
         ),
         child: isLoading
@@ -346,22 +324,12 @@ class OneUIPillButton extends StatelessWidget {
                 ),
               )
             : icon != null
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(icon, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        text,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
                     text,
                     style: const TextStyle(
                       fontSize: 16,
@@ -369,6 +337,16 @@ class OneUIPillButton extends StatelessWidget {
                       letterSpacing: 0.3,
                     ),
                   ),
+                ],
+              )
+            : Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
       ),
     );
   }

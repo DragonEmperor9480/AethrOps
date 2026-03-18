@@ -27,7 +27,7 @@ class _EC2ScreenState extends State<EC2Screen> {
   String _filterState = 'all';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  
+
   // Multi-region settings
   bool _showDashboard = false;
   bool _showAllRegions = false;
@@ -55,15 +55,15 @@ class _EC2ScreenState extends State<EC2Screen> {
     if (mounted) {
       setState(() => _loading = true);
     }
-    
+
     final prefs = await SharedPreferences.getInstance();
     final awsConfig = Provider.of<AwsConfigProvider>(context, listen: false);
-    
+
     // Initialize AWS config provider if not already done
     if (awsConfig.currentRegion == null) {
       await awsConfig.initialize();
     }
-    
+
     if (mounted) {
       setState(() {
         _showDashboard = prefs.getBool('ec2_show_dashboard') ?? false;
@@ -72,15 +72,15 @@ class _EC2ScreenState extends State<EC2Screen> {
         _availableRegions = awsConfig.availableRegions;
       });
     }
-    
+
     // Load both dashboard and instances in parallel
     final futures = <Future>[];
-    
+
     if (_showDashboard) {
       futures.add(_loadDashboard());
     }
     futures.add(_loadInstances());
-    
+
     // Wait for all to complete
     await Future.wait(futures);
   }
@@ -124,13 +124,11 @@ class _EC2ScreenState extends State<EC2Screen> {
       final instances = _showAllRegions
           ? await ApiService.listEC2InstancesAllRegions()
           : await ApiService.listEC2Instances(region: _selectedRegion);
-      
+
       // Store instances (can be empty list)
-      _instances = instances
-          .map((json) => EC2Instance.fromJson(json))
-          .toList();
+      _instances = instances.map((json) => EC2Instance.fromJson(json)).toList();
       _filterInstances();
-      
+
       // Only hide loading if dashboard is not enabled or not loading
       if (!_showDashboard || !_dashboardLoading) {
         if (mounted) {
@@ -219,8 +217,7 @@ class _EC2ScreenState extends State<EC2Screen> {
               ),
             ),
             // Dashboard Widget
-            if (_showDashboard)
-              _buildDashboardWidget(),
+            if (_showDashboard) _buildDashboardWidget(),
             // Instances List
             Expanded(
               child: _loading
@@ -376,7 +373,10 @@ class _EC2ScreenState extends State<EC2Screen> {
               if (_showAllRegions && instance.region != null) ...[
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryPurple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -479,12 +479,12 @@ class _EC2ScreenState extends State<EC2Screen> {
         child: _buildDashboardSkeleton(),
       );
     }
-    
+
     // Only show dashboard content if we have data
     if (_dashboardData == null) {
       return const SizedBox.shrink(); // Don't show anything if no data
     }
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -531,7 +531,7 @@ class _EC2ScreenState extends State<EC2Screen> {
           ],
         ),
         const SizedBox(height: 10),
-        
+
         // 2x2 Grid skeleton
         Row(
           children: [
@@ -586,39 +586,47 @@ class _EC2ScreenState extends State<EC2Screen> {
 
   Widget _buildDashboardContent() {
     final totalInstances = _dashboardData?['total_instances'] ?? 0;
-    final instancesByState = _dashboardData?['instances_by_state'] as Map<String, dynamic>? ?? {};
+    final instancesByState =
+        _dashboardData?['instances_by_state'] as Map<String, dynamic>? ?? {};
     final currentRegion = _dashboardData?['current_region'] ?? 'N/A';
-    final instancesByRegion = _dashboardData?['instances_by_region'] as Map<String, dynamic>? ?? {};
-    
+    final instancesByRegion =
+        _dashboardData?['instances_by_region'] as Map<String, dynamic>? ?? {};
+
     // Total widget is always independent (shows global count)
     final totalCount = totalInstances;
-    
+
     // Dashboard counts depend on "All Regions" setting
     String displayRegion;
     int regionCount;
     int runningCount;
     int stoppedCount;
-    
+
     if (_showAllRegions) {
       // Show all regions data
       displayRegion = 'All Regions';
       regionCount = totalInstances;
-      runningCount = (instancesByState['running'] ?? 0) + (instancesByState['pending'] ?? 0);
+      runningCount =
+          (instancesByState['running'] ?? 0) +
+          (instancesByState['pending'] ?? 0);
       stoppedCount = instancesByState['stopped'] ?? 0;
     } else {
       // Show selected region data
       displayRegion = _selectedRegion ?? currentRegion;
-      
+
       // Use the loaded instances (which are already filtered by region)
       regionCount = _instances.length;
-      runningCount = _instances.where((i) => 
-        i.state.toLowerCase() == 'running' || i.state.toLowerCase() == 'pending'
-      ).length;
-      stoppedCount = _instances.where((i) => 
-        i.state.toLowerCase() == 'stopped'
-      ).length;
+      runningCount = _instances
+          .where(
+            (i) =>
+                i.state.toLowerCase() == 'running' ||
+                i.state.toLowerCase() == 'pending',
+          )
+          .length;
+      stoppedCount = _instances
+          .where((i) => i.state.toLowerCase() == 'stopped')
+          .length;
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -635,7 +643,7 @@ class _EC2ScreenState extends State<EC2Screen> {
           ],
         ),
         const SizedBox(height: 10),
-        
+
         // 2x2 Grid of clickable metrics
         Row(
           children: [
@@ -694,7 +702,7 @@ class _EC2ScreenState extends State<EC2Screen> {
     Color color,
   ) {
     final isSelected = _filterState == 'all';
-    
+
     return InkWell(
       onTap: () {
         // Just filter to show all instances
@@ -764,7 +772,7 @@ class _EC2ScreenState extends State<EC2Screen> {
     String filterState,
   ) {
     final isSelected = _filterState == filterState;
-    
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -862,9 +870,11 @@ class _EC2ScreenState extends State<EC2Screen> {
               const Divider(),
               SwitchListTile(
                 title: const Text('All Regions'),
-                subtitle: Text(_showAllRegions
-                    ? 'Showing instances from all regions'
-                    : 'Showing instances from ${_selectedRegion ?? _dashboardData?['current_region'] ?? "loading..."}'),
+                subtitle: Text(
+                  _showAllRegions
+                      ? 'Showing instances from all regions'
+                      : 'Showing instances from ${_selectedRegion ?? _dashboardData?['current_region'] ?? "loading..."}',
+                ),
                 value: _showAllRegions,
                 onChanged: (value) {
                   setModalState(() => _showAllRegions = value);
@@ -881,9 +891,16 @@ class _EC2ScreenState extends State<EC2Screen> {
               if (!_showAllRegions && _availableRegions.isNotEmpty) ...[
                 const Divider(),
                 ListTile(
-                  leading: Icon(Icons.location_on, color: AppTheme.primaryPurple),
+                  leading: Icon(
+                    Icons.location_on,
+                    color: AppTheme.primaryPurple,
+                  ),
                   title: const Text('Select Region'),
-                  subtitle: Text(_selectedRegion ?? _dashboardData?['current_region'] ?? 'Loading...'),
+                  subtitle: Text(
+                    _selectedRegion ??
+                        _dashboardData?['current_region'] ??
+                        'Loading...',
+                  ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     Navigator.pop(context);
@@ -938,7 +955,9 @@ class _EC2ScreenState extends State<EC2Screen> {
                     title: Text(
                       region,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         color: isSelected ? AppTheme.primaryPurple : null,
                       ),
                     ),
@@ -948,19 +967,22 @@ class _EC2ScreenState extends State<EC2Screen> {
                     onTap: () async {
                       // Close modal first
                       Navigator.pop(context);
-                      
+
                       // Update global provider
-                      final awsConfig = Provider.of<AwsConfigProvider>(context, listen: false);
+                      final awsConfig = Provider.of<AwsConfigProvider>(
+                        context,
+                        listen: false,
+                      );
                       await awsConfig.setRegion(region);
-                      
+
                       // Then update local state
                       setState(() {
                         _selectedRegion = region;
                       });
-                      
+
                       await _saveSettings();
                       _loadInstances();
-                      
+
                       // Refresh dashboard if enabled
                       if (_showDashboard) {
                         _loadDashboard();

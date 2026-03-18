@@ -29,7 +29,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   String _status = 'Initializing...';
   bool _hasError = false;
-  
+
   final List<String> _funMessages = [
     'Waking up the cloud hamsters...',
     'Convincing AWS to let you in...',
@@ -146,13 +146,15 @@ class _SplashScreenState extends State<SplashScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF5F5F5),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Spacer(),
-            
+
             // App Name
             Text(
               'AethrOps',
@@ -164,19 +166,22 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: -0.5,
               ),
             ),
-            
+
             const SizedBox(height: 60),
-            
+
             // Lottie Animation
             ColorFiltered(
-              colorFilter: isDark 
+              colorFilter: isDark
                   ? const ColorFilter.matrix([
-                      -1, 0, 0, 0, 255,  // Invert red
-                      0, -1, 0, 0, 255,  // Invert green
-                      0, 0, -1, 0, 255,  // Invert blue
-                      0, 0, 0, 1, 0,     // Keep alpha
+                      -1, 0, 0, 0, 255, // Invert red
+                      0, -1, 0, 0, 255, // Invert green
+                      0, 0, -1, 0, 255, // Invert blue
+                      0, 0, 0, 1, 0, // Keep alpha
                     ])
-                  : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                  : const ColorFilter.mode(
+                      Colors.transparent,
+                      BlendMode.multiply,
+                    ),
               child: SizedBox(
                 height: 250,
                 child: Lottie.asset(
@@ -186,9 +191,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 60),
-            
+
             // Status message with fun text
             if (!_hasError)
               Container(
@@ -254,9 +259,9 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ],
               ),
-            
+
             const Spacer(),
-            
+
             // Footer tagline
             if (!_hasError)
               Padding(

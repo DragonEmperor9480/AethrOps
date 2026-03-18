@@ -73,7 +73,7 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
-    
+
     return Dialog(
       backgroundColor: theme.scaffoldBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -150,18 +150,24 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                           hintText: 'My Phone, YubiKey, etc.',
                           prefixIcon: Icon(
                             Icons.phone_android,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -189,18 +195,24 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                           hintText: 'arn:aws:iam::123456789012:mfa/user',
                           prefixIcon: Icon(
                             Icons.vpn_key,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -250,7 +262,9 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                                 'MFA device is required for S3 bucket operations like enabling MFA Delete. You can find your device ARN in the AWS IAM console.',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.8,
+                                  ),
                                 ),
                               ),
                             ),
@@ -286,7 +300,9 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        foregroundColor: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                       child: const Text('Cancel'),
                     ),

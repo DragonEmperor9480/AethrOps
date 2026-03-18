@@ -21,7 +21,7 @@ class AWSCredentialsService {
     await _storage.write(key: _keyAccessKey, value: accessKey);
     await _storage.write(key: _keySecretKey, value: secretKey);
     await _storage.write(key: _keyRegion, value: region);
-    
+
     // Also save to backend (creates credential files)
     try {
       final response = await http.post(
@@ -33,9 +33,11 @@ class AWSCredentialsService {
           'region': region,
         }),
       );
-      
+
       if (response.statusCode != 200) {
-        debugPrint('Warning: Failed to save credentials to backend: ${response.body}');
+        debugPrint(
+          'Warning: Failed to save credentials to backend: ${response.body}',
+        );
       }
     } catch (e) {
       debugPrint('Warning: Failed to call backend config endpoint: $e');
@@ -58,7 +60,7 @@ class AWSCredentialsService {
       } catch (clearError) {
         // Ignore clear errors
       }
-      
+
       return {'accessKey': null, 'secretKey': null, 'region': null};
     }
   }
@@ -77,7 +79,7 @@ class AWSCredentialsService {
       } catch (clearError) {
         // Ignore clear errors
       }
-      
+
       return false;
     }
   }

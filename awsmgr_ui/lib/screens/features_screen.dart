@@ -7,48 +7,56 @@ class FeaturesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final features = [
       {
         'icon': Icons.cloud,
         'title': 'EC2 Management',
-        'desc': 'Launch, monitor, and manage EC2 instances with ease. Control your compute resources from anywhere.',
+        'desc':
+            'Launch, monitor, and manage EC2 instances with ease. Control your compute resources from anywhere.',
         'color': AppTheme.ec2Color,
       },
       {
         'icon': Icons.storage,
         'title': 'S3 Browser',
-        'desc': 'Browse, upload, download, and manage S3 buckets and objects. Full file management capabilities.',
+        'desc':
+            'Browse, upload, download, and manage S3 buckets and objects. Full file management capabilities.',
         'color': AppTheme.s3Color,
       },
       {
         'icon': Icons.vpn_key,
         'title': 'IAM Control',
-        'desc': 'Manage users, roles, groups, and policies. Complete identity and access management.',
+        'desc':
+            'Manage users, roles, groups, and policies. Complete identity and access management.',
         'color': AppTheme.iamColor,
       },
       {
         'icon': Icons.monitor_heart,
         'title': 'CloudWatch Logs',
-        'desc': 'Real-time log streaming and monitoring. View and search through your application logs.',
+        'desc':
+            'Real-time log streaming and monitoring. View and search through your application logs.',
         'color': AppTheme.cloudwatchColor,
       },
       {
         'icon': Icons.email,
         'title': 'Email Alerts',
-        'desc': 'Configure SMTP-based email notifications for important events and alerts.',
+        'desc':
+            'Configure SMTP-based email notifications for important events and alerts.',
         'color': AppTheme.primaryPurple,
       },
       {
         'icon': Icons.security,
         'title': 'Biometric Security',
-        'desc': 'Protect your app with PIN codes and fingerprint authentication for enhanced security.',
+        'desc':
+            'Protect your app with PIN codes and fingerprint authentication for enhanced security.',
         'color': AppTheme.successGreen,
       },
     ];
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Features'),
         backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
@@ -99,21 +107,21 @@ class FeaturesScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Features List
           ...features.map((feature) {
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark 
+                color: isDark
                     ? Colors.white.withValues(alpha: 0.05)
                     : Colors.black.withValues(alpha: 0.03),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: isDark 
+                  color: isDark
                       ? Colors.white.withValues(alpha: 0.15)
                       : Colors.black.withValues(alpha: 0.15),
                   width: 1,
@@ -125,7 +133,9 @@ class FeaturesScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: (feature['color'] as Color).withValues(alpha: 0.15),
+                      color: (feature['color'] as Color).withValues(
+                        alpha: 0.15,
+                      ),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import '../services/api_service.dart';
 import '../services/ec2_service.dart';
@@ -27,11 +26,11 @@ class AwsConfigProvider extends ChangeNotifier {
         Ec2Service.listRegions(),
         ApiService.getAWSConfig(),
       ]);
-      
+
       _availableRegions = results[0] as List<String>;
       final config = results[1] as Map<String, dynamic>;
       final region = config['region'] as String?;
-      
+
       if (region != null) {
         _currentRegion = region;
         // Save to local storage
@@ -54,7 +53,7 @@ class AwsConfigProvider extends ChangeNotifier {
   /// Update current region
   Future<void> setRegion(String region) async {
     if (_currentRegion == region) return;
-    
+
     _currentRegion = region;
     notifyListeners();
 

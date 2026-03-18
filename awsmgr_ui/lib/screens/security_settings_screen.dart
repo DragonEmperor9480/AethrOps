@@ -27,14 +27,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Future<void> _loadSettings() async {
     setState(() => _loading = true);
-    
+
     final securityEnabled = await SecurityService.isSecurityEnabled();
     final biometricEnabled = await SecurityService.isBiometricEnabled();
     final canUseBiometric = await SecurityService.canUseBiometric();
-    
+
     final biometrics = await SecurityService.getAvailableBiometrics();
     final biometricNames = biometrics.map((b) => b.name).toList();
-    
+
     setState(() {
       _securityEnabled = securityEnabled;
       _biometricEnabled = biometricEnabled;
@@ -53,7 +53,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           builder: (context) => const PinLockScreen(isSetup: true),
         ),
       );
-      
+
       if (result == true) {
         setState(() => _securityEnabled = true);
       }
@@ -86,7 +86,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   Future<void> _changePin() async {
     final verified = await _verifyCurrentPin();
     if (!verified) return;
-    
+
     if (mounted) {
       final result = await Navigator.push<bool>(
         context,
@@ -94,7 +94,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           builder: (context) => const PinLockScreen(isSetup: true),
         ),
       );
-      
+
       if (result == true && mounted) {
         ToastUtils.show(context, 'PIN changed successfully', isError: false);
       }
@@ -150,10 +150,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Security Settings'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Security Settings'), elevation: 0),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -164,7 +161,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 if (_securityEnabled) ...[
                   _buildPinCard(),
                   const SizedBox(height: 16),
-                  if (_canUseBiometric && (Platform.isAndroid || Platform.isIOS))
+                  if (_canUseBiometric &&
+                      (Platform.isAndroid || Platform.isIOS))
                     _buildBiometricCard(),
                 ],
               ],
@@ -210,10 +208,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       SizedBox(height: 4),
                       Text(
                         'Protect your app with PIN',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -221,7 +216,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 Switch(
                   value: _securityEnabled,
                   onChanged: _toggleSecurity,
-                  activeColor: AppTheme.primaryPurple,
+                  activeThumbColor: AppTheme.primaryPurple,
                 ),
               ],
             ),
@@ -302,10 +297,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Use $biometricType to unlock',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
@@ -313,7 +305,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             Switch(
               value: _biometricEnabled,
               onChanged: _toggleBiometric,
-              activeColor: AppTheme.successGreen,
+              activeThumbColor: AppTheme.successGreen,
             ),
           ],
         ),

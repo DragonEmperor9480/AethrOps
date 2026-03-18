@@ -198,7 +198,9 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isDark
-                                      ? AppTheme.purple600.withValues(alpha: 0.3)
+                                      ? AppTheme.purple600.withValues(
+                                          alpha: 0.3,
+                                        )
                                       : AppTheme.purple200,
                                   width: 2,
                                 ),
@@ -222,28 +224,31 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
                                       child: Image.asset(
                                         step['image']!,
                                         fit: BoxFit.contain,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Center(
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.broken_image_rounded,
-                                                  size: 64,
-                                                  color: AppTheme.textMuted,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                              return Center(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .broken_image_rounded,
+                                                      size: 64,
+                                                      color: AppTheme.textMuted,
+                                                    ),
+                                                    const SizedBox(height: 16),
+                                                    Text(
+                                                      'Image not found',
+                                                      style: TextStyle(
+                                                        color:
+                                                            AppTheme.textMuted,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                const SizedBox(height: 16),
-                                                Text(
-                                                  'Image not found',
-                                                  style: TextStyle(
-                                                    color: AppTheme.textMuted,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
+                                              );
+                                            },
                                       ),
                                     ),
                                   ),
@@ -257,7 +262,9 @@ class _CredentialsTutorialDialogState extends State<CredentialsTutorialDialog> {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.6),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.6,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -422,10 +429,7 @@ class _FullscreenImageViewer extends StatelessWidget {
   final String imagePath;
   final String title;
 
-  const _FullscreenImageViewer({
-    required this.imagePath,
-    required this.title,
-  });
+  const _FullscreenImageViewer({required this.imagePath, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -443,12 +447,7 @@ class _FullscreenImageViewer extends StatelessWidget {
       body: InteractiveViewer(
         minScale: 0.5,
         maxScale: 5.0,
-        child: Center(
-          child: Image.asset(
-            imagePath,
-            fit: BoxFit.contain,
-          ),
-        ),
+        child: Center(child: Image.asset(imagePath, fit: BoxFit.contain)),
       ),
     );
   }

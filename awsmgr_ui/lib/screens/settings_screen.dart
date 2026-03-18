@@ -93,11 +93,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _updateCredentials() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const CredentialsSetupScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
     );
-    
+
     if (result == true || mounted) {
       _loadCredentialStatus();
     }
@@ -133,21 +131,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _hasCredentials = false;
           _region = null;
         });
-        
+
         if (mounted) {
           ToastUtils.show(context, 'Credentials deleted', isError: false);
-          
+
           // Navigate to credentials setup screen
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (_) => const CredentialsSetupScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
             (route) => false,
           );
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.show(context, 'Failed to delete credentials: $e', isError: true);
+          ToastUtils.show(
+            context,
+            'Failed to delete credentials: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -158,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => const EmailConfigDialog(),
     );
-    
+
     if (result == true) {
       _loadEmailConfigStatus();
       if (mounted) {
@@ -197,13 +197,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _hasEmailConfig = false;
           _senderEmail = null;
         });
-        
+
         if (mounted) {
-          ToastUtils.show(context, 'Email configuration deleted', isError: false);
+          ToastUtils.show(
+            context,
+            'Email configuration deleted',
+            isError: false,
+          );
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.show(context, 'Failed to delete email configuration: $e', isError: true);
+          ToastUtils.show(
+            context,
+            'Failed to delete email configuration: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -214,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => const MFADeviceDialog(),
     );
-    
+
     if (result == true) {
       _loadMFADeviceStatus();
       if (mounted) {
@@ -253,13 +261,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _hasMFADevice = false;
           _mfaDeviceName = null;
         });
-        
+
         if (mounted) {
           ToastUtils.show(context, 'MFA device deleted', isError: false);
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.show(context, 'Failed to delete MFA device: $e', isError: true);
+          ToastUtils.show(
+            context,
+            'Failed to delete MFA device: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -269,9 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -281,37 +291,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('Appearance'),
                 const SizedBox(height: 16),
                 _buildDarkModeCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // AWS Credentials Section
                 _buildSectionHeader('AWS Credentials'),
                 const SizedBox(height: 16),
                 _buildCredentialsCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Email Configuration Section
                 _buildSectionHeader('Email Configuration'),
                 const SizedBox(height: 16),
                 _buildEmailConfigCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // MFA Device Section
                 _buildSectionHeader('MFA Device'),
                 const SizedBox(height: 16),
                 _buildMFADeviceCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Security Section
                 _buildSectionHeader('Security'),
                 const SizedBox(height: 16),
                 _buildSecurityNavigationCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // About Section
                 _buildSectionHeader('About'),
                 const SizedBox(height: 16),
@@ -322,17 +332,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge,
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 
   Widget _buildDarkModeCard() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         final isDark = themeProvider.themeMode == ThemeMode.dark;
-        
+
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -371,7 +378,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isDark ? 'Dark theme is enabled' : 'Light theme is enabled',
+                      isDark
+                          ? 'Dark theme is enabled'
+                          : 'Light theme is enabled',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -430,7 +439,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _hasCredentials ? 'Credentials Configured' : 'No Credentials',
+                      _hasCredentials
+                          ? 'Credentials Configured'
+                          : 'No Credentials',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
@@ -525,7 +536,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  _hasEmailConfig ? Icons.mark_email_read : Icons.email_outlined,
+                  _hasEmailConfig
+                      ? Icons.mark_email_read
+                      : Icons.email_outlined,
                   color: _hasEmailConfig
                       ? AppTheme.successGreen
                       : AppTheme.warningAmber,
@@ -682,7 +695,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: const Text('Delete'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(color: AppTheme.errorRed.withValues(alpha: 0.5)),
+                      side: BorderSide(
+                        color: AppTheme.errorRed.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                 ),
@@ -700,9 +715,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const SecuritySettingsScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
         );
       },
       borderRadius: BorderRadius.circular(12),
@@ -794,9 +807,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const AboutScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const AboutScreen()),
         );
       },
       borderRadius: BorderRadius.circular(12),

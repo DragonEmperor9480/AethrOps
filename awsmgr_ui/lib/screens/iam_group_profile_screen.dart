@@ -32,7 +32,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
       final groupname = widget.group['groupname'];
       final deps = await ApiService.checkGroupDependencies(groupname);
       final policies = await ApiService.listGroupPolicies(groupname);
-      
+
       setState(() {
         _dependencies = deps;
         _policies = policies;
@@ -54,13 +54,13 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
 
   Future<void> _showAttachPoliciesDialog() async {
     final groupname = widget.group['groupname'];
-    
+
     // Get currently attached policy ARNs
     final currentPolicyArns = _policies
         .map((p) => p['policy_arn']?.toString() ?? '')
         .where((arn) => arn.isNotEmpty)
         .toList();
-    
+
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AttachGroupPoliciesDialog(
@@ -75,11 +75,15 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
 
       // Show loading overlay
       setState(() => _loading = true);
-      
+
       try {
         // Determine which policies to attach and detach
-        final toAttach = selectedArns.where((arn) => !currentArns.contains(arn)).toList();
-        final toDetach = currentArns.where((arn) => !selectedArns.contains(arn)).toList();
+        final toAttach = selectedArns
+            .where((arn) => !currentArns.contains(arn))
+            .toList();
+        final toDetach = currentArns
+            .where((arn) => !selectedArns.contains(arn))
+            .toList();
 
         int attachedCount = 0;
         int detachedCount = 0;
@@ -106,11 +110,17 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
 
         // Show success message
         if (attachedCount > 0 && detachedCount > 0) {
-          _showSuccess('Attached $attachedCount, detached $detachedCount ${attachedCount + detachedCount == 1 ? 'policy' : 'policies'}');
+          _showSuccess(
+            'Attached $attachedCount, detached $detachedCount ${attachedCount + detachedCount == 1 ? 'policy' : 'policies'}',
+          );
         } else if (attachedCount > 0) {
-          _showSuccess('Attached $attachedCount ${attachedCount == 1 ? 'policy' : 'policies'}');
+          _showSuccess(
+            'Attached $attachedCount ${attachedCount == 1 ? 'policy' : 'policies'}',
+          );
         } else if (detachedCount > 0) {
-          _showSuccess('Detached $detachedCount ${detachedCount == 1 ? 'policy' : 'policies'}');
+          _showSuccess(
+            'Detached $detachedCount ${detachedCount == 1 ? 'policy' : 'policies'}',
+          );
         } else {
           _showSuccess('No changes needed');
         }
@@ -126,7 +136,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
 
   Future<void> _showAddUsersDialog() async {
     final groupname = widget.group['groupname'];
-    
+
     final result = await showDialog<List<String>>(
       context: context,
       builder: (context) => AddUsersToGroupDialog(
@@ -137,7 +147,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
 
     if (result != null && result.isNotEmpty) {
       setState(() => _loading = true);
-      
+
       try {
         int addedCount = 0;
         for (final username in result) {
@@ -150,7 +160,9 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
         }
 
         if (addedCount > 0) {
-          _showSuccess('Added $addedCount ${addedCount == 1 ? 'user' : 'users'} to group');
+          _showSuccess(
+            'Added $addedCount ${addedCount == 1 ? 'user' : 'users'} to group',
+          );
         }
 
         await _loadGroupDetails();
@@ -170,10 +182,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
     final users = (_dependencies?['users'] as List?)?.cast<String>() ?? [];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(groupname),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(groupname), elevation: 0),
       body: _loading
           ? const LoadingAnimation(message: 'Loading group details...')
           : SingleChildScrollView(
@@ -244,11 +253,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                         _buildSectionTitle('Group Information'),
                         const SizedBox(height: 12),
                         _buildInfoCard([
-                          _buildInfoRow(
-                            Icons.fingerprint,
-                            'Group ID',
-                            groupId,
-                          ),
+                          _buildInfoRow(Icons.fingerprint, 'Group ID', groupId),
                           _buildInfoRow(
                             Icons.calendar_today,
                             'Created',
@@ -269,7 +274,8 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                           count: users.length,
                           icon: Icons.people,
                           isExpanded: _usersExpanded,
-                          onToggle: () => setState(() => _usersExpanded = !_usersExpanded),
+                          onToggle: () =>
+                              setState(() => _usersExpanded = !_usersExpanded),
                           emptyIcon: Icons.person_outlined,
                           emptyMessage: 'No users in this group',
                           isEmpty: users.isEmpty,
@@ -292,7 +298,9 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                           count: _policies.length,
                           icon: Icons.policy,
                           isExpanded: _policiesExpanded,
-                          onToggle: () => setState(() => _policiesExpanded = !_policiesExpanded),
+                          onToggle: () => setState(
+                            () => _policiesExpanded = !_policiesExpanded,
+                          ),
                           emptyIcon: Icons.policy_outlined,
                           emptyMessage: 'No policies attached',
                           isEmpty: _policies.isEmpty,
@@ -302,9 +310,15 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                           onAction: _showAttachPoliciesDialog,
                           child: Column(
                             children: _policies.map<Widget>((policy) {
-                              final policyName = policy['policy_name']?.toString() ?? '';
-                              final policyArn = policy['policy_arn']?.toString() ?? '';
-                              return _buildListItem(Icons.policy, policyName, subtitle: policyArn);
+                              final policyName =
+                                  policy['policy_name']?.toString() ?? '';
+                              final policyArn =
+                                  policy['policy_arn']?.toString() ?? '';
+                              return _buildListItem(
+                                Icons.policy,
+                                policyName,
+                                subtitle: policyArn,
+                              );
                             }).toList(),
                           ),
                         ),
@@ -322,29 +336,27 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
     );
   }
 
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -395,7 +407,11 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                   : Colors.green.shade50,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, size: 20, color: isDark ? AppTheme.successGreen : Colors.green.shade700),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isDark ? AppTheme.successGreen : Colors.green.shade700,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -413,10 +429,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -433,15 +446,19 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
     final theme = Theme.of(context);
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Center(
           child: Column(
             children: [
-              Icon(icon, size: 48, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+              Icon(
+                icon,
+                size: 48,
+                color: theme.textTheme.bodyMedium?.color?.withValues(
+                  alpha: 0.5,
+                ),
+              ),
               const SizedBox(height: 12),
               Text(
                 message,
@@ -494,11 +511,7 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
                           : AppTheme.successGreen.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      icon,
-                      size: 20,
-                      color: AppTheme.successGreen,
-                    ),
+                    child: Icon(icon, size: 20, color: AppTheme.successGreen),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -609,7 +622,6 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
   }
 }
 
-
 // Attach Group Policies Dialog
 class AttachGroupPoliciesDialog extends StatefulWidget {
   final String groupname;
@@ -622,7 +634,8 @@ class AttachGroupPoliciesDialog extends StatefulWidget {
   });
 
   @override
-  State<AttachGroupPoliciesDialog> createState() => _AttachGroupPoliciesDialogState();
+  State<AttachGroupPoliciesDialog> createState() =>
+      _AttachGroupPoliciesDialogState();
 }
 
 class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
@@ -663,7 +676,9 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
   void _filterPolicies() {
     setState(() {
       _filteredPolicies = _policies.where((policy) {
-        final policyName = (policy['policy_name'] ?? '').toString().toLowerCase();
+        final policyName = (policy['policy_name'] ?? '')
+            .toString()
+            .toLowerCase();
         final policyArn = (policy['policy_arn'] ?? '').toString().toLowerCase();
         final query = _searchQuery.toLowerCase();
         return policyName.contains(query) || policyArn.contains(query);
@@ -734,7 +749,8 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                           'Select policies to attach to ${widget.groupname}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -770,7 +786,10 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Scope: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Scope: ',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(width: 8),
                       SegmentedButton<String>(
                         segments: const [
@@ -803,113 +822,139 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredPolicies.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.policy_outlined, size: 64, color: Colors.grey[300]),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchQuery.isEmpty ? 'No policies found' : 'No matching policies',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.policy_outlined,
+                            size: 64,
+                            color: Colors.grey[300],
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _filteredPolicies.length,
-                          itemBuilder: (context, index) {
-                            final policy = _filteredPolicies[index];
-                            final policyArn = policy['policy_arn']?.toString() ?? '';
-                            final policyName = policy['policy_name']?.toString() ?? '';
-                            final isAWSManaged = policy['is_aws_managed'] == true;
-                            final isSelected = _selectedPolicyArns.contains(policyArn);
-                            final isAlreadyAttached = _currentPolicyArns.contains(policyArn);
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'No policies found'
+                                : 'No matching policies',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredPolicies.length,
+                      itemBuilder: (context, index) {
+                        final policy = _filteredPolicies[index];
+                        final policyArn =
+                            policy['policy_arn']?.toString() ?? '';
+                        final policyName =
+                            policy['policy_name']?.toString() ?? '';
+                        final isAWSManaged = policy['is_aws_managed'] == true;
+                        final isSelected = _selectedPolicyArns.contains(
+                          policyArn,
+                        );
+                        final isAlreadyAttached = _currentPolicyArns.contains(
+                          policyArn,
+                        );
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              color: isSelected ? AppTheme.successGreen.withValues(alpha: 0.1) : null,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: isSelected
-                                    ? BorderSide(color: AppTheme.successGreen, width: 2)
-                                    : BorderSide.none,
-                              ),
-                              child: CheckboxListTile(
-                                value: isSelected,
-                                onChanged: (value) {
-                                  setState(() {
-                                    if (value == true) {
-                                      _selectedPolicyArns.add(policyArn);
-                                    } else {
-                                      _selectedPolicyArns.remove(policyArn);
-                                    }
-                                  });
-                                },
-                                title: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        policyName,
-                                        style: const TextStyle(fontWeight: FontWeight.w500),
-                                        overflow: TextOverflow.ellipsis,
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: isSelected
+                              ? AppTheme.successGreen.withValues(alpha: 0.1)
+                              : null,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: isSelected
+                                ? BorderSide(
+                                    color: AppTheme.successGreen,
+                                    width: 2,
+                                  )
+                                : BorderSide.none,
+                          ),
+                          child: CheckboxListTile(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedPolicyArns.add(policyArn);
+                                } else {
+                                  _selectedPolicyArns.remove(policyArn);
+                                }
+                              });
+                            },
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    policyName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                if (isAlreadyAttached)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.successGreen.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'Attached',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: AppTheme.successGreen,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    if (isAlreadyAttached)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.successGreen.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'Attached',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            color: AppTheme.successGreen,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                  ),
+                                if (isAWSManaged) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.warningAmber.withValues(
+                                        alpha: 0.2,
                                       ),
-                                    if (isAWSManaged) ...[
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.warningAmber.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'AWS',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            color: AppTheme.warningAmber,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'AWS',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: AppTheme.warningAmber,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    ],
-                                  ],
-                                ),
-                                subtitle: Text(
-                                  policyArn,
-                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                dense: true,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            subtitle: Text(
+                              policyArn,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
                               ),
-                            );
-                          },
-                        ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            dense: true,
+                          ),
+                        );
+                      },
+                    ),
             ),
 
             // Footer
@@ -917,7 +962,9 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+                border: Border(
+                  top: BorderSide(color: Theme.of(context).dividerColor),
+                ),
               ),
               child: Row(
                 children: [
@@ -954,7 +1001,6 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
     );
   }
 }
-
 
 // Add Users to Group Dialog
 class AddUsersToGroupDialog extends StatefulWidget {
@@ -1066,7 +1112,8 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
                           'Select users to add to ${widget.groupname}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -1118,71 +1165,89 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredUsers.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.person_outlined, size: 64, color: Colors.grey[300]),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchQuery.isEmpty 
-                                    ? 'All users are already in this group' 
-                                    : 'No matching users',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person_outlined,
+                            size: 64,
+                            color: Colors.grey[300],
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _filteredUsers.length,
-                          itemBuilder: (context, index) {
-                            final user = _filteredUsers[index];
-                            final username = user['username']?.toString() ?? '';
-                            final userId = user['user_id']?.toString() ?? '';
-                            final isSelected = _selectedUsers.contains(username);
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'All users are already in this group'
+                                : 'No matching users',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _filteredUsers.length,
+                      itemBuilder: (context, index) {
+                        final user = _filteredUsers[index];
+                        final username = user['username']?.toString() ?? '';
+                        final userId = user['user_id']?.toString() ?? '';
+                        final isSelected = _selectedUsers.contains(username);
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              color: isSelected ? AppTheme.successGreen.withValues(alpha: 0.1) : null,
-                              shape: RoundedRectangleBorder(
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          color: isSelected
+                              ? AppTheme.successGreen.withValues(alpha: 0.1)
+                              : null,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: isSelected
+                                ? BorderSide(
+                                    color: AppTheme.successGreen,
+                                    width: 2,
+                                  )
+                                : BorderSide.none,
+                          ),
+                          child: CheckboxListTile(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedUsers.add(username);
+                                } else {
+                                  _selectedUsers.remove(username);
+                                }
+                              });
+                            },
+                            title: Text(
+                              username,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              userId,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            secondary: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.iamColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
-                                side: isSelected
-                                    ? BorderSide(color: AppTheme.successGreen, width: 2)
-                                    : BorderSide.none,
                               ),
-                              child: CheckboxListTile(
-                                value: isSelected,
-                                onChanged: (value) {
-                                  setState(() {
-                                    if (value == true) {
-                                      _selectedUsers.add(username);
-                                    } else {
-                                      _selectedUsers.remove(username);
-                                    }
-                                  });
-                                },
-                                title: Text(
-                                  username,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                                subtitle: Text(
-                                  userId,
-                                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                                ),
-                                secondary: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.iamColor.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(Icons.person, size: 20, color: AppTheme.iamColor),
-                                ),
-                                dense: true,
+                              child: Icon(
+                                Icons.person,
+                                size: 20,
+                                color: AppTheme.iamColor,
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                            dense: true,
+                          ),
+                        );
+                      },
+                    ),
             ),
 
             // Footer
@@ -1190,7 +1255,9 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+                border: Border(
+                  top: BorderSide(color: Theme.of(context).dividerColor),
+                ),
               ),
               child: Row(
                 children: [
@@ -1210,7 +1277,9 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
                               Navigator.pop(context, _selectedUsers.toList());
                             },
                       icon: const Icon(Icons.person_add, size: 18),
-                      label: Text('Add ${_selectedUsers.length} ${_selectedUsers.length == 1 ? 'User' : 'Users'}'),
+                      label: Text(
+                        'Add ${_selectedUsers.length} ${_selectedUsers.length == 1 ? 'User' : 'Users'}',
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,

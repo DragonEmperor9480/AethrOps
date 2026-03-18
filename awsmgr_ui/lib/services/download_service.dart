@@ -6,7 +6,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// Service for handling file downloads with proper permissions and MediaStore integration
 class DownloadService {
-  static const _mediaScanner = MethodChannel('com.amrut.aethrops/media_scanner');
+  static const _mediaScanner = MethodChannel(
+    'com.amrut.aethrops/media_scanner',
+  );
 
   /// Request storage permissions on Android
   /// Returns true if permission is granted, false otherwise
@@ -109,18 +111,11 @@ class DownloadService {
         final file = File(filePath);
         await file.writeAsBytes(bytes);
 
-        return {
-          'success': true,
-          'path': filePath,
-          'displayPath': displayPath,
-        };
+        return {'success': true, 'path': filePath, 'displayPath': displayPath};
       }
     } catch (e) {
       debugPrint('Error saving file: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 

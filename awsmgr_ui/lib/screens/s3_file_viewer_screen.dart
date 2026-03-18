@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:typed_data';
 import '../services/s3_service.dart';
-import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 
@@ -48,24 +46,46 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
 
   FileType _detectFileType(String fileName) {
     final ext = fileName.toLowerCase().split('.').last;
-    
+
     // Images
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(ext)) {
       return FileType.image;
     }
-    
+
     // Text files
-    if (['txt', 'md', 'log', 'json', 'xml', 'yaml', 'yml', 'csv', 
-         'html', 'css', 'js', 'ts', 'dart', 'py', 'java', 'go', 
-         'c', 'cpp', 'h', 'sh', 'bat', 'sql', 'env'].contains(ext)) {
+    if ([
+      'txt',
+      'md',
+      'log',
+      'json',
+      'xml',
+      'yaml',
+      'yml',
+      'csv',
+      'html',
+      'css',
+      'js',
+      'ts',
+      'dart',
+      'py',
+      'java',
+      'go',
+      'c',
+      'cpp',
+      'h',
+      'sh',
+      'bat',
+      'sql',
+      'env',
+    ].contains(ext)) {
       return FileType.text;
     }
-    
+
     // PDF
     if (ext == 'pdf') {
       return FileType.pdf;
     }
-    
+
     return FileType.unknown;
   }
 
@@ -80,7 +100,7 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
 
     try {
       _fileType = _detectFileType(widget.fileName);
-      
+
       // Download with progress tracking
       final bytes = await S3Service.downloadWithProgress(
         widget.bucketName,
@@ -89,7 +109,8 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
           if (mounted && total > 0) {
             // Throttle UI updates to every 2% for better performance
             final newProgress = received / total;
-            if ((newProgress - _loadingProgress).abs() > 0.02 || received == total) {
+            if ((newProgress - _loadingProgress).abs() > 0.02 ||
+                received == total) {
               setState(() {
                 _bytesReceived = received;
                 _totalBytes = total;
@@ -105,7 +126,8 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
       // Process data efficiently based on file type
       if (_fileType == FileType.text) {
         // Decode text in a compute isolate for large files
-        if (bytes.length > 100000) { // 100KB threshold
+        if (bytes.length > 100000) {
+          // 100KB threshold
           _textContent = await compute(_decodeText, bytes);
         } else {
           _textContent = String.fromCharCodes(bytes);
@@ -118,7 +140,7 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
       }
 
       if (!mounted) return;
-      
+
       setState(() {
         _loading = false;
       });
@@ -203,18 +225,12 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
             const SizedBox(height: 24),
             const Text(
               'Loading file...',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
               widget.fileName,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -259,7 +275,7 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
 
   Widget _buildImageViewer() {
     if (_fileData == null) return const SizedBox();
-    
+
     return InteractiveViewer(
       minScale: 0.5,
       maxScale: 4.0,
@@ -292,15 +308,12 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
 
   Widget _buildTextViewer() {
     if (_textContent == null) return const SizedBox();
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: SelectableText(
         _textContent!,
-        style: const TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 14,
-        ),
+        style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
       ),
     );
   }
@@ -381,9 +394,4 @@ class _S3FileViewerScreenState extends State<S3FileViewerScreen> {
   }
 }
 
-enum FileType {
-  image,
-  text,
-  pdf,
-  unknown,
-}
+enum FileType { image, text, pdf, unknown }

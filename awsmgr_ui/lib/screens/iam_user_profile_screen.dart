@@ -650,8 +650,11 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: valueColor ??
-                        (isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary),
+                    color:
+                        valueColor ??
+                        (isDark
+                            ? AppTheme.textPrimaryDark
+                            : AppTheme.textPrimary),
                   ),
                 ),
               ],
@@ -668,9 +671,7 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppTheme.cardBackgroundDark
-            : AppTheme.purple50,
+        color: isDark ? AppTheme.cardBackgroundDark : AppTheme.purple50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark
@@ -817,9 +818,11 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Dialog(
-      backgroundColor: isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground,
+      backgroundColor: isDark
+          ? AppTheme.cardBackgroundDark
+          : AppTheme.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
         width: 700,
@@ -832,7 +835,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryPurple.withValues(alpha: isDark ? 0.3 : 0.15),
+                    AppTheme.primaryPurple.withValues(
+                      alpha: isDark ? 0.3 : 0.15,
+                    ),
                     AppTheme.purple600.withValues(alpha: isDark ? 0.2 : 0.1),
                   ],
                 ),
@@ -849,7 +854,10 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                       color: AppTheme.primaryPurple,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.policy_rounded, color: Colors.white),
+                    child: const Icon(
+                      Icons.policy_rounded,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -861,14 +869,18 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            color: isDark
+                                ? AppTheme.textPrimaryDark
+                                : AppTheme.textPrimary,
                           ),
                         ),
                         Text(
                           'Select policies to attach to ${widget.username}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                            color: isDark
+                                ? AppTheme.textMutedDark
+                                : AppTheme.textMuted,
                           ),
                         ),
                       ],
@@ -877,7 +889,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
-                    color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                    color: isDark
+                        ? AppTheme.textSecondaryDark
+                        : AppTheme.textSecondary,
                   ),
                 ],
               ),
@@ -922,7 +936,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                           _loadPolicies();
                         },
                         style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith((states) {
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
                             if (states.contains(WidgetState.selected)) {
                               return AppTheme.primaryPurple;
                             }
@@ -934,7 +950,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                       Text(
                         '${_selectedPolicyArns.length} selected',
                         style: TextStyle(
-                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                          color: isDark
+                              ? AppTheme.textSecondaryDark
+                              : AppTheme.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -956,7 +974,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                           Icon(
                             Icons.policy_outlined,
                             size: 64,
-                            color: isDark 
+                            color: isDark
                                 ? AppTheme.purple600.withValues(alpha: 0.3)
                                 : AppTheme.purple200,
                           ),
@@ -966,7 +984,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                                 ? 'No policies found'
                                 : 'No matching policies',
                             style: TextStyle(
-                              color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                              color: isDark
+                                  ? AppTheme.textMutedDark
+                                  : AppTheme.textMuted,
                             ),
                           ),
                         ],
@@ -992,10 +1012,12 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
                           elevation: 0,
-                          color: isSelected 
-                              ? (isDark 
-                                  ? AppTheme.primaryPurple.withValues(alpha: 0.15)
-                                  : AppTheme.purple50)
+                          color: isSelected
+                              ? (isDark
+                                    ? AppTheme.primaryPurple.withValues(
+                                        alpha: 0.15,
+                                      )
+                                    : AppTheme.purple50)
                               : (isDark ? AppTheme.cardBackgroundDark : null),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -1006,7 +1028,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                                   )
                                 : BorderSide(
                                     color: isDark
-                                        ? AppTheme.purple600.withValues(alpha: 0.2)
+                                        ? AppTheme.purple600.withValues(
+                                            alpha: 0.2,
+                                          )
                                         : Colors.grey.shade200,
                                   ),
                           ),
@@ -1040,18 +1064,24 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.successGreen.withValues(alpha: 0.15),
+                                      color: AppTheme.successGreen.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
-                                        color: AppTheme.successGreen.withValues(alpha: 0.3),
+                                        color: AppTheme.successGreen.withValues(
+                                          alpha: 0.3,
+                                        ),
                                       ),
                                     ),
                                     child: Text(
                                       'Attached',
                                       style: TextStyle(
                                         fontSize: 10,
-                                        color: isDark 
-                                            ? AppTheme.successGreen.withValues(alpha: 0.9)
+                                        color: isDark
+                                            ? AppTheme.successGreen.withValues(
+                                                alpha: 0.9,
+                                              )
                                             : AppTheme.successGreen,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -1065,10 +1095,14 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.warningAmber.withValues(alpha: 0.2),
+                                      color: AppTheme.warningAmber.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
-                                        color: AppTheme.warningAmber.withValues(alpha: 0.4),
+                                        color: AppTheme.warningAmber.withValues(
+                                          alpha: 0.4,
+                                        ),
                                       ),
                                     ),
                                     child: Text(
@@ -1089,7 +1123,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                               policyArn,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isDark ? AppTheme.textMutedDark : AppTheme.textMuted,
+                                color: isDark
+                                    ? AppTheme.textMutedDark
+                                    : AppTheme.textMuted,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1105,7 +1141,7 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark 
+                color: isDark
                     ? AppTheme.backgroundDark
                     : AppTheme.purple50.withValues(alpha: 0.3),
                 border: Border(

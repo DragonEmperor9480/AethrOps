@@ -43,7 +43,7 @@ class S3Item {
 
   IconData get icon {
     if (isFolder) return Icons.folder;
-    
+
     final ext = key.split('.').last.toLowerCase();
     switch (ext) {
       case 'pdf':
@@ -80,7 +80,7 @@ class S3Item {
 
   Color get iconColor {
     if (isFolder) return Colors.amber;
-    
+
     final ext = key.split('.').last.toLowerCase();
     switch (ext) {
       case 'pdf':

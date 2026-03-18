@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../services/api_service.dart';
-import '../services/email_config_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/aws_config_dialog.dart';
 import '../widgets/loading_animation.dart';
