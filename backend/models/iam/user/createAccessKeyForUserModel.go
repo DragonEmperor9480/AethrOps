@@ -3,13 +3,11 @@ package user
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/DragonEmperor9480/AethrOps/utils"
-	iamview "github.com/DragonEmperor9480/AethrOps/views/iam/user"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
@@ -36,21 +34,17 @@ func CreateAccessKeyForUserModel(username string) {
 		return
 	}
 
-	// Convert result to JSON format (to match old view format)
-	accessKeyData := map[string]interface{}{
-		"AccessKey": map[string]interface{}{
-			"UserName":        aws.ToString(result.AccessKey.UserName),
-			"AccessKeyId":     aws.ToString(result.AccessKey.AccessKeyId),
-			"Status":          result.AccessKey.Status,
-			"SecretAccessKey": aws.ToString(result.AccessKey.SecretAccessKey),
-			"CreateDate":      result.AccessKey.CreateDate,
-		},
-	}
-	jsonOutput, _ := json.MarshalIndent(accessKeyData, "", "  ")
+	// Display access key information
+	accessKey := aws.ToString(result.AccessKey.AccessKeyId)
+	secretAccessKey := aws.ToString(result.AccessKey.SecretAccessKey)
 
-	accessKey, secretAccessKey := iamview.ShowAccessKeyView(string(jsonOutput))
+	fmt.Println(utils.Green + utils.Bold + "\nAccess Key Created Successfully!" + utils.Reset)
+	fmt.Println("User:", username)
+	fmt.Println("Access Key ID:", accessKey)
+	fmt.Println("Secret Access Key:", secretAccessKey)
+	fmt.Println(utils.Yellow + "\nWARNING: This is the only time you can view the secret access key!" + utils.Reset)
 
-	fmt.Print("Would you like to save the access key and secret access key? (y/n): ")
+	fmt.Print("\nWould you like to save the access key and secret access key? (y/n): ")
 	reader := bufio.NewReader(os.Stdin)
 	saveChoice, _ := reader.ReadString('\n')
 	saveChoice = strings.ToLower(strings.TrimSpace(saveChoice))
@@ -86,5 +80,4 @@ func CreateAccessKeyForUserModel(username string) {
 	} else {
 		fmt.Println(utils.Yellow + utils.Bold + "skipped saving credentials." + utils.Reset)
 	}
-
 }

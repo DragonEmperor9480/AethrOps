@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/DragonEmperor9480/AethrOps/utils"
-	view "github.com/DragonEmperor9480/AethrOps/views/iam/group"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 
@@ -33,13 +32,4 @@ func ListUsersInGroupModel(groupname string) {
 		fmt.Println(utils.Bold + utils.Yellow + "No users found in group '" + groupname + "'." + utils.Reset)
 		return
 	}
-
-	var users []string
-	for _, user := range result.Users {
-		if user.UserName != nil {
-			users = append(users, *user.UserName)
-		}
-	}
-
-	view.ShowGroupUsersTable(groupname, users)
 }
