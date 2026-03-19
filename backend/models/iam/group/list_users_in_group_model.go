@@ -3,13 +3,21 @@ package group
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 
-func ListUsersInGroupModel(groupname string) {
+// UserInGroup represents a user in a group
+type UserInGroup struct {
+	UserName   string `json:"user_name"`
+	UserID     string `json:"user_id"`
+	CreateDate string `json:"create_date"`
+}
+
+// ListUsersInGroupModel lists all users in a group
+func ListUsersInGroupModel(groupname string) ([]UserInGroup, error) {
 	client := utils.GetIAMClient()
 	ctx := context.TODO()
 
@@ -18,18 +26,18 @@ func ListUsersInGroupModel(groupname string) {
 	}
 
 	result, err := client.GetGroup(ctx, input)
-
 	if err != nil {
-		if strings.Contains(err.Error(), "NoSuchEntity") {
-			fmt.Println(utils.Bold + utils.Red + "Group '" + groupname + "' does not exist!" + utils.Reset)
-		} else {
-			fmt.Println(utils.Bold + utils.Red + "Error: " + err.Error() + utils.Reset)
-		}
-		return
+		return nil, fmt.Errorf("failed to get group: %w", err)
 	}
 
-	if len(result.Users) == 0 {
-		fmt.Println(utils.Bold + utils.Yellow + "No users found in group '" + groupname + "'." + utils.Reset)
-		return
+	users := make([]UserInGroup, 0, len(result.Users))
+	for _, user := range result.Users {
+		users = append(users, UserInGroup{
+			UserName:   aws.ToString(user.UserName),
+			UserID:     aws.ToString(user.UserId),
+			CreateDate: user.CreateDate.String(),
+		})
 	}
+
+	return users, nil
 }

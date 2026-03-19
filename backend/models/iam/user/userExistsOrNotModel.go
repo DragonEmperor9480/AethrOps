@@ -1,21 +1,27 @@
 package user
 
 import (
-	"os/exec"
+	"context"
 	"strings"
 
-	utils "github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 
 func UserExistsOrNotModel(username string) bool {
-	utils.ShowProcessingAnimation("Checking if user exists: " + username)
-	checkCmd := exec.Command("aws", "iam", "get-user", "--user-name", username)
-	output, _ := checkCmd.CombinedOutput()
-	utils.StopAnimation()
-	if strings.Contains(string(output), "NoSuchEntity") {
-		utils.StopAnimation()
+	ctx := context.TODO()
+
+	_, err := utils.IAMClient.GetUser(ctx, &iam.GetUserInput{
+		UserName: aws.String(username),
+	})
+
+	if err != nil {
+		if strings.Contains(err.Error(), "NoSuchEntity") {
+			return false
+		}
+		// Other errors also mean user doesn't exist or can't be accessed
 		return false
 	}
 	return true
-
 }

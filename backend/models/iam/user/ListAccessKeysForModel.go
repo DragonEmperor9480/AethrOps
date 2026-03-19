@@ -8,18 +8,34 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 
-func ListAccessKeysForUserModel(username string) {
-	utils.ShowProcessingAnimation("Listing access keys for user: " + username)
+// AccessKeyInfo represents an access key
+type AccessKeyInfo struct {
+	AccessKeyID string `json:"access_key_id"`
+	Status      string `json:"status"`
+	CreateDate  string `json:"create_date"`
+	UserName    string `json:"user_name"`
+}
 
+// ListAccessKeysForUserModel lists access keys for a user
+func ListAccessKeysForUserModel(username string) ([]AccessKeyInfo, error) {
 	ctx := context.TODO()
-	_, err := utils.IAMClient.ListAccessKeys(ctx, &iam.ListAccessKeysInput{
+	result, err := utils.IAMClient.ListAccessKeys(ctx, &iam.ListAccessKeysInput{
 		UserName: aws.String(username),
 	})
 
-	utils.StopAnimation()
-
 	if err != nil {
-		println("Error listing access keys:", err.Error())
-		return
+		return nil, err
 	}
+
+	keys := make([]AccessKeyInfo, 0, len(result.AccessKeyMetadata))
+	for _, key := range result.AccessKeyMetadata {
+		keys = append(keys, AccessKeyInfo{
+			AccessKeyID: aws.ToString(key.AccessKeyId),
+			Status:      string(key.Status),
+			CreateDate:  key.CreateDate.String(),
+			UserName:    aws.ToString(key.UserName),
+		})
+	}
+
+	return keys, nil
 }

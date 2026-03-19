@@ -18,7 +18,6 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/iam/users/{username}", api.DeleteIAMUser).Methods("DELETE")
 	r.HandleFunc("/api/iam/users/{username}/password", api.SetUserPassword).Methods("POST")
 	r.HandleFunc("/api/iam/users/{username}/password", api.UpdateUserPassword).Methods("PUT")
-	r.HandleFunc("/api/iam/users/{username}/access-keys", api.CreateAccessKey).Methods("POST")
 	r.HandleFunc("/api/iam/users/{username}/access-keys", api.ListAccessKeys).Methods("GET")
 	r.HandleFunc("/api/iam/users/{username}/groups", api.ListUserGroups).Methods("GET")
 	r.HandleFunc("/api/iam/users/{username}/policies", api.AttachUserPolicy).Methods("POST")

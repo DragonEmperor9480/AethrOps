@@ -959,12 +959,6 @@ func ListAWSRegions(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// fetchInstancesFromRegion fetches instances from a specific region
-func fetchInstancesFromRegion(region string) ([]map[string]interface{}, error) {
-	ctx := context.TODO()
-	return fetchInstancesFromRegionWithContext(ctx, region)
-}
-
 // fetchInstancesFromRegionWithContext fetches instances from a specific region with context
 func fetchInstancesFromRegionWithContext(ctx context.Context, region string) ([]map[string]interface{}, error) {
 	client, err := utils.GetEC2ClientForRegion(region)

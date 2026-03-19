@@ -30,7 +30,7 @@ func InitLogDirectory() error {
 	logDir = getLogDirectory()
 
 	// Create log directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, 0750); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
@@ -46,6 +46,11 @@ func getLogDirectory() string {
 
 	// Fallback to /tmp for desktop platforms
 	return "/tmp/awsmgr_logs"
+}
+
+// GetLogDirectory returns the log directory (public accessor for validation)
+func GetLogDirectory() string {
+	return getLogDirectory()
 }
 
 // generateSessionID creates a unique session ID
