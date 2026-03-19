@@ -127,17 +127,13 @@ func CloseLogSession(sessionID string) {
 	defer session.Mutex.Unlock()
 
 	if session.File != nil {
-		session.File.Close()
+		_ = session.File.Close()
 		session.File = nil
 	}
 
 	// Delete the log file from disk
 	if session.FilePath != "" {
-		if err := os.Remove(session.FilePath); err != nil {
-			fmt.Printf("Warning: failed to delete log file %s: %v\n", session.FilePath, err)
-		} else {
-			fmt.Printf("Deleted log file: %s\n", session.FilePath)
-		}
+		_ = os.Remove(session.FilePath)
 	}
 }
 
@@ -168,7 +164,7 @@ func DeleteLogSession(sessionID string) error {
 	defer session.Mutex.Unlock()
 
 	if session.File != nil {
-		session.File.Close()
+		_ = session.File.Close()
 		session.File = nil
 	}
 
@@ -199,7 +195,7 @@ func cleanupOldSessions() {
 		logSessionsMutex.RUnlock()
 
 		for _, sessionID := range toDelete {
-			DeleteLogSession(sessionID)
+			_ = DeleteLogSession(sessionID)
 		}
 	}
 }

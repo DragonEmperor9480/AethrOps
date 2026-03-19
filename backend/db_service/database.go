@@ -1,6 +1,7 @@
 package db_service
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -61,7 +62,9 @@ func InitDB() error {
 	}
 
 	// Create directory if it doesn't exist
-	os.MkdirAll(filepath.Dir(dbPath), 0700)
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0700); err != nil {
+		return fmt.Errorf("failed to create database directory: %w", err)
+	}
 
 	// Open database with silent logger to suppress "record not found" errors
 	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{
@@ -83,7 +86,7 @@ func InitDB() error {
 	}
 
 	// Set file permissions to owner only
-	os.Chmod(dbPath, 0600)
+	_ = os.Chmod(dbPath, 0600)
 
 	return nil
 }

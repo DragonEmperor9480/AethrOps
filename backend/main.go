@@ -57,7 +57,7 @@ func main() {
 	// Health check
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	}).Methods("GET")
 
 	log.Println("Server running on http://127.0.0.1:9480")

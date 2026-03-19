@@ -33,7 +33,11 @@ func DownloadLogs(w http.ResponseWriter, r *http.Request) {
 	// Close the file for writing before reading
 	session.Mutex.Lock()
 	if session.File != nil {
-		session.File.Sync() // Ensure all data is written
+		if err := session.File.Sync(); err != nil {
+			session.Mutex.Unlock()
+			respondError(w, http.StatusInternalServerError, "Failed to sync log file")
+			return
+		}
 	}
 	session.Mutex.Unlock()
 

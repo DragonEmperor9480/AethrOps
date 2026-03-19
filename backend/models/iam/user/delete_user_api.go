@@ -48,34 +48,43 @@ func DeleteIAMUserAPI(username string) error {
 
 	// Remove user from all groups
 	for _, g := range groupsResult.Groups {
-		utils.IAMClient.RemoveUserFromGroup(ctx, &iam.RemoveUserFromGroupInput{
+		if _, err := utils.IAMClient.RemoveUserFromGroup(ctx, &iam.RemoveUserFromGroupInput{
 			UserName:  aws.String(username),
 			GroupName: g.GroupName,
-		})
+		}); err != nil {
+			// Continue cleanup even if one operation fails
+			continue
+		}
 	}
 
 	// Detach all managed policies
 	for _, p := range policiesResult.AttachedPolicies {
-		utils.IAMClient.DetachUserPolicy(ctx, &iam.DetachUserPolicyInput{
+		if _, err := utils.IAMClient.DetachUserPolicy(ctx, &iam.DetachUserPolicyInput{
 			UserName:  aws.String(username),
 			PolicyArn: p.PolicyArn,
-		})
+		}); err != nil {
+			continue
+		}
 	}
 
 	// Delete all inline policies
 	for _, p := range inlineResult.PolicyNames {
-		utils.IAMClient.DeleteUserPolicy(ctx, &iam.DeleteUserPolicyInput{
+		if _, err := utils.IAMClient.DeleteUserPolicy(ctx, &iam.DeleteUserPolicyInput{
 			UserName:   aws.String(username),
 			PolicyName: aws.String(p),
-		})
+		}); err != nil {
+			continue
+		}
 	}
 
 	// Delete access keys
 	for _, k := range keysResult.AccessKeyMetadata {
-		utils.IAMClient.DeleteAccessKey(ctx, &iam.DeleteAccessKeyInput{
+		if _, err := utils.IAMClient.DeleteAccessKey(ctx, &iam.DeleteAccessKeyInput{
 			UserName:    aws.String(username),
 			AccessKeyId: k.AccessKeyId,
-		})
+		}); err != nil {
+			continue
+		}
 	}
 
 	// Delete login profile if exists
@@ -83,7 +92,8 @@ func DeleteIAMUserAPI(username string) error {
 		UserName: aws.String(username),
 	})
 	if err == nil {
-		utils.IAMClient.DeleteLoginProfile(ctx, &iam.DeleteLoginProfileInput{
+		// Ignore error on delete
+		_, _ = utils.IAMClient.DeleteLoginProfile(ctx, &iam.DeleteLoginProfileInput{
 			UserName: aws.String(username),
 		})
 	}

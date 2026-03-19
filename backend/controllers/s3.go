@@ -328,7 +328,10 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Close the file before uploading
-	tempFile.Close()
+	if err := tempFile.Close(); err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to close temp file: "+err.Error())
+		return
+	}
 
 	// Start the response with initial progress
 	w.WriteHeader(http.StatusOK)

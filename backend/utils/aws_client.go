@@ -37,8 +37,12 @@ func InitAWSClients() error {
 	log.Printf("Loading AWS config from: %s", configPath)
 
 	// Force AWS SDK to use our custom paths by setting environment variables
-	os.Setenv("AWS_SHARED_CREDENTIALS_FILE", credPath)
-	os.Setenv("AWS_CONFIG_FILE", configPath)
+	if err := os.Setenv("AWS_SHARED_CREDENTIALS_FILE", credPath); err != nil {
+		return fmt.Errorf("failed to set credentials path: %w", err)
+	}
+	if err := os.Setenv("AWS_CONFIG_FILE", configPath); err != nil {
+		return fmt.Errorf("failed to set config path: %w", err)
+	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {

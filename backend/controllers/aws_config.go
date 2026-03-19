@@ -82,10 +82,10 @@ func DeleteAWSConfig(w http.ResponseWriter, r *http.Request) {
 	configFile := filepath.Join(configDir, "config")
 
 	// Delete credentials file (ignore error if not exists)
-	os.Remove(credentialsFile)
+	_ = os.Remove(credentialsFile)
 
 	// Delete config file (ignore error if not exists)
-	os.Remove(configFile)
+	_ = os.Remove(configFile)
 
 	respondJSON(w, http.StatusOK, map[string]string{"message": "AWS credentials deleted successfully"})
 }

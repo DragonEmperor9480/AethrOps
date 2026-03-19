@@ -97,7 +97,7 @@ func DeleteMultipleIAMUsers(requests []UserDeletionRequest) []UserDeletionResult
 				if err == nil && deps != nil {
 					// Remove from groups
 					for _, g := range deps.Groups {
-						utils.IAMClient.RemoveUserFromGroup(ctx, &iam.RemoveUserFromGroupInput{
+						_, _ = utils.IAMClient.RemoveUserFromGroup(ctx, &iam.RemoveUserFromGroupInput{
 							UserName:  aws.String(request.Username),
 							GroupName: aws.String(g),
 						})
@@ -108,7 +108,7 @@ func DeleteMultipleIAMUsers(requests []UserDeletionRequest) []UserDeletionResult
 						UserName: aws.String(request.Username),
 					})
 					for _, p := range policiesResult.AttachedPolicies {
-						utils.IAMClient.DetachUserPolicy(ctx, &iam.DetachUserPolicyInput{
+						_, _ = utils.IAMClient.DetachUserPolicy(ctx, &iam.DetachUserPolicyInput{
 							UserName:  aws.String(request.Username),
 							PolicyArn: p.PolicyArn,
 						})
@@ -116,7 +116,7 @@ func DeleteMultipleIAMUsers(requests []UserDeletionRequest) []UserDeletionResult
 
 					// Delete inline policies
 					for _, p := range deps.InlinePolicies {
-						utils.IAMClient.DeleteUserPolicy(ctx, &iam.DeleteUserPolicyInput{
+						_, _ = utils.IAMClient.DeleteUserPolicy(ctx, &iam.DeleteUserPolicyInput{
 							UserName:   aws.String(request.Username),
 							PolicyName: aws.String(p),
 						})
@@ -124,7 +124,7 @@ func DeleteMultipleIAMUsers(requests []UserDeletionRequest) []UserDeletionResult
 
 					// Delete access keys
 					for _, k := range deps.AccessKeys {
-						utils.IAMClient.DeleteAccessKey(ctx, &iam.DeleteAccessKeyInput{
+						_, _ = utils.IAMClient.DeleteAccessKey(ctx, &iam.DeleteAccessKeyInput{
 							UserName:    aws.String(request.Username),
 							AccessKeyId: aws.String(k),
 						})
@@ -132,7 +132,7 @@ func DeleteMultipleIAMUsers(requests []UserDeletionRequest) []UserDeletionResult
 
 					// Delete login profile
 					if deps.HasLoginProfile {
-						utils.IAMClient.DeleteLoginProfile(ctx, &iam.DeleteLoginProfileInput{
+						_, _ = utils.IAMClient.DeleteLoginProfile(ctx, &iam.DeleteLoginProfileInput{
 							UserName: aws.String(request.Username),
 						})
 					}
