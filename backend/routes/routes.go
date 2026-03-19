@@ -7,6 +7,9 @@ import (
 
 // RegisterRoutes registers all API routes on the provided mux router
 func RegisterRoutes(r *mux.Router) {
+	// Health check
+	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
+
 	// IAM Users
 	r.HandleFunc("/api/iam/caller-identity", api.GetCallerIdentity).Methods("GET")
 	r.HandleFunc("/api/iam/users", api.ListIAMUsers).Methods("GET")
