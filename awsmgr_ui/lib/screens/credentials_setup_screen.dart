@@ -19,7 +19,7 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
   final _accessKeyController = TextEditingController();
   final _secretKeyController = TextEditingController();
   final _regionController = TextEditingController(text: 'us-east-1');
-  
+
   bool _obscureSecret = true;
   bool _saving = false;
 
@@ -57,7 +57,11 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.show(context, 'Failed to save credentials: $e', isError: true);
+        ToastUtils.show(
+          context,
+          'Failed to save credentials: $e',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -67,9 +71,11 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF5F5F5),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -79,7 +85,7 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Header Section
                 Text(
                   'AethrOps',
@@ -103,9 +109,9 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                     letterSpacing: 0.2,
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Lottie Animation
                 SizedBox(
                   height: 200,
@@ -115,9 +121,9 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                     repeat: true,
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Input Fields
                 // AWS Access Key
                 OneUIPillTextField(
@@ -132,9 +138,9 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // AWS Secret Access Key
                 OneUIPillTextField(
                   controller: _secretKeyController,
@@ -144,10 +150,13 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                   obscureText: _obscureSecret,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureSecret ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      _obscureSecret
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscureSecret = !_obscureSecret),
+                    onPressed: () =>
+                        setState(() => _obscureSecret = !_obscureSecret),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -156,9 +165,9 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // AWS Region
                 OneUIPillTextField(
                   controller: _regionController,
@@ -172,23 +181,23 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Connect Button
                 OneUIPillButton(
                   text: 'Let\'s Get Started',
                   onPressed: _saveCredentials,
                   isLoading: _saving,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Security Info
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark 
+                    color: isDark
                         ? AppTheme.primaryPurple.withValues(alpha: 0.1)
                         : AppTheme.purple50.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(16),
@@ -206,7 +215,9 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                           'Your credentials are stored securely on your device',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.white70 : const Color(0xFF666666),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF666666),
                             height: 1.4,
                           ),
                         ),
@@ -214,9 +225,9 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Help Link
                 TextButton.icon(
                   onPressed: () {

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../services/api_service.dart';
-import '../services/email_config_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/aws_config_dialog.dart';
 import '../widgets/loading_animation.dart';
@@ -69,8 +67,9 @@ class _IAMScreenState extends State<IAMScreen> {
       if (!mounted) return;
       _showError('Failed to load data: $e');
     } finally {
-      if (!mounted) return;
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -467,8 +466,9 @@ class _IAMScreenState extends State<IAMScreen> {
         if (!mounted) return;
         _showError('Failed to delete user: $e');
       } finally {
-        if (!mounted) return;
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -1069,8 +1069,9 @@ class _IAMScreenState extends State<IAMScreen> {
         if (!mounted) return;
         _showError('Failed to create group: $e');
       } finally {
-        if (!mounted) return;
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -1211,8 +1212,9 @@ class _IAMScreenState extends State<IAMScreen> {
         if (!mounted) return;
         _showError('Failed to delete group: $e');
       } finally {
-        if (!mounted) return;
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }

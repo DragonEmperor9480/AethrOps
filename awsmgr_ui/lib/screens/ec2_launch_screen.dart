@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/ec2_launch_request.dart';
 import '../services/ec2_service.dart';
-import '../services/api_service.dart';
 import '../providers/aws_config_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/oneui_widgets.dart';
@@ -71,17 +70,17 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
     try {
       // Get AWS config from provider
       final awsConfig = Provider.of<AwsConfigProvider>(context, listen: false);
-      
+
       // Initialize if not already done (loads regions and current region in parallel)
       if (awsConfig.currentRegion == null) {
         await awsConfig.initialize();
       }
-      
+
       setState(() {
         _regions = awsConfig.availableRegions;
         _selectedRegion = awsConfig.currentRegion;
       });
-      
+
       // Load resources for the default region
       await _loadRegionResources();
     } catch (e) {
@@ -98,7 +97,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
 
   Future<void> _loadRegionResources() async {
     if (_selectedRegion == null) return;
-    
+
     setState(() => _isLoadingData = true);
     try {
       final results = await Future.wait([
@@ -110,11 +109,11 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       ]);
 
       setState(() {
-        _keyPairs = results[0] ?? [];
-        _vpcs = results[1] ?? [];
-        _subnets = results[2] ?? [];
-        _securityGroups = results[3] ?? [];
-        _amis = results[4] ?? [];
+        _keyPairs = results[0];
+        _vpcs = results[1];
+        _subnets = results[2];
+        _securityGroups = results[3];
+        _amis = results[4];
         _isLoadingData = false;
 
         // Reset selections when region changes
@@ -132,13 +131,13 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
           );
           _selectedVpc = defaultVpc['vpc_id'];
         }
-        
+
         // Auto-select first AMI if available
         if (_amis.isNotEmpty && !_useCustomAmi) {
           _selectedAmiId = _amis.first['image_id'];
         }
       });
-      
+
       // Show warnings for empty resources
       if (mounted) {
         if (_amis.isEmpty) {
@@ -168,65 +167,25 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
     }
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoadingData = true);
-    try {
-      final results = await Future.wait([
-        Ec2Service.listKeyPairs(),
-        Ec2Service.listVpcs(),
-        Ec2Service.listSubnets(),
-        Ec2Service.listSecurityGroups(),
-        Ec2Service.listRegions(),
-      ]);
-
-      setState(() {
-        _keyPairs = results[0];
-        _vpcs = results[1];
-        _subnets = results[2];
-        _securityGroups = results[3];
-        _regions = List<String>.from(results[4]);
-        _isLoadingData = false;
-
-        // Auto-select Default VPC, or first available
-        if (_vpcs.isNotEmpty) {
-          final defaultVpc = _vpcs.firstWhere(
-            (vpc) => vpc['is_default'] == true,
-            orElse: () => _vpcs.first,
-          );
-          _selectedVpc = defaultVpc['vpc_id'];
-        }
-      });
-    } catch (e) {
-      setState(() => _isLoadingData = false);
-      if (mounted) {
-        ToastUtils.show(
-          context,
-          'Failed to load AWS resources: $e',
-          isError: true,
-        );
-      }
-    }
-  }
-
   Future<void> _launchInstance() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     // Validate region is selected
     if (_selectedRegion == null) {
       ToastUtils.show(context, 'Please select a region', isError: true);
       return;
     }
-    
+
     // Validate VPC exists
     if (_vpcs.isEmpty) {
       ToastUtils.show(
-        context, 
+        context,
         'No VPCs available in $_selectedRegion. Please create a VPC first.',
         isError: true,
       );
       return;
     }
-    
+
     // Determine which AMI to use
     String amiId;
     if (_useCustomAmi) {
@@ -239,7 +198,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       if (_selectedAmiId == null) {
         if (_amis.isEmpty) {
           ToastUtils.show(
-            context, 
+            context,
             'No AMIs available. Please enter a custom AMI ID.',
             isError: true,
           );
@@ -318,7 +277,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Instance Name
                     OneUIPillTextField(
                       controller: TextEditingController(text: _instanceName),
@@ -328,7 +287,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                       onChanged: (val) => _instanceName = val,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Region and Instance Type
                     Row(
                       children: [
@@ -342,7 +301,10 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                             items: _regions.map((region) {
                               return DropdownMenuItem<String>(
                                 value: region,
-                                child: Text(region, style: const TextStyle(fontSize: 13)),
+                                child: Text(
+                                  region,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               );
                             }).toList(),
                             onChanged: (val) {
@@ -364,10 +326,14 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                             items: _instanceTypes.map((type) {
                               return DropdownMenuItem(
                                 value: type,
-                                child: Text(type, style: const TextStyle(fontSize: 13)),
+                                child: Text(
+                                  type,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               );
                             }).toList(),
-                            onChanged: (val) => setState(() => _instanceType = val!),
+                            onChanged: (val) =>
+                                setState(() => _instanceType = val!),
                           ),
                         ),
                       ],
@@ -382,7 +348,7 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -393,16 +359,20 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                             children: [
                               if (_useCustomAmi)
                                 OneUIPillTextField(
-                                  controller: TextEditingController(text: _customAmiId),
+                                  controller: TextEditingController(
+                                    text: _customAmiId,
+                                  ),
                                   label: 'AMI ID',
                                   hint: 'ami-xxxxx',
                                   icon: Icons.image,
                                   onChanged: (val) => _customAmiId = val,
                                   validator: (val) {
-                                    if (_useCustomAmi && (val == null || val.isEmpty)) {
+                                    if (_useCustomAmi &&
+                                        (val == null || val.isEmpty)) {
                                       return 'Enter AMI ID';
                                     }
-                                    if (_useCustomAmi && !val!.startsWith('ami-')) {
+                                    if (_useCustomAmi &&
+                                        !val!.startsWith('ami-')) {
                                       return 'Must start with "ami-"';
                                     }
                                     return null;
@@ -410,66 +380,90 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                 )
                               else
                                 _amis.isEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.orange),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.warning, color: Colors.orange, size: 20),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              'No AMIs found',
-                                              style: TextStyle(color: Colors.orange, fontSize: 12),
+                                    ? Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.orange,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.warning,
+                                              color: Colors.orange,
+                                              size: 20,
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'No AMIs found',
+                                                style: TextStyle(
+                                                  color: Colors.orange,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : OneUIPillDropdown<String>(
+                                        value: _selectedAmiId,
+                                        label: 'AMI',
+                                        hint: 'Select AMI',
+                                        icon: Icons.image,
+                                        items: _amis.map((ami) {
+                                          return DropdownMenuItem<String>(
+                                            value: ami['image_id'],
+                                            child: Text(
+                                              ami['name'] ?? ami['image_id'],
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          );
+                                        }).toList(),
+                                        onChanged: (val) => setState(
+                                          () => _selectedAmiId = val,
+                                        ),
+                                        validator: (val) {
+                                          if (!_useCustomAmi && val == null) {
+                                            return 'Select AMI';
+                                          }
+                                          return null;
+                                        },
                                       ),
-                                    )
-                                  : OneUIPillDropdown<String>(
-                                      value: _selectedAmiId,
-                                      label: 'AMI',
-                                      hint: 'Select AMI',
-                                      icon: Icons.image,
-                                      items: _amis.map((ami) {
-                                        return DropdownMenuItem<String>(
-                                          value: ami['image_id'],
-                                          child: Text(
-                                            ami['name'] ?? ami['image_id'],
-                                            style: const TextStyle(fontSize: 13),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) => setState(() => _selectedAmiId = val),
-                                      validator: (val) {
-                                        if (!_useCustomAmi && val == null) {
-                                          return 'Select AMI';
-                                        }
-                                        return null;
-                                      },
-                                    ),
                               const SizedBox(height: 8),
                               InkWell(
-                                onTap: () => setState(() => _useCustomAmi = !_useCustomAmi),
+                                onTap: () => setState(
+                                  () => _useCustomAmi = !_useCustomAmi,
+                                ),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        _useCustomAmi ? Icons.check_box : Icons.check_box_outline_blank,
+                                        _useCustomAmi
+                                            ? Icons.check_box
+                                            : Icons.check_box_outline_blank,
                                         size: 18,
                                         color: primaryColor,
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
                                         'Custom AMI',
-                                        style: TextStyle(fontSize: 12, color: primaryColor),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: primaryColor,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -507,14 +501,18 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                     );
                                   }),
                                 ],
-                                onChanged: (val) => setState(() => _selectedKeyPair = val),
+                                onChanged: (val) =>
+                                    setState(() => _selectedKeyPair = val),
                               ),
                               if (_keyPairs.isEmpty)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8),
                                   child: Text(
                                     'No key pairs found',
-                                    style: TextStyle(fontSize: 11, color: Colors.blue),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.blue,
+                                    ),
                                   ),
                                 ),
                             ],
@@ -561,7 +559,9 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                               children: [
                                 Expanded(
                                   child: OneUIPillTextField(
-                                    controller: TextEditingController(text: _storageSize.toString()),
+                                    controller: TextEditingController(
+                                      text: _storageSize.toString(),
+                                    ),
                                     label: 'Size (GiB)',
                                     hint: '8',
                                     icon: Icons.storage,
@@ -591,18 +591,28 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                     label: 'Volume Type',
                                     hint: 'Select type',
                                     icon: Icons.storage,
-                                    items: [
-                                      'gp3',
-                                      'gp2',
-                                      'io1',
-                                      'io2',
-                                      'sc1',
-                                      'st1',
-                                      'standard',
-                                    ].map((type) => DropdownMenuItem(
-                                      value: type,
-                                      child: Text(type, style: const TextStyle(fontSize: 13)),
-                                    )).toList(),
+                                    items:
+                                        [
+                                              'gp3',
+                                              'gp2',
+                                              'io1',
+                                              'io2',
+                                              'sc1',
+                                              'st1',
+                                              'standard',
+                                            ]
+                                            .map(
+                                              (type) => DropdownMenuItem(
+                                                value: type,
+                                                child: Text(
+                                                  type,
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
                                     onChanged: (val) {
                                       if (val != null) {
                                         setState(() => _volumeType = val);
@@ -636,50 +646,51 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                           children: [
                             // VPC
                             _vpcs.isEmpty
-                              ? Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.red),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.error, color: Colors.red),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          'No VPCs found in $_selectedRegion. Please create a VPC first.',
-                                          style: TextStyle(color: Colors.red),
+                                ? Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.red),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.error, color: Colors.red),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'No VPCs found in $_selectedRegion. Please create a VPC first.',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                  )
+                                : OneUIPillDropdown<String>(
+                                    value: _selectedVpc,
+                                    label: 'VPC',
+                                    hint: 'Select VPC',
+                                    icon: Icons.cloud_outlined,
+                                    items: _vpcs.map((vpc) {
+                                      final name = vpc['name'] != ''
+                                          ? ' (${vpc['name']})'
+                                          : '';
+                                      final isDefault =
+                                          vpc['is_default'] == true;
+                                      return DropdownMenuItem<String>(
+                                        value: vpc['vpc_id'],
+                                        child: Text(
+                                          '${vpc['vpc_id']}$name${isDefault ? ' (Default)' : ''}',
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _selectedVpc = val;
+                                        _selectedSubnet = null;
+                                      });
+                                    },
                                   ),
-                                )
-                              : OneUIPillDropdown<String>(
-                              value: _selectedVpc,
-                              label: 'VPC',
-                              hint: 'Select VPC',
-                              icon: Icons.cloud_outlined,
-                              items: _vpcs.map((vpc) {
-                                final name = vpc['name'] != ''
-                                    ? ' (${vpc['name']})'
-                                    : '';
-                                final isDefault = vpc['is_default'] == true;
-                                return DropdownMenuItem<String>(
-                                  value: vpc['vpc_id'],
-                                  child: Text(
-                                    '${vpc['vpc_id']}$name${isDefault ? ' (Default)' : ''}',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                setState(() {
-                                  _selectedVpc = val;
-                                  _selectedSubnet = null;
-                                });
-                              },
-                            ),
                             const SizedBox(height: 16),
 
                             // Subnet
@@ -691,7 +702,10 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                               items: [
                                 const DropdownMenuItem<String?>(
                                   value: null,
-                                  child: Text('No Preference', style: TextStyle(fontSize: 13)),
+                                  child: Text(
+                                    'No Preference',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
                                 ),
                                 ..._subnets
                                     .where((s) => s['vpc_id'] == _selectedVpc)
@@ -708,7 +722,8 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                       );
                                     }),
                               ],
-                              onChanged: (val) => setState(() => _selectedSubnet = val),
+                              onChanged: (val) =>
+                                  setState(() => _selectedSubnet = val),
                             ),
                             const SizedBox(height: 16),
 
@@ -791,14 +806,17 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                 setState(() {});
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 18,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark 
+                                  color: isDark
                                       ? Colors.white.withValues(alpha: 0.05)
                                       : Colors.black.withValues(alpha: 0.03),
                                   borderRadius: BorderRadius.circular(28),
                                   border: Border.all(
-                                    color: isDark 
+                                    color: isDark
                                         ? Colors.white.withValues(alpha: 0.15)
                                         : Colors.black.withValues(alpha: 0.15),
                                     width: 1,
@@ -819,14 +837,18 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                             : '${_selectedSecurityGroups.length} selected',
                                         style: TextStyle(
                                           fontSize: 15,
-                                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF1A1A1A),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
                                     Icon(
                                       Icons.arrow_drop_down,
-                                      color: isDark ? Colors.white60 : const Color(0xFF999999),
+                                      color: isDark
+                                          ? Colors.white60
+                                          : const Color(0xFF999999),
                                     ),
                                   ],
                                 ),

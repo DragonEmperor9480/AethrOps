@@ -379,17 +379,13 @@ func UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.UpdateUserPasswordModel(username, req.Password)
+	err := user.UpdateUserPasswordModel(username, req.Password)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Password updated", "username": username})
-}
-
-// CreateAccessKey creates access key for user
-func CreateAccessKey(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	username := vars["username"]
-
-	user.CreateAccessKeyForUserModel(username)
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Access key created", "username": username})
 }
 
 // ListAccessKeys lists access keys for user
@@ -397,8 +393,16 @@ func ListAccessKeys(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	user.ListAccessKeysForUserModel(username)
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Access keys listed", "username": username})
+	keys, err := user.ListAccessKeysForUserModel(username)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"username":    username,
+		"access_keys": keys,
+	})
 }
 
 // ============ IAM GROUPS ============
@@ -431,7 +435,12 @@ func CreateIAMGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group.CreateIAMGroup(req.GroupName)
+	err := group.CreateIAMGroup(req.GroupName)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Group created", "groupname": req.GroupName})
 }
 
@@ -450,7 +459,11 @@ func DeleteIAMGroup(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		group.DeleteGroupModel(groupname)
+		err := group.DeleteGroupModel(groupname)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Group deleted", "groupname": groupname})
@@ -484,7 +497,12 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group.AddUserToGroupModel(req.Username, groupname)
+	err := group.AddUserToGroupModel(req.Username, groupname)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]string{"message": "User added to group", "username": req.Username, "groupname": groupname})
 }
 
@@ -494,7 +512,12 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 	groupname := vars["groupname"]
 	username := vars["username"]
 
-	group.RemoveUserFromGroupModel(username, groupname)
+	err := group.RemoveUserFromGroupModel(username, groupname)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]string{"message": "User removed from group", "username": username, "groupname": groupname})
 }
 
@@ -503,8 +526,16 @@ func ListUsersInGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	group.ListUsersInGroupModel(groupname)
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Users listed", "groupname": groupname})
+	users, err := group.ListUsersInGroupModel(groupname)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"groupname": groupname,
+		"users":     users,
+	})
 }
 
 // ListUserGroups lists all groups for a user
@@ -757,7 +788,7 @@ func parseTabSeparated(output string, fields []string) []map[string]string {
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func respondError(w http.ResponseWriter, status int, message string) {

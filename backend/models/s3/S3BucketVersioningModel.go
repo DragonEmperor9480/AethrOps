@@ -9,10 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
-// Get current bucket versioning status (Enabled, Suspended, or empty if never set)
+// GetBucketVersioningStatusModel gets current bucket versioning status
 func GetBucketVersioningStatusModel(bucketName string) (string, error) {
-	utils.ShowProcessingAnimation("Checking versioning status for bucket: " + bucketName)
-
 	client := utils.GetS3Client()
 	ctx := context.TODO()
 
@@ -22,15 +20,13 @@ func GetBucketVersioningStatusModel(bucketName string) (string, error) {
 
 	result, err := client.GetBucketVersioning(ctx, input)
 	if err != nil {
-		utils.StopAnimation()
 		return "", err
 	}
-	utils.StopAnimation()
-	fmt.Println()
 
 	return string(result.Status), nil
 }
 
+// SetBucketVersioningModel sets bucket versioning status
 func SetBucketVersioningModel(bucketName, status string) error {
 	client := utils.GetS3Client()
 	ctx := context.TODO()

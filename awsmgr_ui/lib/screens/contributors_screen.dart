@@ -22,7 +22,7 @@ class ContributorsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final contributors = [
       {
         'name': 'Amarjeet Aryan',
@@ -35,7 +35,9 @@ class ContributorsScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Contributors'),
         backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
@@ -86,9 +88,9 @@ class ContributorsScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Contributors List
           ...contributors.map((contributor) {
             return Container(
@@ -99,12 +101,12 @@ class ContributorsScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDark 
+                    color: isDark
                         ? Colors.white.withValues(alpha: 0.05)
                         : Colors.black.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: isDark 
+                      color: isDark
                           ? Colors.white.withValues(alpha: 0.15)
                           : Colors.black.withValues(alpha: 0.15),
                       width: 1,
@@ -117,7 +119,9 @@ class ContributorsScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              (contributor['color'] as Color).withValues(alpha: 0.2),
+                              (contributor['color'] as Color).withValues(
+                                alpha: 0.2,
+                              ),
                               AppTheme.primaryBlue.withValues(alpha: 0.2),
                             ],
                           ),

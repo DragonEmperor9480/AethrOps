@@ -52,8 +52,6 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	// Create log session for this stream
 	session, err := service.CreateLogSession(functionName)
 	if err != nil {
-		// Log the actual error for debugging
-		fmt.Printf("ERROR: Failed to create log session: %v\n", err)
 		respondError(w, http.StatusInternalServerError, "Failed to create log session: "+err.Error())
 		return
 	}
@@ -82,13 +80,21 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	var eventID uint64
 	if lastEventID != "" {
 		// Parse the last event ID client sent — resume numbering from there
-		fmt.Sscanf(lastEventID, "%d", &eventID)
+		if _, err := fmt.Sscanf(lastEventID, "%d", &eventID); err != nil {
+			// If parsing fails, start from 0
+			eventID = 0
+		}
 	}
 
 	// Send initial connection message with session ID
 	eventID++
-	if _, err := fmt.Fprintf(w, "id: %d\ndata: {\"type\":\"connected\",\"function\":\"%s\",\"sessionId\":\"%s\"}\n\n",
-		eventID, functionName, session.SessionID); err != nil {
+	// Use JSON encoding to prevent XSS
+	connData, _ := json.Marshal(map[string]string{
+		"type":      "connected",
+		"function":  functionName,
+		"sessionId": session.SessionID,
+	})
+	if _, err := fmt.Fprintf(w, "id: %d\ndata: %s\n\n", eventID, string(connData)); err != nil {
 		return // Client already disconnected
 	}
 	flusher.Flush()

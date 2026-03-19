@@ -49,9 +49,7 @@ func CheckUserDependencies(username string) (*UserDependencies, error) {
 	inlineResult, _ := utils.IAMClient.ListUserPolicies(ctx, &iam.ListUserPoliciesInput{
 		UserName: aws.String(username),
 	})
-	for _, p := range inlineResult.PolicyNames {
-		deps.InlinePolicies = append(deps.InlinePolicies, p)
-	}
+	deps.InlinePolicies = append(deps.InlinePolicies, inlineResult.PolicyNames...)
 
 	// Get access keys
 	keysResult, _ := utils.IAMClient.ListAccessKeys(ctx, &iam.ListAccessKeysInput{

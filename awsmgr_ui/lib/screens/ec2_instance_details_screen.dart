@@ -83,7 +83,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.startEC2Instance(widget.instanceId, region: widget.region);
+        await ApiService.startEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance start initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -106,7 +109,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.stopEC2Instance(widget.instanceId, region: widget.region);
+        await ApiService.stopEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance stop initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -129,7 +135,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.rebootEC2Instance(widget.instanceId, region: widget.region);
+        await ApiService.rebootEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance reboot initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -154,7 +163,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.terminateEC2Instance(widget.instanceId, region: widget.region);
+        await ApiService.terminateEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance termination initiated');
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
@@ -259,7 +271,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             tooltip: 'Actions',
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             offset: const Offset(0, 50),
             onSelected: (value) {
               switch (value) {

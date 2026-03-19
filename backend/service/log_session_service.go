@@ -30,7 +30,7 @@ func InitLogDirectory() error {
 	logDir = getLogDirectory()
 
 	// Create log directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, 0750); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
@@ -46,6 +46,11 @@ func getLogDirectory() string {
 
 	// Fallback to /tmp for desktop platforms
 	return "/tmp/awsmgr_logs"
+}
+
+// GetLogDirectory returns the log directory (public accessor for validation)
+func GetLogDirectory() string {
+	return getLogDirectory()
 }
 
 // generateSessionID creates a unique session ID
@@ -122,17 +127,13 @@ func CloseLogSession(sessionID string) {
 	defer session.Mutex.Unlock()
 
 	if session.File != nil {
-		session.File.Close()
+		_ = session.File.Close()
 		session.File = nil
 	}
 
 	// Delete the log file from disk
 	if session.FilePath != "" {
-		if err := os.Remove(session.FilePath); err != nil {
-			fmt.Printf("Warning: failed to delete log file %s: %v\n", session.FilePath, err)
-		} else {
-			fmt.Printf("Deleted log file: %s\n", session.FilePath)
-		}
+		_ = os.Remove(session.FilePath)
 	}
 }
 
@@ -163,7 +164,7 @@ func DeleteLogSession(sessionID string) error {
 	defer session.Mutex.Unlock()
 
 	if session.File != nil {
-		session.File.Close()
+		_ = session.File.Close()
 		session.File = nil
 	}
 
@@ -194,7 +195,7 @@ func cleanupOldSessions() {
 		logSessionsMutex.RUnlock()
 
 		for _, sessionID := range toDelete {
-			DeleteLogSession(sessionID)
+			_ = DeleteLogSession(sessionID)
 		}
 	}
 }

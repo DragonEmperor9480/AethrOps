@@ -9,20 +9,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// ListS3BucketsModel lists all S3 buckets
 func ListS3BucketsModel() string {
-	utils.ShowProcessingAnimation("Listing S3 Buckets")
-
 	client := utils.GetS3Client()
 	ctx := context.TODO()
 
 	input := &s3.ListBucketsInput{}
 	result, err := client.ListBuckets(ctx, input)
 	if err != nil {
-		utils.StopAnimation()
-		println("Error listing S3 buckets:", err.Error())
 		return err.Error()
 	}
-	utils.StopAnimation()
 
 	var output strings.Builder
 	for _, bucket := range result.Buckets {

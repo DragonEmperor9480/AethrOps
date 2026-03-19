@@ -22,7 +22,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     with TickerProviderStateMixin {
   final List<LogEntry> _logs = [];
   final ItemScrollController _itemScrollController = ItemScrollController();
-  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
   StreamSubscription<dynamic>? _logSubscription; // Changed to dynamic
   bool _isPaused = false;
   bool _autoScroll = true;
@@ -38,7 +39,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   late AnimationController _shimmerController;
   late AnimationController _glitchController;
   late Animation<double> _pulseAnimation;
-  DateTime _lastLogTime = DateTime.now();
   int _logsPerSecond = 0;
   Timer? _statsTimer;
   final List<int> _recentLogCounts = [];
@@ -47,29 +47,29 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Pulse animation for live indicator
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _pulseAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     // Shimmer animation for loading state
     _shimmerController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     )..repeat();
-    
+
     // Glitch effect for reconnecting state
     _glitchController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     // Stats timer for logs/sec calculation
     _statsTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
@@ -77,12 +77,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           _logsPerSecond = _recentLogCounts.isEmpty
               ? 0
               : _recentLogCounts.reduce((a, b) => a + b) ~/
-                  _recentLogCounts.length;
+                    _recentLogCounts.length;
           _recentLogCounts.clear();
         });
       }
     });
-    
+
     _startStreaming();
     _itemPositionsListener.itemPositions.addListener(_onScroll);
   }
@@ -104,9 +104,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     if (positions.isEmpty || _logs.isEmpty) return;
 
     // Check if the last item is visible (i.e. user is at the bottom)
-    final lastVisible = positions.where(
-      (pos) => pos.index == _logs.length - 1,
-    );
+    final lastVisible = positions.where((pos) => pos.index == _logs.length - 1);
 
     if (lastVisible.isNotEmpty) {
       if (!_autoScroll) {
@@ -142,7 +140,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               debugPrint('Session ID captured: $_sessionId');
               return;
             }
-            
+
             // Handle log entries
             if (event is LogEntry && !_isPaused) {
               setState(() {
@@ -157,10 +155,11 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     _searchMatches[i] -= removeCount;
                   }
                   if (_currentMatchIndex >= _searchMatches.length) {
-                    _currentMatchIndex = _searchMatches.isEmpty ? -1 : _searchMatches.length - 1;
+                    _currentMatchIndex = _searchMatches.isEmpty
+                        ? -1
+                        : _searchMatches.length - 1;
                   }
                 }
-                _lastLogTime = DateTime.now();
                 _recentLogCounts.add(1);
                 if (_recentLogCounts.length > 5) {
                   _recentLogCounts.removeAt(0);
@@ -225,8 +224,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   void _downloadLogs() async {
     if (_sessionId == null) {
       ToastUtils.show(
-        context, 
-        'Session not ready. Please wait for logs to start streaming.', 
+        context,
+        'Session not ready. Please wait for logs to start streaming.',
         isError: true,
       );
       return;
@@ -243,23 +242,25 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
 
     try {
       ToastUtils.show(context, 'Downloading logs...', isError: false);
-      
+
       // Call backend API to download logs
       final logContent = await ApiService.downloadLogs(_sessionId!);
-      
+
       // Get platform-specific Downloads directory
       String downloadsPath;
-      
+
       if (Platform.isAndroid) {
         // Android: Try public Downloads first, fallback to app-specific storage
         try {
           downloadsPath = '/storage/emulated/0/Download';
           final testDir = Directory(downloadsPath);
-          
+
           // Test if we can actually write to this directory
-          if (!await testDir.exists() || !(await _canWriteToDirectory(downloadsPath))) {
+          if (!await testDir.exists() ||
+              !(await _canWriteToDirectory(downloadsPath))) {
             // Fallback to app-specific directory (no permission needed)
-            downloadsPath = '/storage/emulated/0/Android/data/com.amrut.aethrops/files/Downloads';
+            downloadsPath =
+                '/storage/emulated/0/Android/data/com.amrut.aethrops/files/Downloads';
             final appDir = Directory(downloadsPath);
             if (!await appDir.exists()) {
               // Last resort: internal storage
@@ -272,7 +273,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         }
       } else if (Platform.isLinux) {
         // Linux: ~/Downloads
-        final home = Platform.environment['HOME'] ?? Platform.environment['USER'];
+        final home =
+            Platform.environment['HOME'] ?? Platform.environment['USER'];
         downloadsPath = '$home/Downloads';
       } else if (Platform.isWindows) {
         // Windows: C:\Users\{username}\Downloads
@@ -286,36 +288,37 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         // Fallback: current directory
         downloadsPath = Directory.current.path;
       }
-      
+
       // Generate filename
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .split('.')[0];
       final filename = '${widget.functionName}_$timestamp.log';
       final filePath = '$downloadsPath${Platform.pathSeparator}$filename';
-      
+
       // Ensure Downloads directory exists
       final downloadsDir = Directory(downloadsPath);
       if (!await downloadsDir.exists()) {
         await downloadsDir.create(recursive: true);
       }
-      
+
       // Write file to Downloads folder
       final file = File(filePath);
       await file.writeAsString(logContent);
-      
+
       // Show user-friendly message
-      final displayPath = Platform.isAndroid 
-          ? 'Downloads/$filename' 
-          : filePath;
-      
-      ToastUtils.show(
-        context,
-        'Downloaded: $displayPath',
-        isError: false,
-      );
-      
+      final displayPath = Platform.isAndroid ? 'Downloads/$filename' : filePath;
+
+      if (mounted) {
+        ToastUtils.show(context, 'Downloaded: $displayPath', isError: false);
+      }
+
       debugPrint('Saved ${logContent.length} bytes to $filePath');
     } catch (e) {
-      ToastUtils.show(context, 'Download failed: $e', isError: true);
+      if (mounted) {
+        ToastUtils.show(context, 'Download failed: $e', isError: true);
+      }
       debugPrint('Download error: $e');
     }
   }
@@ -324,10 +327,10 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     if (!mounted) return;
 
     _reconnectAttempts++;
-    
+
     // Trigger glitch effect
     _glitchController.forward(from: 0);
-    
+
     // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
     final delay = Duration(
       seconds: (1 << (_reconnectAttempts - 1)).clamp(1, 30),
@@ -495,10 +498,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           IconButton(
             icon: const Icon(Icons.download),
             onPressed: _sessionId != null ? _downloadLogs : null,
-            tooltip: _sessionId != null 
-                ? 'Download ${_logs.length} logs' 
+            tooltip: _sessionId != null
+                ? 'Download ${_logs.length} logs'
                 : 'Waiting for session...',
-            color: _sessionId != null ? Colors.greenAccent : const Color(0xFF8B949E),
+            color: _sessionId != null
+                ? Colors.greenAccent
+                : const Color(0xFF8B949E),
           ),
           IconButton(
             icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
@@ -524,9 +529,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         children: [
           if (_isSearchMode) _buildSearchBar(),
           _buildStatusBar(),
-          Expanded(
-            child: _logs.isEmpty ? _buildEmptyState() : _buildLogList(),
-          ),
+          Expanded(child: _logs.isEmpty ? _buildEmptyState() : _buildLogList()),
         ],
       ),
     );
@@ -539,18 +542,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         color: const Color(0xFF161B22),
         border: Border(
           bottom: BorderSide(
-            color: Colors.blueAccent.withOpacity(0.3),
+            color: Colors.blueAccent.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.search,
-            size: 18,
-            color: Colors.blueAccent.shade400,
-          ),
+          Icon(Icons.search, size: 18, color: Colors.blueAccent.shade400),
           const SizedBox(width: 12),
           Expanded(
             child: KeyboardListener(
@@ -588,9 +587,10 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   fontSize: 13,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search logs... (↑↓ navigate, Enter next, Esc close)',
+                  hintText:
+                      'Search logs... (↑↓ navigate, Enter next, Esc close)',
                   hintStyle: TextStyle(
-                    color: const Color(0xFF8B949E).withOpacity(0.5),
+                    color: const Color(0xFF8B949E).withValues(alpha: 0.5),
                     fontFamily: 'monospace',
                     fontSize: 13,
                   ),
@@ -613,9 +613,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF0D1117),
                 borderRadius: BorderRadius.circular(3),
-                border: Border.all(
-                  color: Colors.yellowAccent.withOpacity(0.3),
-                ),
+                border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.3)),
               ),
               child: Text(
                 '${_currentMatchIndex + 1}/${_searchMatches.length}',
@@ -661,19 +659,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   }
 
   Widget _buildStatusBar() {
-    final timeSinceLastLog = DateTime.now().difference(_lastLogTime);
-    final isActive = timeSinceLastLog.inSeconds < 5 && !_isPaused;
-    
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF161B22),
         border: Border(
           bottom: BorderSide(
             color: _isPaused
-                ? Colors.red.withOpacity(0.3)
+                ? Colors.red.withValues(alpha: 0.3)
                 : _isReconnecting
-                    ? Colors.orange.withOpacity(0.3)
-                    : Colors.greenAccent.withOpacity(0.3),
+                ? Colors.orange.withValues(alpha: 0.3)
+                : Colors.greenAccent.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -718,12 +713,13 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             color: const Color(0xFF0D1117),
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: (_isPaused
-                      ? Colors.red
-                      : _isReconnecting
+              color:
+                  (_isPaused
+                          ? Colors.red
+                          : _isReconnecting
                           ? Colors.orange
                           : Colors.greenAccent)
-                  .withOpacity(0.5),
+                      .withValues(alpha: 0.5),
             ),
           ),
           child: Row(
@@ -733,12 +729,13 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: (_isPaused
-                          ? Colors.red
-                          : _isReconnecting
+                  color:
+                      (_isPaused
+                              ? Colors.red
+                              : _isReconnecting
                               ? Colors.orange
                               : Colors.greenAccent.shade400)
-                      .withOpacity(_isPaused ? 1.0 : _pulseAnimation.value),
+                          .withValues(alpha: _isPaused ? 1.0 : _pulseAnimation.value),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -747,14 +744,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 _isPaused
                     ? 'PAUSED'
                     : _isReconnecting
-                        ? 'RECONNECTING'
-                        : 'LIVE',
+                    ? 'RECONNECTING'
+                    : 'LIVE',
                 style: TextStyle(
                   color: _isPaused
                       ? Colors.red
                       : _isReconnecting
-                          ? Colors.orange
-                          : Colors.greenAccent.shade400,
+                      ? Colors.orange
+                      : Colors.greenAccent.shade400,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                   fontFamily: 'monospace',
@@ -777,9 +774,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           decoration: BoxDecoration(
             color: const Color(0xFF0D1117),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: Colors.blueAccent.withOpacity(0.3),
-            ),
+            border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -811,13 +806,15 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   final delay = index * 0.3;
                   final value = (_shimmerController.value + delay) % 1.0;
                   final opacity = (math.sin(value * math.pi * 2) + 1) / 2;
-                  
+
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 1),
                     width: 3,
                     height: 3,
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.shade400.withOpacity(0.3 + opacity * 0.7),
+                      color: Colors.blueAccent.shade400.withValues(
+                        alpha: 0.3 + opacity * 0.7,
+                      ),
                       shape: BoxShape.circle,
                     ),
                   );
@@ -841,8 +838,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             color: const Color(0xFF0D1117),
             borderRadius: BorderRadius.circular(3),
             border: Border.all(
-              color: _autoScroll 
-                  ? Colors.blueAccent.withOpacity(0.3)
+              color: _autoScroll
+                  ? Colors.blueAccent.withValues(alpha: 0.3)
                   : const Color(0xFF30363D),
             ),
           ),
@@ -852,7 +849,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               Icon(
                 _autoScroll ? Icons.vertical_align_bottom : Icons.pan_tool,
                 size: 12,
-                color: _autoScroll ? Colors.blueAccent.shade400 : const Color(0xFF8B949E),
+                color: _autoScroll
+                    ? Colors.blueAccent.shade400
+                    : const Color(0xFF8B949E),
               ),
               const SizedBox(width: 4),
               Text(
@@ -860,7 +859,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 style: TextStyle(
                   fontSize: 10,
                   fontFamily: 'monospace',
-                  color: _autoScroll ? Colors.blueAccent.shade400 : const Color(0xFF8B949E),
+                  color: _autoScroll
+                      ? Colors.blueAccent.shade400
+                      : const Color(0xFF8B949E),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -910,7 +911,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
       decoration: BoxDecoration(
         color: const Color(0xFF0D1117),
         borderRadius: BorderRadius.circular(3),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -922,7 +923,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             style: TextStyle(
               fontSize: 9,
               fontFamily: 'monospace',
-              color: color.withOpacity(0.7),
+              color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -957,9 +958,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 (_shimmerController.value + 0.3).clamp(0.0, 1.0),
               ],
               colors: [
-                Colors.orange.withOpacity(0.0),
+                Colors.orange.withValues(alpha: 0.0),
                 Colors.orange,
-                Colors.orange.withOpacity(0.0),
+                Colors.orange.withValues(alpha: 0.0),
               ],
             ),
           ),
@@ -1010,37 +1011,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     );
   }
 
-  Widget _buildWaitingDots() {
-    return AnimatedBuilder(
-      animation: _shimmerController,
-      builder: (context, child) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            final delay = index * 0.15;
-            final value = (_shimmerController.value + delay) % 1.0;
-            final scale = 0.5 + ((math.sin(value * math.pi * 2) + 1) / 2) * 0.5;
-            final opacity = 0.3 + ((math.sin(value * math.pi * 2) + 1) / 2) * 0.4;
-            
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              child: Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.greenAccent.withOpacity(opacity),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            );
-          }),
-        );
-      },
-    );
-  }
 
   Widget _buildLogList() {
     return Container(
@@ -1085,19 +1055,19 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     ),
                     decoration: BoxDecoration(
                       color: isCurrentMatch
-                          ? Colors.yellow.shade700.withOpacity(0.3)
+                          ? Colors.yellow.shade700.withValues(alpha: 0.3)
                           : isMatch
-                              ? Colors.yellow.shade900.withOpacity(0.2)
-                              : index % 2 == 0
-                                  ? const Color(0xFF161B22).withOpacity(0.5)
-                                  : Colors.transparent,
+                          ? Colors.yellow.shade900.withValues(alpha: 0.2)
+                          : index % 2 == 0
+                          ? const Color(0xFF161B22).withValues(alpha: 0.5)
+                          : Colors.transparent,
                       border: Border(
                         left: BorderSide(
                           color: isNewLog
-                              ? Colors.greenAccent.shade400.withOpacity(value)
+                              ? Colors.greenAccent.shade400.withValues(alpha: value)
                               : isCurrentMatch
-                                  ? Colors.yellow.shade700
-                                  : Colors.transparent,
+                              ? Colors.yellow.shade700
+                              : Colors.transparent,
                           width: isNewLog ? 3 : 2,
                         ),
                       ),
@@ -1113,7 +1083,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                           child: Text(
                             '${index + 1}',
                             style: TextStyle(
-                              color: const Color(0xFF8B949E).withOpacity(0.5),
+                              color: const Color(0xFF8B949E).withValues(alpha: 0.5),
                               fontSize: 11,
                               fontFamily: 'monospace',
                             ),
@@ -1145,20 +1115,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
       child: GestureDetector(
         onTap: () {
           Clipboard.setData(ClipboardData(text: content));
-          ToastUtils.show(
-            context,
-            'Copied to clipboard',
-            isError: false,
-          );
+          ToastUtils.show(context, 'Copied to clipboard', isError: false);
         },
         child: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: const Color(0xFF161B22),
             borderRadius: BorderRadius.circular(3),
-            border: Border.all(
-              color: const Color(0xFF30363D),
-            ),
+            border: Border.all(color: const Color(0xFF30363D)),
           ),
           child: Icon(
             Icons.content_copy,
@@ -1329,18 +1293,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF161B22),
                 borderRadius: BorderRadius.circular(3),
-                border: Border.all(
-                  color: Colors.blueAccent.withOpacity(0.3),
-                ),
+                border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.code,
-                    size: 12,
-                    color: Colors.blueAccent.shade400,
-                  ),
+                  Icon(Icons.code, size: 12, color: Colors.blueAccent.shade400),
                   const SizedBox(width: 4),
                   Text(
                     'Copy JSON',

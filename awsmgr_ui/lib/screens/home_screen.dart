@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final credentials = await AWSCredentialsService.getCredentials();
         _region = credentials['region'] ?? '';
       } catch (_) {}
-      
+
       setState(() {
         _username = 'User';
         _greeting = _getGreeting();

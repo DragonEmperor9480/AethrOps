@@ -38,7 +38,12 @@ func CreateS3Bucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s3.CreateS3BucketModel(req.BucketName)
+	err := s3.CreateS3BucketModel(req.BucketName)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Bucket created", "bucketname": req.BucketName})
 }
 
@@ -275,6 +280,9 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Limit request body size to 500MB to prevent memory exhaustion
+	r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
+
 	// Parse multipart form (max 500MB)
 	err := r.ParseMultipartForm(500 << 20)
 	if err != nil {
@@ -320,11 +328,17 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Close the file before uploading
-	tempFile.Close()
+	if err := tempFile.Close(); err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to close temp file: "+err.Error())
+		return
+	}
 
 	// Start the response with initial progress
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "{\"progress\":0,\"total\":%d}", fileSize)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"progress": 0,
+		"total":    fileSize,
+	})
 	flusher.Flush()
 
 	// Upload to S3 with progress tracking
@@ -333,20 +347,33 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 		// Send progress updates every 10% to avoid flooding while maintaining responsiveness
 		if current-progressSent > total/10 || current == total {
 			progressSent = current
-			fmt.Fprintf(w, "\n{\"progress\":%d,\"total\":%d}", current, total)
+			w.Write([]byte("\n"))
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"progress": current,
+				"total":    total,
+			})
 			flusher.Flush()
 			// No artificial delay - let it upload at full speed
 		}
 	})
 
 	if err != nil {
-		fmt.Fprintf(w, "\n{\"error\":\"Failed to upload to S3: %s\"}", err.Error())
+		w.Write([]byte("\n"))
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": "Failed to upload to S3: " + err.Error(),
+		})
 		flusher.Flush()
 		return
 	}
 
 	// Send completion
-	fmt.Fprintf(w, "\n{\"progress\":%d,\"total\":%d,\"complete\":true,\"message\":\"Upload successful\"}", fileSize, fileSize)
+	w.Write([]byte("\n"))
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"progress": fileSize,
+		"total":    fileSize,
+		"complete": true,
+		"message":  "Upload successful",
+	})
 	flusher.Flush()
 }
 

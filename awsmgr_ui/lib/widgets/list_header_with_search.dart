@@ -41,6 +41,7 @@ class ListHeaderWithSearch extends StatefulWidget {
 class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
     with SingleTickerProviderStateMixin {
   late AnimationController _searchAnimationController;
+  // ignore: unused_field
   late Animation<double> _searchAnimation;
   bool _searchExpanded = false;
 
@@ -108,11 +109,7 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: widget.svgAsset != null
-                    ? SvgPicture.asset(
-                        widget.svgAsset!,
-                        width: 22,
-                        height: 22,
-                      )
+                    ? SvgPicture.asset(widget.svgAsset!, width: 22, height: 22)
                     : Icon(widget.icon!, color: widget.iconColor, size: 22),
               ),
               const SizedBox(width: 14),

@@ -52,6 +52,8 @@ func getConfigDirectory() (string, error) {
 	// Check if we're in a mobile environment
 	dataDir := os.Getenv("AWSMGR_DATA_DIR")
 	if dataDir != "" {
+		// Clean the path to prevent directory traversal
+		dataDir = filepath.Clean(dataDir)
 		configDir := filepath.Join(dataDir, "config")
 		if err := os.MkdirAll(configDir, 0700); err != nil {
 			return "", err

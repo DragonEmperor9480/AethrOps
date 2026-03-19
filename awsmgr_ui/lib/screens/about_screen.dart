@@ -62,7 +62,7 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -78,14 +78,8 @@ class _AboutScreenState extends State<AboutScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: isDark
-                        ? [
-                            const Color(0xFF1A1A1A),
-                            const Color(0xFF121212),
-                          ]
-                        : [
-                            const Color(0xFFF5F5F5),
-                            Colors.white,
-                          ],
+                        ? [const Color(0xFF1A1A1A), const Color(0xFF121212)]
+                        : [const Color(0xFFF5F5F5), Colors.white],
                   ),
                 ),
                 child: SafeArea(
@@ -107,7 +101,9 @@ class _AboutScreenState extends State<AboutScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryPurple.withValues(alpha: 0.4),
+                              color: AppTheme.primaryPurple.withValues(
+                                alpha: 0.4,
+                              ),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -165,9 +161,9 @@ class _AboutScreenState extends State<AboutScreen> {
                 children: [
                   // Version Info Card
                   _buildVersionCard(isDark),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Navigation Cards
                   _buildNavigationCard(
                     'Features',
@@ -198,9 +194,9 @@ class _AboutScreenState extends State<AboutScreen> {
                     },
                     isDark,
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Website & Docs Links
                   _buildLinkCard(
                     'Visit Website',
@@ -217,19 +213,19 @@ class _AboutScreenState extends State<AboutScreen> {
                     'https://aethrops.vercel.app/docs',
                     isDark,
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Tech Stack
                   _buildSectionTitle('Built With', isDark),
                   const SizedBox(height: 16),
                   _buildTechStack(isDark),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Made with Love
                   _buildMadeWithLove(isDark),
-                  
+
                   const SizedBox(height: 20),
                 ],
               ),
@@ -281,7 +277,7 @@ class _AboutScreenState extends State<AboutScreen> {
             Container(
               width: 1,
               height: 16,
-              color: isDark 
+              color: isDark
                   ? Colors.white.withValues(alpha: 0.2)
                   : Colors.black.withValues(alpha: 0.2),
             ),
@@ -306,19 +302,25 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Widget _buildLinkCard(String title, String description, IconData icon, String url, bool isDark) {
+  Widget _buildLinkCard(
+    String title,
+    String description,
+    IconData icon,
+    String url,
+    bool isDark,
+  ) {
     return InkWell(
       onTap: () => _launchURL(url),
       borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: isDark 
+          color: isDark
               ? Colors.white.withValues(alpha: 0.05)
               : Colors.black.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.15),
             width: 1,
@@ -337,11 +339,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: AppTheme.primaryPurple,
-                size: 22,
-              ),
+              child: Icon(icon, color: AppTheme.primaryPurple, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -378,19 +376,25 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Widget _buildNavigationCard(String title, String description, IconData icon, VoidCallback onTap, bool isDark) {
+  Widget _buildNavigationCard(
+    String title,
+    String description,
+    IconData icon,
+    VoidCallback onTap,
+    bool isDark,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: isDark 
+          color: isDark
               ? Colors.white.withValues(alpha: 0.05)
               : Colors.black.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.15),
             width: 1,
@@ -409,11 +413,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: AppTheme.primaryPurple,
-                size: 22,
-              ),
+              child: Icon(icon, color: AppTheme.primaryPurple, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -476,7 +476,7 @@ class _AboutScreenState extends State<AboutScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.05)
                 : Colors.black.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(24),
@@ -502,12 +502,12 @@ class _AboutScreenState extends State<AboutScreen> {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? Colors.white.withValues(alpha: 0.05)
             : Colors.black.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? Colors.white.withValues(alpha: 0.15)
               : Colors.black.withValues(alpha: 0.15),
           width: 1,
@@ -527,11 +527,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
-                Icons.favorite,
-                color: AppTheme.errorRed,
-                size: 24,
-              ),
+              const Icon(Icons.favorite, color: AppTheme.errorRed, size: 24),
               const SizedBox(width: 8),
               Text(
                 'by',

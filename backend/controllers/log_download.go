@@ -22,15 +22,27 @@ func DownloadLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate that the file path is within the expected log directory
+	logDir := service.GetLogDirectory()
+	cleanPath := filepath.Clean(session.FilePath)
+	if !filepath.HasPrefix(cleanPath, logDir) {
+		respondError(w, http.StatusForbidden, "Invalid file path")
+		return
+	}
+
 	// Close the file for writing before reading
 	session.Mutex.Lock()
 	if session.File != nil {
-		session.File.Sync() // Ensure all data is written
+		if err := session.File.Sync(); err != nil {
+			session.Mutex.Unlock()
+			respondError(w, http.StatusInternalServerError, "Failed to sync log file")
+			return
+		}
 	}
 	session.Mutex.Unlock()
 
 	// Open file for reading
-	file, err := os.Open(session.FilePath)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to open log file")
 		return

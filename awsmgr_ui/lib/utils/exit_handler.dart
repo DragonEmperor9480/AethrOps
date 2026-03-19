@@ -45,7 +45,7 @@ class ExitHandler {
       ),
     );
 
-    if (shouldExit == true) {
+    if (shouldExit == true && context.mounted) {
       // Perform shutdown with animation and exit - don't return, just exit directly
       await _performShutdownAndExit(context);
       // This line won't be reached as app will be closed

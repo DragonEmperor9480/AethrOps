@@ -59,7 +59,7 @@ class ProgressDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Title
             Text(
               title,
@@ -71,18 +71,15 @@ class ProgressDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            
+
             // Message
             Text(
               message,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            
+
             // Progress indicator
             if (progress == null)
               // Indeterminate progress
@@ -90,7 +87,9 @@ class ProgressDialog extends StatelessWidget {
                 width: double.infinity,
                 child: LinearProgressIndicator(
                   backgroundColor: Colors.black12,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryPurple,
+                  ),
                 ),
               )
             else
@@ -127,14 +126,11 @@ class ProgressDialog extends StatelessWidget {
                   ),
                 ],
               ),
-            
+
             // Cancel button
             if (onCancel != null) ...[
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: onCancel,
-                child: const Text('Cancel'),
-              ),
+              TextButton(onPressed: onCancel, child: const Text('Cancel')),
             ],
           ],
         ),
@@ -247,15 +243,11 @@ class _AnimatedProgressDialogState extends State<AnimatedProgressDialog>
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.sync,
-                  size: 40,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.sync, size: 40, color: Colors.white),
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Title
             Text(
               widget.title,
@@ -267,18 +259,15 @@ class _AnimatedProgressDialogState extends State<AnimatedProgressDialog>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            
+
             // Message
             Text(
               widget.message,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            
+
             // Progress
             if (widget.progressStream != null)
               Column(
@@ -313,7 +302,9 @@ class _AnimatedProgressDialogState extends State<AnimatedProgressDialog>
                 width: double.infinity,
                 child: LinearProgressIndicator(
                   backgroundColor: Colors.black12,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryPurple),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryPurple,
+                  ),
                 ),
               ),
           ],

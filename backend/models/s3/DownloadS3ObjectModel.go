@@ -67,7 +67,7 @@ func DownloadS3ObjectToFileWithProgress(bucketName, objectKey, destinationPath s
 
 	// Create destination directory if it doesn't exist
 	destDir := filepath.Dir(destinationPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0750); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 

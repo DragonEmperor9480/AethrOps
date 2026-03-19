@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import '../models/bucket_info.dart';
 import '../models/s3_object.dart';
 import '../services/api_service.dart';
@@ -17,7 +16,6 @@ class S3Screen extends StatefulWidget {
   @override
   State<S3Screen> createState() => _S3ScreenState();
 }
-
 
 class _S3ScreenState extends State<S3Screen> {
   List<BucketInfo> _buckets = [];
@@ -405,9 +403,6 @@ class BucketObjectsScreen extends StatefulWidget {
   @override
   State<BucketObjectsScreen> createState() => _BucketObjectsScreenState();
 }
-
-
-
 
 class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
   List<S3Object> _objects = [];

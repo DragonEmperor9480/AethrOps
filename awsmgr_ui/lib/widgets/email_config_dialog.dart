@@ -127,7 +127,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       backgroundColor: Colors.transparent,
@@ -173,10 +173,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                         SizedBox(height: 4),
                         Text(
                           'Configure SMTP settings for sending emails',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -339,9 +336,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                     width: double.infinity,
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey,
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
                       child: const Text('Cancel'),
                     ),
                   ),
