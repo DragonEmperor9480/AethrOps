@@ -92,10 +92,6 @@ class SecurityService {
     try {
       return await _localAuth.authenticate(
         localizedReason: 'Authenticate to access AethrOps',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: true,
-        ),
       );
     } catch (e) {
       debugPrint('Biometric authentication error: $e');

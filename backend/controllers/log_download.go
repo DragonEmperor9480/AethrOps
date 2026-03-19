@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/gorilla/mux"
@@ -25,7 +26,11 @@ func DownloadLogs(w http.ResponseWriter, r *http.Request) {
 	// Validate that the file path is within the expected log directory
 	logDir := service.GetLogDirectory()
 	cleanPath := filepath.Clean(session.FilePath)
-	if !filepath.HasPrefix(cleanPath, logDir) {
+	cleanLogDir := filepath.Clean(logDir)
+
+	// Check if cleanPath starts with cleanLogDir and has a path separator after it
+	if !strings.HasPrefix(cleanPath, cleanLogDir) ||
+		(len(cleanPath) > len(cleanLogDir) && cleanPath[len(cleanLogDir)] != filepath.Separator) {
 		respondError(w, http.StatusForbidden, "Invalid file path")
 		return
 	}

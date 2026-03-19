@@ -335,7 +335,7 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 
 	// Start the response with initial progress
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"progress": 0,
 		"total":    fileSize,
 	})
@@ -347,19 +347,18 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 		// Send progress updates every 10% to avoid flooding while maintaining responsiveness
 		if current-progressSent > total/10 || current == total {
 			progressSent = current
-			w.Write([]byte("\n"))
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_, _ = w.Write([]byte("\n"))
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"progress": current,
 				"total":    total,
 			})
 			flusher.Flush()
-			// No artificial delay - let it upload at full speed
 		}
 	})
 
 	if err != nil {
-		w.Write([]byte("\n"))
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_, _ = w.Write([]byte("\n"))
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"error": "Failed to upload to S3: " + err.Error(),
 		})
 		flusher.Flush()
@@ -367,8 +366,8 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send completion
-	w.Write([]byte("\n"))
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	_, _ = w.Write([]byte("\n"))
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"progress": fileSize,
 		"total":    fileSize,
 		"complete": true,
