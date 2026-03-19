@@ -70,7 +70,7 @@ class BackendService {
           );
 
       final dirPtr = appDir.path.toNativeUtf8();
-      final setDirResult = setDataDir(dirPtr);
+      setDataDir(dirPtr);
       calloc.free(dirPtr);
 
       // Start backend

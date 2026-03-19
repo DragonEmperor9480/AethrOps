@@ -67,8 +67,9 @@ class _IAMScreenState extends State<IAMScreen> {
       if (!mounted) return;
       _showError('Failed to load data: $e');
     } finally {
-      if (!mounted) return;
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -465,8 +466,9 @@ class _IAMScreenState extends State<IAMScreen> {
         if (!mounted) return;
         _showError('Failed to delete user: $e');
       } finally {
-        if (!mounted) return;
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -1067,8 +1069,9 @@ class _IAMScreenState extends State<IAMScreen> {
         if (!mounted) return;
         _showError('Failed to create group: $e');
       } finally {
-        if (!mounted) return;
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -1209,8 +1212,9 @@ class _IAMScreenState extends State<IAMScreen> {
         if (!mounted) return;
         _showError('Failed to delete group: $e');
       } finally {
-        if (!mounted) return;
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }

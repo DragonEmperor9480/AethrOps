@@ -48,12 +48,12 @@ class CloudWatchService {
           buffer = buffer.substring(eventEnd + 2);
 
           // Parse the event block
-          String? eventId;
           String? data;
 
           for (var line in eventBlock.split('\n')) {
             if (line.startsWith('id: ')) {
-              eventId = line.substring(4);
+              // Event ID - not currently used but part of SSE spec
+              continue;
             } else if (line.startsWith('data: ')) {
               data = line.substring(6);
             } else if (line.startsWith(':')) {

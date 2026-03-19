@@ -38,7 +38,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   // Versioning and MFA Delete state
   bool _versioningEnabled = false;
   bool _mfaDeleteEnabled = false;
-  bool _loadingVersioning = false;
 
   @override
   void initState() {
@@ -198,7 +197,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   Future<void> _loadVersioningStatus() async {
     if (!mounted) return;
-    setState(() => _loadingVersioning = true);
     try {
       final versioningStatus = await ApiService.getBucketVersioning(
         widget.bucketName,
@@ -214,7 +212,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       debugPrint('Failed to load versioning status: $e');
     } finally {
       if (mounted) {
-        setState(() => _loadingVersioning = false);
       }
     }
   }
@@ -317,7 +314,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    setState(() => _loadingVersioning = true);
     try {
       await ApiService.setBucketVersioning(
         widget.bucketName,
@@ -338,7 +334,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       _showError('Failed to update versioning: $e');
     } finally {
       if (mounted) {
-        setState(() => _loadingVersioning = false);
       }
     }
   }
@@ -365,7 +360,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     final mfaToken = await _showMFATokenDialog();
     if (mfaToken == null || !mounted) return;
 
-    setState(() => _loadingVersioning = true);
     try {
       await ApiService.updateBucketMFADelete(
         widget.bucketName,
@@ -380,7 +374,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       _showError('Failed to update MFA Delete: $e');
     } finally {
       if (mounted) {
-        setState(() => _loadingVersioning = false);
       }
     }
   }
@@ -438,6 +431,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       // Create progress stream controller
       progressController = StreamController<double>.broadcast();
 
+      if (!mounted) return;
+      
       // Show animated progress dialog with real progress
       showDialog(
         context: context,
@@ -567,6 +562,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       _showError(DownloadService.getPermissionDeniedMessage());
       return;
     }
+
+    if (!mounted) return;
 
     // Create progress stream controller
     final progressController = StreamController<double>();
@@ -713,6 +710,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     );
 
     if (confirm == true) {
+      if (!mounted) return;
+      
       // Show animated progress dialog
       showDialog(
         context: context,
@@ -777,6 +776,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     );
 
     if (result != null && result.isNotEmpty) {
+      if (!mounted) return;
+      
       // Show animated progress dialog
       showDialog(
         context: context,
@@ -902,13 +903,12 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return WillPopScope(
-      onWillPop: () async {
-        if (_currentPrefix.isNotEmpty) {
+    return PopScope(
+      canPop: _currentPrefix.isEmpty,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _currentPrefix.isNotEmpty) {
           _navigateBack();
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,

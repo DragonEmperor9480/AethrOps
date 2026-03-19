@@ -442,37 +442,6 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
     );
   }
 
-  Widget _buildEmptyState(IconData icon, String message) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 48,
-                color: theme.textTheme.bodyMedium?.color?.withValues(
-                  alpha: 0.5,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: theme.textTheme.bodyMedium?.color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildCollapsibleSection({
     required String title,

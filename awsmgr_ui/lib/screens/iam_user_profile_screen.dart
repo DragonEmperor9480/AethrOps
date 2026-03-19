@@ -48,8 +48,9 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
         _showError('Failed to load user details: $e');
       }
     } finally {
-      if (!mounted) return;
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -124,8 +125,9 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
           _showError('Failed to sync policies: $e');
         }
       } finally {
-        if (!mounted) return;
-        setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+        }
       }
     }
   }
@@ -701,27 +703,6 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
     );
   }
 
-  Widget _buildEmptyState(IconData icon, String message) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(icon, size: 48, color: Colors.grey[300]),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // Attach Policies Dialog

@@ -39,7 +39,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   late AnimationController _shimmerController;
   late AnimationController _glitchController;
   late Animation<double> _pulseAnimation;
-  DateTime _lastLogTime = DateTime.now();
   int _logsPerSecond = 0;
   Timer? _statsTimer;
   final List<int> _recentLogCounts = [];
@@ -161,7 +160,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                         : _searchMatches.length - 1;
                   }
                 }
-                _lastLogTime = DateTime.now();
                 _recentLogCounts.add(1);
                 if (_recentLogCounts.length > 5) {
                   _recentLogCounts.removeAt(0);
@@ -312,11 +310,15 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
       // Show user-friendly message
       final displayPath = Platform.isAndroid ? 'Downloads/$filename' : filePath;
 
-      ToastUtils.show(context, 'Downloaded: $displayPath', isError: false);
+      if (mounted) {
+        ToastUtils.show(context, 'Downloaded: $displayPath', isError: false);
+      }
 
       debugPrint('Saved ${logContent.length} bytes to $filePath');
     } catch (e) {
-      ToastUtils.show(context, 'Download failed: $e', isError: true);
+      if (mounted) {
+        ToastUtils.show(context, 'Download failed: $e', isError: true);
+      }
       debugPrint('Download error: $e');
     }
   }
@@ -540,7 +542,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         color: const Color(0xFF161B22),
         border: Border(
           bottom: BorderSide(
-            color: Colors.blueAccent.withOpacity(0.3),
+            color: Colors.blueAccent.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -588,7 +590,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   hintText:
                       'Search logs... (↑↓ navigate, Enter next, Esc close)',
                   hintStyle: TextStyle(
-                    color: const Color(0xFF8B949E).withOpacity(0.5),
+                    color: const Color(0xFF8B949E).withValues(alpha: 0.5),
                     fontFamily: 'monospace',
                     fontSize: 13,
                   ),
@@ -611,7 +613,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF0D1117),
                 borderRadius: BorderRadius.circular(3),
-                border: Border.all(color: Colors.yellowAccent.withOpacity(0.3)),
+                border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.3)),
               ),
               child: Text(
                 '${_currentMatchIndex + 1}/${_searchMatches.length}',
@@ -657,19 +659,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   }
 
   Widget _buildStatusBar() {
-    final timeSinceLastLog = DateTime.now().difference(_lastLogTime);
-    final isActive = timeSinceLastLog.inSeconds < 5 && !_isPaused;
-
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF161B22),
         border: Border(
           bottom: BorderSide(
             color: _isPaused
-                ? Colors.red.withOpacity(0.3)
+                ? Colors.red.withValues(alpha: 0.3)
                 : _isReconnecting
-                ? Colors.orange.withOpacity(0.3)
-                : Colors.greenAccent.withOpacity(0.3),
+                ? Colors.orange.withValues(alpha: 0.3)
+                : Colors.greenAccent.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -720,7 +719,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                           : _isReconnecting
                           ? Colors.orange
                           : Colors.greenAccent)
-                      .withOpacity(0.5),
+                      .withValues(alpha: 0.5),
             ),
           ),
           child: Row(
@@ -736,7 +735,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                               : _isReconnecting
                               ? Colors.orange
                               : Colors.greenAccent.shade400)
-                          .withOpacity(_isPaused ? 1.0 : _pulseAnimation.value),
+                          .withValues(alpha: _isPaused ? 1.0 : _pulseAnimation.value),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -775,7 +774,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           decoration: BoxDecoration(
             color: const Color(0xFF0D1117),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+            border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -813,8 +812,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     width: 3,
                     height: 3,
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.shade400.withOpacity(
-                        0.3 + opacity * 0.7,
+                      color: Colors.blueAccent.shade400.withValues(
+                        alpha: 0.3 + opacity * 0.7,
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -840,7 +839,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             borderRadius: BorderRadius.circular(3),
             border: Border.all(
               color: _autoScroll
-                  ? Colors.blueAccent.withOpacity(0.3)
+                  ? Colors.blueAccent.withValues(alpha: 0.3)
                   : const Color(0xFF30363D),
             ),
           ),
@@ -912,7 +911,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
       decoration: BoxDecoration(
         color: const Color(0xFF0D1117),
         borderRadius: BorderRadius.circular(3),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -924,7 +923,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             style: TextStyle(
               fontSize: 9,
               fontFamily: 'monospace',
-              color: color.withOpacity(0.7),
+              color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -959,9 +958,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 (_shimmerController.value + 0.3).clamp(0.0, 1.0),
               ],
               colors: [
-                Colors.orange.withOpacity(0.0),
+                Colors.orange.withValues(alpha: 0.0),
                 Colors.orange,
-                Colors.orange.withOpacity(0.0),
+                Colors.orange.withValues(alpha: 0.0),
               ],
             ),
           ),
@@ -1012,38 +1011,6 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     );
   }
 
-  Widget _buildWaitingDots() {
-    return AnimatedBuilder(
-      animation: _shimmerController,
-      builder: (context, child) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(5, (index) {
-            final delay = index * 0.15;
-            final value = (_shimmerController.value + delay) % 1.0;
-            final scale = 0.5 + ((math.sin(value * math.pi * 2) + 1) / 2) * 0.5;
-            final opacity =
-                0.3 + ((math.sin(value * math.pi * 2) + 1) / 2) * 0.4;
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              child: Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: Colors.greenAccent.withOpacity(opacity),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            );
-          }),
-        );
-      },
-    );
-  }
 
   Widget _buildLogList() {
     return Container(
@@ -1088,16 +1055,16 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     ),
                     decoration: BoxDecoration(
                       color: isCurrentMatch
-                          ? Colors.yellow.shade700.withOpacity(0.3)
+                          ? Colors.yellow.shade700.withValues(alpha: 0.3)
                           : isMatch
-                          ? Colors.yellow.shade900.withOpacity(0.2)
+                          ? Colors.yellow.shade900.withValues(alpha: 0.2)
                           : index % 2 == 0
-                          ? const Color(0xFF161B22).withOpacity(0.5)
+                          ? const Color(0xFF161B22).withValues(alpha: 0.5)
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(
                           color: isNewLog
-                              ? Colors.greenAccent.shade400.withOpacity(value)
+                              ? Colors.greenAccent.shade400.withValues(alpha: value)
                               : isCurrentMatch
                               ? Colors.yellow.shade700
                               : Colors.transparent,
@@ -1116,7 +1083,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                           child: Text(
                             '${index + 1}',
                             style: TextStyle(
-                              color: const Color(0xFF8B949E).withOpacity(0.5),
+                              color: const Color(0xFF8B949E).withValues(alpha: 0.5),
                               fontSize: 11,
                               fontFamily: 'monospace',
                             ),
@@ -1326,7 +1293,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               decoration: BoxDecoration(
                 color: const Color(0xFF161B22),
                 borderRadius: BorderRadius.circular(3),
-                border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

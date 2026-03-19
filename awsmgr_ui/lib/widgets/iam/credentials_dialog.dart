@@ -43,6 +43,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
       return;
     }
 
+    if (!mounted) return;
+
     // Ask for recipient email
     final emailController = TextEditingController();
     final email = await showDialog<String>(
@@ -123,6 +125,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     );
 
     if (email == null || email.isEmpty) return;
+
+    if (!mounted) return;
 
     // Confirm email
     final confirmed = await showDialog<bool>(
@@ -345,7 +349,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
 
     if (credsWithPasswords.isEmpty) {
       // No passwords to show, just close
-      Future.microtask(() => Navigator.pop(context));
+      Future.microtask(() {
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
+      });
       return const SizedBox.shrink();
     }
 

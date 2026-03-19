@@ -57,6 +57,7 @@ class _EC2ScreenState extends State<EC2Screen> {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final awsConfig = Provider.of<AwsConfigProvider>(context, listen: false);
 
     // Initialize AWS config provider if not already done
@@ -152,9 +153,6 @@ class _EC2ScreenState extends State<EC2Screen> {
     ToastUtils.show(context, message, isError: true);
   }
 
-  void _showSuccess(String message) {
-    ToastUtils.show(context, message, isError: false);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -589,8 +587,6 @@ class _EC2ScreenState extends State<EC2Screen> {
     final instancesByState =
         _dashboardData?['instances_by_state'] as Map<String, dynamic>? ?? {};
     final currentRegion = _dashboardData?['current_region'] ?? 'N/A';
-    final instancesByRegion =
-        _dashboardData?['instances_by_region'] as Map<String, dynamic>? ?? {};
 
     // Total widget is always independent (shows global count)
     final totalCount = totalInstances;

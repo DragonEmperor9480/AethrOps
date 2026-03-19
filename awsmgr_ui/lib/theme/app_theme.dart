@@ -137,7 +137,6 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryPurple,
         brightness: Brightness.dark,
-        background: backgroundDark,
         surface: cardBackgroundDark,
       ),
       scaffoldBackgroundColor: backgroundDark,

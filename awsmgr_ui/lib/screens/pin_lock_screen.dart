@@ -119,7 +119,9 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (isValid) {
       if (mounted) Navigator.of(context).pop(true);
     } else {
-      ToastUtils.show(context, 'Invalid PIN', isError: true);
+      if (mounted) {
+        ToastUtils.show(context, 'Invalid PIN', isError: true);
+      }
       setState(() => _pin = '');
     }
   }

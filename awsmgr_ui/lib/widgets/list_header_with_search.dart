@@ -41,6 +41,7 @@ class ListHeaderWithSearch extends StatefulWidget {
 class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
     with SingleTickerProviderStateMixin {
   late AnimationController _searchAnimationController;
+  // ignore: unused_field
   late Animation<double> _searchAnimation;
   bool _searchExpanded = false;
 

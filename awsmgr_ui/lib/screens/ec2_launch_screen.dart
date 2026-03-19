@@ -109,11 +109,11 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
       ]);
 
       setState(() {
-        _keyPairs = results[0] ?? [];
-        _vpcs = results[1] ?? [];
-        _subnets = results[2] ?? [];
-        _securityGroups = results[3] ?? [];
-        _amis = results[4] ?? [];
+        _keyPairs = results[0];
+        _vpcs = results[1];
+        _subnets = results[2];
+        _securityGroups = results[3];
+        _amis = results[4];
         _isLoadingData = false;
 
         // Reset selections when region changes
@@ -161,46 +161,6 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         ToastUtils.show(
           context,
           'Failed to load resources for region: $e',
-          isError: true,
-        );
-      }
-    }
-  }
-
-  Future<void> _loadData() async {
-    setState(() => _isLoadingData = true);
-    try {
-      final results = await Future.wait([
-        Ec2Service.listKeyPairs(),
-        Ec2Service.listVpcs(),
-        Ec2Service.listSubnets(),
-        Ec2Service.listSecurityGroups(),
-        Ec2Service.listRegions(),
-      ]);
-
-      setState(() {
-        _keyPairs = results[0];
-        _vpcs = results[1];
-        _subnets = results[2];
-        _securityGroups = results[3];
-        _regions = List<String>.from(results[4]);
-        _isLoadingData = false;
-
-        // Auto-select Default VPC, or first available
-        if (_vpcs.isNotEmpty) {
-          final defaultVpc = _vpcs.firstWhere(
-            (vpc) => vpc['is_default'] == true,
-            orElse: () => _vpcs.first,
-          );
-          _selectedVpc = defaultVpc['vpc_id'];
-        }
-      });
-    } catch (e) {
-      setState(() => _isLoadingData = false);
-      if (mounted) {
-        ToastUtils.show(
-          context,
-          'Failed to load AWS resources: $e',
           isError: true,
         );
       }
