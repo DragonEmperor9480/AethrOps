@@ -262,6 +262,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     VoidCallback? onToggleVisibility,
     bool isVisible = true,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -270,7 +272,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[600],
+            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
             letterSpacing: 0.3,
           ),
         ),
@@ -278,9 +280,13 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark 
+                ? AppTheme.backgroundDark 
+                : Colors.grey[50],
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+            ),
           ),
           child: Row(
             children: [
@@ -296,13 +302,17 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                       fontWeight: isPassword
                           ? FontWeight.w500
                           : FontWeight.w400,
-                      color: Colors.grey[900],
+                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-              Container(width: 1, height: 24, color: Colors.grey.shade300),
+              Container(
+                width: 1, 
+                height: 24, 
+                color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+              ),
               if (isPassword && onToggleVisibility != null)
                 IconButton(
                   icon: Icon(
@@ -310,7 +320,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                     size: 18,
-                    color: Colors.grey[600],
+                    color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
                   ),
                   tooltip: isVisible ? 'Hide' : 'Show',
                   onPressed: onToggleVisibility,
@@ -321,12 +331,16 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                   ),
                 ),
               if (isPassword)
-                Container(width: 1, height: 24, color: Colors.grey.shade300),
+                Container(
+                  width: 1, 
+                  height: 24, 
+                  color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+                ),
               IconButton(
                 icon: Icon(
                   Icons.copy_rounded,
                   size: 18,
-                  color: Colors.grey[600],
+                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
                 ),
                 tooltip: 'Copy $label',
                 onPressed: onCopy,
@@ -342,6 +356,8 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     // Filter out credentials without passwords
     final credsWithPasswords = widget.credentials
         .where((c) => c['password'] != null && c['password']!.isNotEmpty)
@@ -365,11 +381,11 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         width: 550,
         constraints: const BoxConstraints(maxHeight: 700),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppTheme.cardBackgroundDark : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -400,7 +416,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -410,6 +426,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: -0.5,
+                                color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
                               ),
                             ),
                           ],
@@ -422,7 +439,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.warningAmber.withValues(alpha: 0.08),
+                      color: AppTheme.warningAmber.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: AppTheme.warningAmber.withValues(alpha: 0.3),
@@ -434,7 +451,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                         Icon(
                           Icons.info_outline_rounded,
                           size: 20,
-                          color: Colors.orange[800],
+                          color: AppTheme.warningAmber,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -443,7 +460,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                             style: TextStyle(
                               fontSize: 13,
                               height: 1.4,
-                              color: Colors.orange[900],
+                              color: AppTheme.warningAmber,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -455,7 +472,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
               ),
             ),
 
-            const Divider(height: 1),
+            Divider(height: 1, color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
 
             // Credentials list
             Flexible(
@@ -463,9 +480,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 shrinkWrap: true,
                 padding: const EdgeInsets.all(24),
                 itemCount: credsWithPasswords.length,
-                separatorBuilder: (context, index) => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Divider(),
+                separatorBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Divider(color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
                 ),
                 itemBuilder: (context, index) {
                   final cred = credsWithPasswords[index];
@@ -500,7 +517,7 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
               ),
             ),
 
-            const Divider(height: 1),
+            Divider(height: 1, color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor),
 
             // Footer Buttons
             Padding(
@@ -516,8 +533,10 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                           label: const Text('Copy All Credentials'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            foregroundColor: AppTheme.textPrimary,
-                            side: BorderSide(color: Colors.grey.shade300),
+                            foregroundColor: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            side: BorderSide(
+                              color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),

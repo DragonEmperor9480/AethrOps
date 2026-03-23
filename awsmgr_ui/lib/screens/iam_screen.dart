@@ -316,142 +316,198 @@ class _IAMScreenState extends State<IAMScreen> {
 
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(
-              hasDeps ? Icons.warning : Icons.delete,
-              color: hasDeps ? Colors.orange : Colors.red,
-            ),
-            const SizedBox(width: 8),
-            const Text('Delete User'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: isDark ? AppTheme.cardBackgroundDark : AppTheme.cardBackground,
+          title: Row(
             children: [
-              Text('Are you sure you want to delete "$username"?'),
-              const SizedBox(height: 8),
-              if (hasDeps) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.orange, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'User has dependencies:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if ((dependencies['groups'] as List?)?.isNotEmpty ==
-                          true) ...[
-                        const Text(
-                          'Groups:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        ...(dependencies['groups'] as List).map(
-                          (g) => Text('  • $g'),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if ((dependencies['managed_policies'] as List?)
-                              ?.isNotEmpty ==
-                          true) ...[
-                        const Text(
-                          'Managed Policies:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        ...(dependencies['managed_policies'] as List).map(
-                          (p) => Text('  • $p'),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if ((dependencies['inline_policies'] as List?)
-                              ?.isNotEmpty ==
-                          true) ...[
-                        const Text(
-                          'Inline Policies:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        ...(dependencies['inline_policies'] as List).map(
-                          (p) => Text('  • $p'),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if ((dependencies['access_keys'] as List?)?.isNotEmpty ==
-                          true) ...[
-                        const Text(
-                          'Access Keys:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        ...(dependencies['access_keys'] as List).map(
-                          (k) => Text('  • $k'),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if (dependencies['has_login_profile'] == true) ...[
-                        const Text(
-                          '• Has login profile',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ],
-                  ),
+              Icon(
+                hasDeps ? Icons.warning : Icons.delete,
+                color: hasDeps ? AppTheme.warningAmber : AppTheme.errorRed,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Delete User',
+                style: TextStyle(
+                  color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  'All dependencies will be removed automatically.',
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 8),
-              const Text(
-                'This action cannot be undone.',
-                style: TextStyle(color: Colors.red, fontSize: 12),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.delete),
-            label: Text(hasDeps ? 'Remove All & Delete' : 'Delete'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Are you sure you want to delete "$username"?',
+                  style: TextStyle(
+                    color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (hasDeps) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warningAmber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.warningAmber.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info, color: AppTheme.warningAmber, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'User has dependencies:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.warningAmber,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if ((dependencies['groups'] as List?)?.isNotEmpty ==
+                            true) ...[
+                          Text(
+                            'Groups:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            ),
+                          ),
+                          ...(dependencies['groups'] as List).map(
+                            (g) => Text(
+                              '  • $g',
+                              style: TextStyle(
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        if ((dependencies['managed_policies'] as List?)
+                                ?.isNotEmpty ==
+                            true) ...[
+                          Text(
+                            'Managed Policies:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            ),
+                          ),
+                          ...(dependencies['managed_policies'] as List).map(
+                            (p) => Text(
+                              '  • $p',
+                              style: TextStyle(
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        if ((dependencies['inline_policies'] as List?)
+                                ?.isNotEmpty ==
+                            true) ...[
+                          Text(
+                            'Inline Policies:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            ),
+                          ),
+                          ...(dependencies['inline_policies'] as List).map(
+                            (p) => Text(
+                              '  • $p',
+                              style: TextStyle(
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        if ((dependencies['access_keys'] as List?)?.isNotEmpty ==
+                            true) ...[
+                          Text(
+                            'Access Keys:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            ),
+                          ),
+                          ...(dependencies['access_keys'] as List).map(
+                            (k) => Text(
+                              '  • $k',
+                              style: TextStyle(
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                        if (dependencies['has_login_profile'] == true) ...[
+                          Text(
+                            '• Has login profile',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'All dependencies will be removed automatically.',
+                    style: TextStyle(
+                      color: AppTheme.warningAmber,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Text(
+                  'This action cannot be undone.',
+                  style: TextStyle(color: AppTheme.errorRed, fontSize: 12),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                ),
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.delete),
+              label: Text(hasDeps ? 'Remove All & Delete' : 'Delete'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorRed,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirm == true) {
