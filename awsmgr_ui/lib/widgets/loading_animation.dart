@@ -76,10 +76,10 @@ class _LoadingAnimationState extends State<LoadingAnimation>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                _currentQuote,
+                widget.message ?? _currentQuote,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  fontStyle: FontStyle.italic,
+                  fontStyle: widget.message != null ? FontStyle.normal : FontStyle.italic,
                   color: isDark
                       ? AppTheme.textSecondaryDark
                       : AppTheme.textSecondary,

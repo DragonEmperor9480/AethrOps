@@ -7,7 +7,6 @@ import '../services/api_service.dart';
 import '../services/s3_service.dart';
 import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
-import '../widgets/progress_dialog.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
@@ -433,14 +432,13 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
       if (!mounted) return;
       
-      // Show animated progress dialog with real progress
+      // Show loading animation
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AnimatedProgressDialog(
-          title: 'Uploading File',
-          message: '$fileName (${_formatBytes(fileSize)})',
-          progressStream: progressController!.stream,
+        builder: (context) => LoadingAnimation(
+          message: 'Uploading $fileName',
+          showQuote: true,
         ),
       );
 
@@ -712,26 +710,24 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     if (confirm == true) {
       if (!mounted) return;
       
-      // Show animated progress dialog
+      // Show loading animation
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AnimatedProgressDialog(
-          title: 'Deleting Item',
-          message: item.displayName,
+        builder: (context) => LoadingAnimation(
+          message: 'Deleting ${item.displayName}',
+          showQuote: true,
         ),
       );
 
       try {
         await ApiService.deleteS3Object(widget.bucketName, item.key);
 
-        // Hide progress dialog
         if (mounted) Navigator.of(context).pop();
 
         _showSuccess('Deleted: ${item.displayName}');
         await _loadItems();
       } catch (e) {
-        // Hide progress dialog if showing
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
         _showError('Delete failed: $e');
       }
@@ -778,12 +774,14 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     if (result != null && result.isNotEmpty) {
       if (!mounted) return;
       
-      // Show animated progress dialog
+      // Show loading animation
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) =>
-            AnimatedProgressDialog(title: 'Creating Folder', message: result),
+        builder: (context) => LoadingAnimation(
+          message: 'Creating folder $result',
+          showQuote: true,
+        ),
       );
 
       try {
@@ -792,13 +790,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           _currentPrefix + result,
         );
 
-        // Hide progress dialog
         if (mounted) Navigator.of(context).pop();
 
         _showSuccess('Created folder: $result');
         await _loadItems();
       } catch (e) {
-        // Hide progress dialog if showing
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
         _showError('Create folder failed: $e');
       }
