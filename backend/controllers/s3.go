@@ -305,7 +305,7 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	fileSize := header.Size
 
 	// Get temp directory - use app's data directory if available (for mobile)
-	tempDir := os.Getenv("AWSMGR_DATA_DIR")
+	tempDir := os.Getenv("AETHROPS_DATA_DIR")
 	if tempDir == "" {
 		tempDir = os.TempDir()
 	}

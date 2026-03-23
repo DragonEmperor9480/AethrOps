@@ -24,7 +24,7 @@ func init() {
 	go cleanupOldSessions()
 }
 
-// InitLogDirectory initializes the log directory (call after setting AWSMGR_DATA_DIR)
+// InitLogDirectory initializes the log directory (call after setting AETHROPS_DATA_DIR)
 func InitLogDirectory() error {
 	// Use platform-appropriate log directory
 	logDir = getLogDirectory()
@@ -40,12 +40,12 @@ func InitLogDirectory() error {
 // getLogDirectory returns the appropriate log directory for the platform
 func getLogDirectory() string {
 	// Check if data directory is set (mobile platforms)
-	if dataDir := os.Getenv("AWSMGR_DATA_DIR"); dataDir != "" {
+	if dataDir := os.Getenv("AETHROPS_DATA_DIR"); dataDir != "" {
 		return filepath.Join(dataDir, "logs")
 	}
 
 	// Fallback to /tmp for desktop platforms
-	return "/tmp/awsmgr_logs"
+	return "/tmp/aethrops_logs"
 }
 
 // GetLogDirectory returns the log directory (public accessor for validation)

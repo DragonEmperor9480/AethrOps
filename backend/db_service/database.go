@@ -20,7 +20,7 @@ func SetDataDirectory(dir string) {
 }
 
 // GetConfigDirectory returns the directory for storing config files
-// Uses dataDir if set (mobile), otherwise uses ~/.awsmgr (desktop)
+// Uses dataDir if set (mobile), otherwise uses ~/.aethrops (desktop)
 func GetConfigDirectory() (string, error) {
 	if dataDir != "" {
 		// Use provided data directory (for mobile)
@@ -37,11 +37,11 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	awsmgrDir := filepath.Join(homeDir, ".awsmgr")
-	if err := os.MkdirAll(awsmgrDir, 0700); err != nil {
+	aethropsDir := filepath.Join(homeDir, ".aethrops")
+	if err := os.MkdirAll(aethropsDir, 0700); err != nil {
 		return "", err
 	}
-	return awsmgrDir, nil
+	return aethropsDir, nil
 }
 
 // InitDB initializes the database connection
@@ -51,14 +51,14 @@ func InitDB() error {
 
 	if dataDir != "" {
 		// Use provided data directory (for mobile)
-		dbPath = filepath.Join(dataDir, "awsmgr_data.db")
+		dbPath = filepath.Join(dataDir, "aethrops_data.db")
 	} else {
 		// Use home directory (for desktop)
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return err
 		}
-		dbPath = filepath.Join(homeDir, ".awsmgr", "awsmgr_data.db")
+		dbPath = filepath.Join(homeDir, ".aethrops", "aethrops_data.db")
 	}
 
 	// Create directory if it doesn't exist

@@ -43,7 +43,7 @@ func main() {
 	// Try to initialize AWS SDK clients (don't fail if credentials not available)
 	if err := utils.InitAWSClients(); err != nil {
 		log.Printf("Warning: AWS clients not initialized: %v", err)
-		log.Println("AWS credentials will be loaded from ~/.aws/credentials or environment variables")
+		log.Println("AWS credentials will be loaded from ~/.aethrops/credentials or environment variables")
 	} else {
 		log.Println("AWS clients initialized successfully")
 	}

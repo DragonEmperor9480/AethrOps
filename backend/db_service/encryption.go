@@ -10,7 +10,7 @@ import (
 )
 
 // Simple encryption key (in production, use env variable or secure vault)
-const encryptionKey = "awsmgr-32byte-encryption-key!!!!" // Must be exactly 32 bytes for AES-256
+const encryptionKey = "aethrops-32byte-encryption-key!!" // Must be exactly 32 bytes for AES-256
 
 // Encrypt encrypts a string using AES-256-GCM
 func Encrypt(plaintext string) (string, error) {

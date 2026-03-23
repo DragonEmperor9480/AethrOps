@@ -47,10 +47,10 @@ func LoadEmailConfig() (*EmailConfig, error) {
 }
 
 // getConfigDirectory returns the directory for storing config files
-// Uses AWSMGR_DATA_DIR env var if set (mobile), otherwise uses ~/.aws (desktop)
+// Uses AETHROPS_DATA_DIR env var if set (mobile), otherwise uses ~/.aws (desktop)
 func getConfigDirectory() (string, error) {
 	// Check if we're in a mobile environment
-	dataDir := os.Getenv("AWSMGR_DATA_DIR")
+	dataDir := os.Getenv("AETHROPS_DATA_DIR")
 	if dataDir != "" {
 		// Clean the path to prevent directory traversal
 		dataDir = filepath.Clean(dataDir)

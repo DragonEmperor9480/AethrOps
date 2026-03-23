@@ -29,9 +29,9 @@ var (
 
 // InitAWSClients initializes AWS SDK clients
 func InitAWSClients() error {
-	// Use custom credentials location (~/.awsmgr instead of ~/.aws)
-	credPath := getAWSMgrCredentialsPath()
-	configPath := getAWSMgrConfigPath()
+	// Use custom credentials location (~/.aethrops instead of ~/.aws)
+	credPath := getAethrOpsCredentialsPath()
+	configPath := getAethrOpsConfigPath()
 
 	log.Printf("Loading AWS credentials from: %s", credPath)
 	log.Printf("Loading AWS config from: %s", configPath)
@@ -61,22 +61,22 @@ func InitAWSClients() error {
 	return nil
 }
 
-// getAWSMgrCredentialsPath returns the path to .awsmgr/credentials
-func getAWSMgrCredentialsPath() string {
+// getAethrOpsCredentialsPath returns the path to .aethrops/credentials
+func getAethrOpsCredentialsPath() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(homeDir, ".awsmgr", "credentials")
+	return filepath.Join(homeDir, ".aethrops", "credentials")
 }
 
-// getAWSMgrConfigPath returns the path to .awsmgr/config
-func getAWSMgrConfigPath() string {
+// getAethrOpsConfigPath returns the path to .aethrops/config
+func getAethrOpsConfigPath() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(homeDir, ".awsmgr", "config")
+	return filepath.Join(homeDir, ".aethrops", "config")
 }
 
 // GetEC2Client returns the EC2 client
