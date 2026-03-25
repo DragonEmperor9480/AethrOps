@@ -1,0 +1,39 @@
+name: "AethrBuildDev"
+# Manual dev workflow for platform builds from the Actions UI.
+
+run-name: "AethrBuildDev (${{ inputs.target || 'all' }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Choose which dev build to run"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - android
+          - windows
+          - linux
+
+permissions:
+  contents: write
+
+jobs:
+
+  android:
+    name: AethrOps Android Build
+    if: ${{ inputs.target == 'all' || inputs.target == 'android' }}
+    uses: ./.github/workflows/build-android.yml
+    secrets: inherit
+
+  windows:
+    name: Aethrops Windows Build
+    if: ${{ inputs.target == 'all' || inputs.target == 'windows' }}
+    uses: ./.github/workflows/build-windows.yml
+
+  linux:
+    name: Aethrops Linux AppImage Build
+    if: ${{ inputs.target == 'all' || inputs.target == 'linux' }}
+    uses: ./.github/workflows/build-linux-appimage.yml
