@@ -4,6 +4,9 @@ name: "AethrBuildDev"
 run-name: "AethrBuildDev (${{ inputs.target || 'all' }})"
 
 on:
+  push:
+    branches:
+      - '**'
   workflow_dispatch:
     inputs:
       target:
@@ -24,16 +27,16 @@ jobs:
 
   android:
     name: AethrOps Android Build
-    if: ${{ inputs.target == 'all' || inputs.target == 'android' }}
+    if: ${{ github.event_name == 'push' || inputs.target == 'all' || inputs.target == 'android' }}
     uses: ./.github/workflows/build-android.yml
     secrets: inherit
 
   windows:
     name: Aethrops Windows Build
-    if: ${{ inputs.target == 'all' || inputs.target == 'windows' }}
+    if: ${{ github.event_name == 'push' || inputs.target == 'all' || inputs.target == 'windows' }}
     uses: ./.github/workflows/build-windows.yml
 
   linux:
     name: Aethrops Linux AppImage Build
-    if: ${{ inputs.target == 'all' || inputs.target == 'linux' }}
+    if: ${{ github.event_name == 'push' || inputs.target == 'all' || inputs.target == 'linux' }}
     uses: ./.github/workflows/build-linux-appimage.yml
