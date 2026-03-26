@@ -75,7 +75,6 @@ jobs:
           cp -r awsmgr_ui/build/linux/x64/release/bundle/* "$APPDIR/"
           cp backend/aethrops_core "$APPDIR/"
           chmod +x "$APPDIR/aethrops_core"
-          mv "$APPDIR/aethrops" "$APPDIR/aethrops"
 
       - name: Create AppRun
         run: |

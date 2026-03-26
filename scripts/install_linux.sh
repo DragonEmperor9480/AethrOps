@@ -40,9 +40,6 @@ if [ $? -ne 0 ]; then
 fi
 echo "✓ Flutter app built"
 
-# Rename binary to aethrops
-mv awsmgr_ui/build/linux/x64/release/bundle/aethrops awsmgr_ui/build/linux/x64/release/bundle/aethrops
-
 # Step 3: Copy backend to bundle
 echo ""
 echo "Step 3: Bundling backend with application..."

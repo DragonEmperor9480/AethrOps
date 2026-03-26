@@ -77,9 +77,6 @@ cp ../backend/aethrops_core build/linux/x64/release/bundle/
 chmod +x build/linux/x64/release/bundle/aethrops_core
 echo "✓ Backend copied to bundle"
 
-# Rename binary to aethrops
-mv build/linux/x64/release/bundle/aethrops build/linux/x64/release/bundle/aethrops
-
 cd ..
 
 echo ""
@@ -91,4 +88,3 @@ echo ""
 echo "To run:"
 echo "  cd awsmgr_ui/build/linux/x64/release/bundle/"
 echo "  ./aethrops"
-
