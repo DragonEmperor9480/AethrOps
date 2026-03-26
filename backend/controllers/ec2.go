@@ -16,6 +16,27 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// EC2Instance represents a minimal EC2 instance for efficient serialization
+type EC2Instance struct {
+	InstanceID   string `json:"instance_id"`
+	Name         string `json:"name"`
+	State        string `json:"state"`
+	Platform     string `json:"platform"`
+	Architecture string `json:"architecture"`
+	InstanceType string `json:"instance_type"`
+	Region       string `json:"region"`
+}
+
+// getTagValue extracts a tag value by key from EC2 tags
+func getTagValue(tags []types.Tag, key string) string {
+	for _, tag := range tags {
+		if aws.ToString(tag.Key) == key {
+			return aws.ToString(tag.Value)
+		}
+	}
+	return ""
+}
+
 // ListEC2Instances returns all EC2 instances
 func ListEC2Instances(w http.ResponseWriter, r *http.Request) {
 	// Check for optional region parameter
@@ -37,9 +58,11 @@ func ListEC2Instances(w http.ResponseWriter, r *http.Request) {
 		region = utils.GetCurrentRegion()
 	}
 
-	ctx := context.TODO()
+	// Use request context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
-	var instances []map[string]interface{}
+	instances := make([]EC2Instance, 0, 100) // Pre-allocate
 	var nextToken *string
 
 	for {
@@ -59,26 +82,15 @@ func ListEC2Instances(w http.ResponseWriter, r *http.Request) {
 		// Parse reservations and instances
 		for _, reservation := range result.Reservations {
 			for _, instance := range reservation.Instances {
-				// Get instance name from tags
-				instanceName := ""
-				for _, tag := range instance.Tags {
-					if aws.ToString(tag.Key) == "Name" {
-						instanceName = aws.ToString(tag.Value)
-						break
-					}
-				}
-
-				instanceData := map[string]interface{}{
-					"instance_id":   aws.ToString(instance.InstanceId),
-					"name":          instanceName,
-					"state":         string(instance.State.Name),
-					"platform":      aws.ToString(instance.PlatformDetails),
-					"architecture":  string(instance.Architecture),
-					"instance_type": string(instance.InstanceType),
-					"region":        region,
-				}
-
-				instances = append(instances, instanceData)
+				instances = append(instances, EC2Instance{
+					InstanceID:   aws.ToString(instance.InstanceId),
+					Name:         getTagValue(instance.Tags, "Name"),
+					State:        string(instance.State.Name),
+					Platform:     aws.ToString(instance.PlatformDetails),
+					Architecture: string(instance.Architecture),
+					InstanceType: string(instance.InstanceType),
+					Region:       region,
+				})
 			}
 		}
 
@@ -679,7 +691,9 @@ func ListSecurityGroups(w http.ResponseWriter, r *http.Request) {
 		client = utils.GetEC2Client()
 	}
 
-	ctx := context.TODO()
+	// Use request context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
 	input := &ec2.DescribeSecurityGroupsInput{}
 	result, err := client.DescribeSecurityGroups(ctx, input)
@@ -688,7 +702,8 @@ func ListSecurityGroups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var groups []map[string]string
+	// Pre-allocate slice
+	groups := make([]map[string]string, 0, len(result.SecurityGroups))
 	for _, sg := range result.SecurityGroups {
 		groups = append(groups, map[string]string{
 			"group_id":    aws.ToString(sg.GroupId),
@@ -722,7 +737,9 @@ func ListKeyPairs(w http.ResponseWriter, r *http.Request) {
 		client = utils.GetEC2Client()
 	}
 
-	ctx := context.TODO()
+	// Use request context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
 	input := &ec2.DescribeKeyPairsInput{}
 	result, err := client.DescribeKeyPairs(ctx, input)
@@ -731,7 +748,8 @@ func ListKeyPairs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var keyPairs []map[string]string
+	// Pre-allocate slice
+	keyPairs := make([]map[string]string, 0, len(result.KeyPairs))
 	for _, kp := range result.KeyPairs {
 		keyPairs = append(keyPairs, map[string]string{
 			"key_name":        aws.ToString(kp.KeyName),
@@ -764,7 +782,9 @@ func ListSubnets(w http.ResponseWriter, r *http.Request) {
 		client = utils.GetEC2Client()
 	}
 
-	ctx := context.TODO()
+	// Use request context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
 	input := &ec2.DescribeSubnetsInput{}
 	result, err := client.DescribeSubnets(ctx, input)
@@ -773,22 +793,15 @@ func ListSubnets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var subnets []map[string]string
+	// Pre-allocate slice
+	subnets := make([]map[string]string, 0, len(result.Subnets))
 	for _, sn := range result.Subnets {
-		name := ""
-		for _, tag := range sn.Tags {
-			if aws.ToString(tag.Key) == "Name" {
-				name = aws.ToString(tag.Value)
-				break
-			}
-		}
-
 		subnets = append(subnets, map[string]string{
 			"subnet_id":         aws.ToString(sn.SubnetId),
 			"vpc_id":            aws.ToString(sn.VpcId),
 			"cidr_block":        aws.ToString(sn.CidrBlock),
 			"availability_zone": aws.ToString(sn.AvailabilityZone),
-			"name":              name,
+			"name":              getTagValue(sn.Tags, "Name"),
 		})
 	}
 
@@ -816,7 +829,9 @@ func ListVPCs(w http.ResponseWriter, r *http.Request) {
 		client = utils.GetEC2Client()
 	}
 
-	ctx := context.TODO()
+	// Use request context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
 	input := &ec2.DescribeVpcsInput{}
 	result, err := client.DescribeVpcs(ctx, input)
@@ -825,21 +840,14 @@ func ListVPCs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var vpcs []map[string]interface{}
+	// Pre-allocate slice
+	vpcs := make([]map[string]interface{}, 0, len(result.Vpcs))
 	for _, vpc := range result.Vpcs {
-		name := ""
-		for _, tag := range vpc.Tags {
-			if aws.ToString(tag.Key) == "Name" {
-				name = aws.ToString(tag.Value)
-				break
-			}
-		}
-
 		vpcs = append(vpcs, map[string]interface{}{
 			"vpc_id":     aws.ToString(vpc.VpcId),
 			"cidr_block": aws.ToString(vpc.CidrBlock),
 			"state":      string(vpc.State),
-			"name":       name,
+			"name":       getTagValue(vpc.Tags, "Name"),
 			"is_default": vpc.IsDefault,
 		})
 	}
@@ -869,7 +877,9 @@ func ListAMIs(w http.ResponseWriter, r *http.Request) {
 		region = utils.GetCurrentRegion()
 	}
 
-	ctx := context.TODO()
+	// Use request context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
 
 	// Query for popular AMIs with specific name patterns
 	input := &ec2.DescribeImagesInput{
@@ -923,7 +933,8 @@ func ListAMIs(w http.ResponseWriter, r *http.Request) {
 		images = images[:limit]
 	}
 
-	var amis []map[string]interface{}
+	// Pre-allocate slice
+	amis := make([]map[string]interface{}, 0, len(images))
 	for _, image := range images {
 		amis = append(amis, map[string]interface{}{
 			"image_id":      aws.ToString(image.ImageId),
@@ -960,13 +971,13 @@ func ListAWSRegions(w http.ResponseWriter, r *http.Request) {
 }
 
 // fetchInstancesFromRegionWithContext fetches instances from a specific region with context
-func fetchInstancesFromRegionWithContext(ctx context.Context, region string) ([]map[string]interface{}, error) {
+func fetchInstancesFromRegionWithContext(ctx context.Context, region string) ([]EC2Instance, error) {
 	client, err := utils.GetEC2ClientForRegion(region)
 	if err != nil {
 		return nil, err
 	}
 
-	var instances []map[string]interface{}
+	instances := make([]EC2Instance, 0, 100) // Pre-allocate with reasonable capacity
 	var nextToken *string
 
 	for {
@@ -991,25 +1002,15 @@ func fetchInstancesFromRegionWithContext(ctx context.Context, region string) ([]
 
 		for _, reservation := range result.Reservations {
 			for _, instance := range reservation.Instances {
-				instanceName := ""
-				for _, tag := range instance.Tags {
-					if aws.ToString(tag.Key) == "Name" {
-						instanceName = aws.ToString(tag.Value)
-						break
-					}
-				}
-
-				instanceData := map[string]interface{}{
-					"instance_id":   aws.ToString(instance.InstanceId),
-					"name":          instanceName,
-					"state":         string(instance.State.Name),
-					"platform":      aws.ToString(instance.PlatformDetails),
-					"architecture":  string(instance.Architecture),
-					"instance_type": string(instance.InstanceType),
-					"region":        region,
-				}
-
-				instances = append(instances, instanceData)
+				instances = append(instances, EC2Instance{
+					InstanceID:   aws.ToString(instance.InstanceId),
+					Name:         getTagValue(instance.Tags, "Name"),
+					State:        string(instance.State.Name),
+					Platform:     aws.ToString(instance.PlatformDetails),
+					Architecture: string(instance.Architecture),
+					InstanceType: string(instance.InstanceType),
+					Region:       region,
+				})
 			}
 		}
 
@@ -1032,37 +1033,51 @@ func ListEC2InstancesAllRegions(w http.ResponseWriter, r *http.Request) {
 
 	type regionResult struct {
 		region    string
-		instances []map[string]interface{}
+		instances []EC2Instance
 		err       error
 	}
 
 	resultsChan := make(chan regionResult, len(regions))
 
-	// Query all regions in parallel with timeout
-	for _, region := range regions {
-		go func(r string) {
-			// Create context with timeout for each region
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			defer cancel()
+	// Use request context with overall timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
-			instances, err := fetchInstancesFromRegionWithContext(ctx, r)
-			resultsChan <- regionResult{
+	// Worker pool to limit concurrent goroutines
+	const maxWorkers = 5
+	sem := make(chan struct{}, maxWorkers)
+
+	// Query all regions in parallel with controlled concurrency
+	for _, region := range regions {
+		sem <- struct{}{} // Acquire semaphore
+		go func(r string) {
+			defer func() { <-sem }() // Release semaphore
+
+			// Create per-region timeout (shorter than overall)
+			regionCtx, regionCancel := context.WithTimeout(ctx, 3*time.Second)
+			defer regionCancel()
+
+			instances, err := fetchInstancesFromRegionWithContext(regionCtx, r)
+
+			// Use select to prevent goroutine leak if context cancelled
+			select {
+			case resultsChan <- regionResult{
 				region:    r,
 				instances: instances,
 				err:       err,
+			}:
+			case <-ctx.Done():
+				return
 			}
 		}(region)
 	}
 
-	// Collect results with overall timeout
-	var allInstances []map[string]interface{}
+	// Collect results
+	allInstances := make([]EC2Instance, 0, 500) // Pre-allocate with heuristic
 	var failedRegions []string
-	regionsQueried := make([]string, 0)
+	regionsQueried := make([]string, 0, len(regions))
 
-	// Set overall timeout for collecting results
-	timeout := time.After(10 * time.Second)
 	collected := 0
-
 	for collected < len(regions) {
 		select {
 		case result := <-resultsChan:
@@ -1075,8 +1090,8 @@ func ListEC2InstancesAllRegions(w http.ResponseWriter, r *http.Request) {
 				allInstances = append(allInstances, result.instances...)
 				regionsQueried = append(regionsQueried, result.region)
 			}
-		case <-timeout:
-			// Timeout reached, return what we have so far
+		case <-ctx.Done():
+			// Context cancelled or timeout - stop waiting
 			goto done
 		}
 	}
@@ -1104,40 +1119,71 @@ func GetEC2Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type regionResult struct {
-		region    string
-		instances []map[string]interface{}
-		err       error
+		region string
+		count  int
+		states map[string]int
+		err    error
 	}
 
 	resultsChan := make(chan regionResult, len(regions))
 
-	// Query all regions in parallel with timeout
-	for _, region := range regions {
-		go func(r string) {
-			// Create context with timeout for each region
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			defer cancel()
+	// Use request context with overall timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 
-			instances, err := fetchInstancesFromRegionWithContext(ctx, r)
-			resultsChan <- regionResult{
-				region:    r,
-				instances: instances,
-				err:       err,
+	// Worker pool to limit concurrent goroutines
+	const maxWorkers = 5
+	sem := make(chan struct{}, maxWorkers)
+
+	// Query all regions in parallel with controlled concurrency
+	for _, region := range regions {
+		sem <- struct{}{} // Acquire semaphore
+		go func(r string) {
+			defer func() { <-sem }() // Release semaphore
+
+			// Create per-region timeout (shorter than overall)
+			regionCtx, regionCancel := context.WithTimeout(ctx, 3*time.Second)
+			defer regionCancel()
+
+			instances, err := fetchInstancesFromRegionWithContext(regionCtx, r)
+
+			if err != nil {
+				select {
+				case resultsChan <- regionResult{region: r, err: err}:
+				case <-ctx.Done():
+					return
+				}
+				return
+			}
+
+			// Aggregate data here instead of sending full instances
+			states := make(map[string]int)
+			for _, instance := range instances {
+				states[instance.State]++
+			}
+
+			// Use select to prevent goroutine leak if context cancelled
+			select {
+			case resultsChan <- regionResult{
+				region: r,
+				count:  len(instances),
+				states: states,
+				err:    nil,
+			}:
+			case <-ctx.Done():
+				return
 			}
 		}(region)
 	}
 
-	// Collect and aggregate results with overall timeout
+	// Collect and aggregate results
 	instancesByRegion := make(map[string]int)
 	instancesByState := make(map[string]int)
 	totalInstances := 0
-	regionsWithInstances := make([]string, 0)
+	regionsWithInstances := make([]string, 0, len(regions))
 	failedRegions := make([]string, 0)
 
-	// Set overall timeout for collecting results
-	timeout := time.After(10 * time.Second)
 	collected := 0
-
 	for collected < len(regions) {
 		select {
 		case result := <-resultsChan:
@@ -1147,19 +1193,18 @@ func GetEC2Dashboard(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if len(result.instances) > 0 {
-				instancesByRegion[result.region] = len(result.instances)
+			if result.count > 0 {
+				instancesByRegion[result.region] = result.count
 				regionsWithInstances = append(regionsWithInstances, result.region)
-				totalInstances += len(result.instances)
+				totalInstances += result.count
 
-				// Count by state
-				for _, instance := range result.instances {
-					state := instance["state"].(string)
-					instancesByState[state]++
+				// Merge state counts
+				for state, count := range result.states {
+					instancesByState[state] += count
 				}
 			}
-		case <-timeout:
-			// Timeout reached, return what we have so far
+		case <-ctx.Done():
+			// Context cancelled or timeout - stop waiting
 			goto done
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -25,6 +26,9 @@ var (
 	S3Client     *s3.Client
 	STSClient    *sts.Client
 	awsConfig    aws.Config // Store config for creating region-specific clients
+
+	// Client cache for region-specific clients
+	ec2ClientCache sync.Map // map[string]*ec2.Client
 )
 
 // InitAWSClients initializes AWS SDK clients
@@ -152,10 +156,15 @@ func GetConsoleSignInURL() (string, error) {
 	return "https://" + accountID + ".signin.aws.amazon.com/console", nil
 }
 
-// GetEC2ClientForRegion creates an EC2 client for a specific region
+// GetEC2ClientForRegion creates or returns a cached EC2 client for a specific region
 func GetEC2ClientForRegion(region string) (*ec2.Client, error) {
 	if awsConfig.Region == "" {
 		return nil, fmt.Errorf("AWS config not initialized")
+	}
+
+	// Check cache first
+	if cached, ok := ec2ClientCache.Load(region); ok {
+		return cached.(*ec2.Client), nil
 	}
 
 	// Load config with the specified region
@@ -165,7 +174,12 @@ func GetEC2ClientForRegion(region string) (*ec2.Client, error) {
 		return nil, fmt.Errorf("failed to load config for region %s: %w", region, err)
 	}
 
-	return ec2.NewFromConfig(cfg), nil
+	client := ec2.NewFromConfig(cfg)
+
+	// Store in cache
+	ec2ClientCache.Store(region, client)
+
+	return client, nil
 }
 
 // GetAllAWSRegions returns list of all AWS regions
