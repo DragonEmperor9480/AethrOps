@@ -39,7 +39,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 
   Future<void> _checkBiometric() async {
-    if (!widget.isSetup && Platform.isAndroid || Platform.isIOS) {
+    if (!widget.isSetup) {
       final biometricEnabled = await SecurityService.isBiometricEnabled();
       final canUse = await SecurityService.canUseBiometric();
       setState(() => _showBiometric = biometricEnabled && canUse);
@@ -272,9 +272,16 @@ class _PinLockScreenState extends State<PinLockScreen> {
                       const SizedBox(height: 16),
                       IconButton(
                         onPressed: _authenticateWithBiometric,
-                        icon: const Icon(Icons.fingerprint, size: 40),
+                        icon: Icon(
+                          Platform.isWindows
+                              ? Icons.lock_person
+                              : Icons.fingerprint,
+                          size: 40,
+                        ),
                         color: AppTheme.primaryPurple,
-                        tooltip: 'Use biometric',
+                        tooltip: Platform.isWindows
+                            ? 'Use Windows Hello'
+                            : 'Use biometric',
                       ),
                     ],
                   ],

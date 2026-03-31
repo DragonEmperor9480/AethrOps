@@ -28,10 +28,6 @@ class SecurityService {
 
   /// Check if device supports biometric authentication
   static Future<bool> canUseBiometric() async {
-    if (!Platform.isAndroid && !Platform.isIOS) {
-      return false; // Only Android and iOS support biometrics
-    }
-
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
@@ -83,7 +79,7 @@ class SecurityService {
     );
   }
 
-  /// Authenticate with biometrics
+  /// Authenticate with biometrics (includes Windows Hello, Face ID, Touch ID, Fingerprint)
   static Future<bool> authenticateWithBiometric() async {
     if (!await canUseBiometric()) {
       return false;
@@ -91,7 +87,13 @@ class SecurityService {
 
     try {
       return await _localAuth.authenticate(
-        localizedReason: 'Authenticate to access AethrOps',
+        localizedReason: Platform.isWindows
+            ? 'Verify your identity to access AethrOps'
+            : 'Authenticate to access AethrOps',
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false, // Allow Windows Hello PIN fallback
+        ),
       );
     } catch (e) {
       debugPrint('Biometric authentication error: $e');

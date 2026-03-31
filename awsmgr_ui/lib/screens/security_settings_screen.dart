@@ -161,9 +161,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 if (_securityEnabled) ...[
                   _buildPinCard(),
                   const SizedBox(height: 16),
-                  if (_canUseBiometric &&
-                      (Platform.isAndroid || Platform.isIOS))
-                    _buildBiometricCard(),
+                  if (_canUseBiometric) _buildBiometricCard(),
                 ],
               ],
             ),
@@ -257,10 +255,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Widget _buildBiometricCard() {
     String biometricType = 'Biometric';
-    if (_availableBiometrics.contains('fingerprint')) {
+    IconData biometricIcon = Icons.fingerprint;
+
+    if (Platform.isWindows) {
+      biometricType = 'Windows Hello';
+      biometricIcon = Icons.lock_person;
+    } else if (_availableBiometrics.contains('fingerprint')) {
       biometricType = 'Fingerprint';
+      biometricIcon = Icons.fingerprint;
     } else if (_availableBiometrics.contains('face')) {
       biometricType = 'Face Recognition';
+      biometricIcon = Icons.face;
     }
 
     return Card(
@@ -276,8 +281,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 color: AppTheme.successGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.fingerprint,
+              child: Icon(
+                biometricIcon,
                 color: AppTheme.successGreen,
                 size: 24,
               ),
