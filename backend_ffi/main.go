@@ -41,7 +41,7 @@ func SetDataDirectory(dir *C.char) int {
 	dataDir := C.GoString(dir)
 	db_service.SetDataDirectory(dataDir)
 	// Set environment variable so other packages can access it
-	os.Setenv("AWSMGR_DATA_DIR", dataDir)
+	os.Setenv("AETHROPS_DATA_DIR", dataDir)
 	log.Printf("Data directory set to: %s", dataDir)
 
 	// Initialize log directory after setting data directory
