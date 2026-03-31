@@ -73,23 +73,16 @@ class _MyAppState extends State<MyApp> with WindowListener {
 
   @override
   Future<void> onWindowClose() async {
-    // Get the overlay context from navigator (has both Navigator and MaterialLocalizations)
+    // Get the overlay context from navigator
     final overlayContext = navigatorKey.currentState?.overlay?.context;
 
     if (overlayContext == null) {
-      // If no proper context available, just close
       await windowManager.destroy();
       return;
     }
 
-    try {
-      await ExitHandler.showExitConfirmation(overlayContext);
-      // showExitConfirmation handles shutdown and exit internally
-    } catch (e) {
-      // If dialog fails, just close
-      debugPrint('Failed to show exit dialog: $e');
-      await windowManager.destroy();
-    }
+    // Show exit confirmation and handle exit
+    await ExitHandler.showExitConfirmation(overlayContext);
   }
 
   @override

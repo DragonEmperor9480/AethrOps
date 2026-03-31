@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:http/http.dart' as http;
-import 'dart:async';
 import '../theme/app_theme.dart';
 import '../services/backend_service.dart';
 
@@ -24,9 +22,7 @@ class ExitHandler {
             const Text('Exit AethrOps?'),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to exit? The backend service will be stopped.',
-        ),
+        content: const Text('Are you sure you want to exit?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -45,34 +41,28 @@ class ExitHandler {
       ),
     );
 
-    if (shouldExit == true && context.mounted) {
-      // Perform shutdown with animation and exit - don't return, just exit directly
-      await _performShutdownAndExit(context);
-      // This line won't be reached as app will be closed
+    if (shouldExit == true) {
+      // Send shutdown request to backend
+      try {
+        await http
+            .post(Uri.parse('${BackendService.baseUrl}/api/shutdown'))
+            .timeout(const Duration(milliseconds: 500));
+      } catch (_) {
+        // Ignore errors - backend might already be down
+      }
+
+      // Exit immediately
+      await exitApp();
       return true;
     }
 
     return false;
   }
 
-  /// Performs the actual shutdown process and exits immediately
-  static Future<void> _performShutdownAndExit(BuildContext context) async {
-    // Close the UI FIRST - immediately
-    exitApp();
-
-    // Tell backend to shutdown in background (fire and forget)
-    unawaited(
-      http
-          .post(Uri.parse('${BackendService.baseUrl}/api/shutdown'))
-          .timeout(const Duration(milliseconds: 500))
-          .catchError((_) => http.Response('', 500)),
-    );
-  }
-
   /// Handles app exit based on platform
   static Future<void> exitApp() async {
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      await windowManager.destroy();
+      exit(0); // Force immediate exit
     } else {
       SystemNavigator.pop();
     }

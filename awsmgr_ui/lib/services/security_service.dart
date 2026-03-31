@@ -90,10 +90,6 @@ class SecurityService {
         localizedReason: Platform.isWindows
             ? 'Verify your identity to access AethrOps'
             : 'Authenticate to access AethrOps',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false, // Allow Windows Hello PIN fallback
-        ),
       );
     } catch (e) {
       debugPrint('Biometric authentication error: $e');

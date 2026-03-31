@@ -16,7 +16,6 @@ func Shutdown(w http.ResponseWriter, r *http.Request) {
 
 	// Close the server in a goroutine to allow response to be sent
 	go func() {
-		// Give time for response to be sent
 		time.Sleep(100 * time.Millisecond)
 		os.Exit(0)
 	}()
