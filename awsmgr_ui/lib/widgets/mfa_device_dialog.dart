@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../utils/toast_utils.dart';
 import '../theme/app_theme.dart';
+import 'oneui_widgets.dart';
 
 class MFADeviceDialog extends StatefulWidget {
   const MFADeviceDialog({super.key});
@@ -72,40 +73,36 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
 
     return Dialog(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: Colors.transparent,
       child: Container(
         width: 500,
-        constraints: const BoxConstraints(maxHeight: 600),
         decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(16),
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(28),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primaryPurple,
-                    AppTheme.primaryPurple.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
-                  const Icon(Icons.security, color: Colors.white, size: 28),
-                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.security,
+                      color: AppTheme.primaryPurple,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,71 +110,36 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                         Text(
                           'MFA Device Configuration',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
                           ),
                         ),
+                        SizedBox(height: 4),
                         Text(
                           'Configure your MFA device for S3 operations',
-                          style: TextStyle(fontSize: 12, color: Colors.white70),
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
                 ],
               ),
             ),
-
-            // Form
-            Expanded(
+            const Divider(height: 1),
+            Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _deviceNameController,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          labelText: 'Device Name *',
-                          hintText: 'My Phone, YubiKey, etc.',
-                          prefixIcon: Icon(
-                            Icons.phone_android,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
-                        ),
+                        label: 'Device Name',
+                        hint: 'My Phone, YubiKey, etc.',
+                        icon: Icons.phone_android,
+                        autofocus: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Device name is required';
@@ -186,44 +148,11 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                         },
                       ),
                       const SizedBox(height: 16),
-
-                      TextFormField(
+                      OneUIPillTextField(
                         controller: _deviceArnController,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          labelText: 'Device ARN *',
-                          hintText: 'arn:aws:iam::123456789012:mfa/user',
-                          prefixIcon: Icon(
-                            Icons.vpn_key,
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.6,
-                            ),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: AppTheme.primaryPurple,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        maxLines: 2,
+                        label: 'Device ARN',
+                        hint: 'arn:aws:iam::123456789012:mfa/user',
+                        icon: Icons.vpn_key,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Device ARN is required';
@@ -234,37 +163,31 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
-
-                      // Info box
+                      const SizedBox(height: 24),
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? AppTheme.primaryBlue.withValues(alpha: 0.1)
-                              : AppTheme.primaryBlue.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.2),
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
                               Icons.info_outline,
                               color: AppTheme.primaryBlue,
-                              size: 20,
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'MFA device is required for S3 bucket operations like enabling MFA Delete. You can find your device ARN in the AWS IAM console.',
                                 style: TextStyle(
+                                  color: AppTheme.primaryBlue,
                                   fontSize: 13,
-                                  color: theme.colorScheme.onSurface.withValues(
-                                    alpha: 0.8,
-                                  ),
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -276,58 +199,26 @@ class _MFADeviceDialogState extends State<MFADeviceDialog> {
                 ),
               ),
             ),
-
-            // Footer
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surface.withValues(alpha: 0.3)
-                    : theme.colorScheme.surface,
-                border: Border(
-                  top: BorderSide(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                  ),
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-              ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.grey),
                       child: const Text('Cancel'),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
+                    child: OneUIPillButton(
+                      text: _loading ? 'Saving...' : 'Save Device',
+                      icon: Icons.save,
+                      isLoading: _loading,
+                      backgroundColor: AppTheme.primaryPurple,
                       onPressed: _loading ? null : _saveDevice,
-                      icon: _loading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.save, size: 18),
-                      label: Text(_loading ? 'Saving...' : 'Save Device'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryPurple,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
                     ),
                   ),
                 ],

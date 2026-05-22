@@ -14,6 +14,7 @@ class OneUIPillTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final int? maxLines;
   final bool enabled;
+  final bool autofocus;
 
   const OneUIPillTextField({
     super.key,
@@ -28,6 +29,7 @@ class OneUIPillTextField extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.enabled = true,
+    this.autofocus = false,
   });
 
   @override
@@ -38,6 +40,7 @@ class OneUIPillTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       enabled: enabled,
+      autofocus: autofocus,
       keyboardType: keyboardType,
       maxLines: maxLines,
       onChanged: onChanged,
@@ -267,6 +270,7 @@ class OneUIPillButton extends StatelessWidget {
   final IconData? icon;
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final double? width;
 
   const OneUIPillButton({
     super.key,
@@ -276,6 +280,7 @@ class OneUIPillButton extends StatelessWidget {
     this.icon,
     this.backgroundColor,
     this.foregroundColor,
+    this.width = double.infinity,
   });
 
   @override
@@ -284,7 +289,7 @@ class OneUIPillButton extends StatelessWidget {
     final isTransparent = backgroundColor == Colors.transparent;
 
     return SizedBox(
-      width: double.infinity,
+      width: width,
       height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
@@ -325,16 +330,20 @@ class OneUIPillButton extends StatelessWidget {
               )
             : icon != null
             ? Row(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(icon, size: 20),
                   const SizedBox(width: 8),
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -346,6 +355,7 @@ class OneUIPillButton extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
       ),
     );

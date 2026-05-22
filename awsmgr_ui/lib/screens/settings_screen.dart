@@ -11,6 +11,7 @@ import '../widgets/mfa_device_dialog.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../utils/toast_utils.dart';
+import '../widgets/oneui_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -104,24 +105,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteCredentials() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Credentials'),
-        content: const Text(
-          'Are you sure you want to delete your AWS credentials? '
-          'You will need to re-enter them to use AWS services.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 500,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorRed.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppTheme.errorRed,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete Credentials',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Are you sure you want to delete your AWS credentials? You will need to re-enter them to use AWS services.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      OneUIPillButton(
+                        text: 'Delete',
+                        icon: Icons.delete,
+                        backgroundColor: AppTheme.errorRed,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -170,24 +240,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteEmailConfig() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Email Configuration'),
-        content: const Text(
-          'Are you sure you want to delete your email configuration? '
-          'You will need to re-enter it to send credentials via email.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 500,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorRed.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppTheme.errorRed,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete Email Configuration',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Are you sure you want to delete your email configuration? You will need to re-enter it to send credentials via email.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      OneUIPillButton(
+                        text: 'Delete',
+                        icon: Icons.delete,
+                        backgroundColor: AppTheme.errorRed,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -234,24 +373,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteMFADevice() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete MFA Device'),
-        content: const Text(
-          'Are you sure you want to delete your MFA device configuration? '
-          'You will need to re-enter it for MFA operations.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 500,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorRed.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppTheme.errorRed,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete MFA Device',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Are you sure you want to delete your MFA device configuration? You will need to re-enter it for MFA operations.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      OneUIPillButton(
+                        text: 'Delete',
+                        icon: Icons.delete,
+                        backgroundColor: AppTheme.errorRed,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -463,26 +671,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Update',
+                    icon: Icons.edit,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.primaryPurple,
                     onPressed: _updateCredentials,
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Update'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryPurple,
-                      side: BorderSide(color: AppTheme.primaryPurple),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Delete',
+                    icon: Icons.delete_outline,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.errorRed,
                     onPressed: _deleteCredentials,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(color: AppTheme.errorRed),
-                    ),
                   ),
                 ),
               ],
@@ -491,15 +695,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: OneUIPillButton(
+                text: 'Add Credentials',
+                icon: Icons.add,
+                backgroundColor: AppTheme.primaryPurple,
                 onPressed: _updateCredentials,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Credentials'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
               ),
             ),
           ],
@@ -573,26 +773,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Update',
+                    icon: Icons.edit,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.primaryPurple,
                     onPressed: _configureEmail,
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Update'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryPurple,
-                      side: BorderSide(color: AppTheme.primaryPurple),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Delete',
+                    icon: Icons.delete_outline,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.errorRed,
                     onPressed: _deleteEmailConfig,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(color: AppTheme.errorRed),
-                    ),
                   ),
                 ),
               ],
@@ -601,15 +797,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: OneUIPillButton(
+                text: 'Configure Email',
+                icon: Icons.add,
+                backgroundColor: AppTheme.primaryPurple,
                 onPressed: _configureEmail,
-                icon: const Icon(Icons.add),
-                label: const Text('Configure Email'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
               ),
             ),
           ],
@@ -671,14 +863,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              ElevatedButton.icon(
+              OneUIPillButton(
+                text: _hasMFADevice ? 'Update' : 'Configure',
+                icon: _hasMFADevice ? Icons.edit : Icons.add,
+                backgroundColor: AppTheme.primaryBlue,
+                width: null,
                 onPressed: _configureMFADevice,
-                icon: Icon(_hasMFADevice ? Icons.edit : Icons.add, size: 18),
-                label: Text(_hasMFADevice ? 'Update' : 'Configure'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                ),
               ),
             ],
           ),
@@ -689,16 +879,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Delete',
+                    icon: Icons.delete_outline,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.errorRed,
                     onPressed: _deleteMFADevice,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(
-                        color: AppTheme.errorRed.withValues(alpha: 0.5),
-                      ),
-                    ),
                   ),
                 ),
               ],

@@ -8,6 +8,7 @@ import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import '../widgets/oneui_widgets.dart';
 import 's3_browser_screen.dart';
 
 class S3Screen extends StatefulWidget {
@@ -92,46 +93,117 @@ class _S3ScreenState extends State<S3Screen> {
 
   Future<void> _createBucket() async {
     final controller = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.add_circle, color: AppTheme.primaryPurple),
-            SizedBox(width: 8),
-            Text('Create S3 Bucket'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: 'Bucket Name',
-                hintText: 'my-unique-bucket-name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 500,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.add_circle,
+                        color: AppTheme.primaryPurple,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Create S3 Bucket',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Enter a unique name for your new bucket',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                prefixIcon: const Icon(Icons.storage),
-                helperText: 'Must be globally unique and DNS-compliant',
               ),
-              autofocus: true,
-            ),
-          ],
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    OneUIPillTextField(
+                      controller: controller,
+                      label: 'Bucket Name',
+                      hint: 'my-unique-bucket-name',
+                      icon: Icons.storage,
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Must be globally unique and DNS-compliant',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OneUIPillButton(
+                        text: 'Create',
+                        icon: Icons.add,
+                        onPressed: () => Navigator.pop(context, controller.text),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, controller.text),
-            icon: const Icon(Icons.add),
-            label: const Text('Create'),
-          ),
-        ],
       ),
     );
 
@@ -150,43 +222,129 @@ class _S3ScreenState extends State<S3Screen> {
   }
 
   Future<void> _deleteBucket(String bucketName) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Delete Bucket'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Are you sure you want to delete "$bucketName"?'),
-            const SizedBox(height: 8),
-            const Text(
-              'This action cannot be undone. The bucket must be empty.',
-              style: TextStyle(color: Colors.red, fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 500,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(28),
           ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.delete),
-            label: const Text('Delete'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorRed,
-              foregroundColor: Colors.white,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorRed.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.warning_rounded,
+                        color: AppTheme.errorRed,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Delete Bucket',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Are you sure you want to delete "$bucketName"?',
+                            style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorRed.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.errorRed.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppTheme.errorRed,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'This action cannot be undone. The bucket must be empty before it can be deleted.',
+                          style: TextStyle(
+                            color: AppTheme.errorRed,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    OneUIPillButton(
+                      text: 'Delete',
+                      icon: Icons.delete,
+                      backgroundColor: AppTheme.errorRed,
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey,
+                        minimumSize: const Size(double.infinity, 56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 

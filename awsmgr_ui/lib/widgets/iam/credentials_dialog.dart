@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/email_config_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/toast_utils.dart';
+import '../oneui_widgets.dart';
 
 /// Dialog for displaying and managing newly created IAM user credentials.
 class CredentialsDialog extends StatefulWidget {
@@ -47,80 +48,100 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
 
     // Ask for recipient email
     final emailController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final email = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryPurple.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.email_rounded,
-                color: AppTheme.primaryPurple,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Send Credentials'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Send credentials for ${credential['username']} via email',
-              style: TextStyle(color: Colors.grey[700]),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: 'Recipient Email',
-                hintText: 'user@example.com',
-                prefixIcon: const Icon(Icons.alternate_email_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  borderSide: BorderSide(
-                    color: AppTheme.primaryPurple,
-                    width: 2,
-                  ),
-                ),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              autofocus: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-            child: const Text('Cancel'),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 500,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(28),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (emailController.text.contains('@')) {
-                Navigator.pop(context, emailController.text.trim());
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryPurple,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryPurple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.email_rounded,
+                        color: AppTheme.primaryPurple,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Send Credentials',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Send credentials for ${credential['username']} via email',
+                            style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            child: const Text('Next'),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: OneUIPillTextField(
+                  controller: emailController,
+                  label: 'Recipient Email',
+                  hint: 'user@example.com',
+                  icon: Icons.alternate_email_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OneUIPillButton(
+                        text: 'Next',
+                        onPressed: () {
+                          if (emailController.text.contains('@')) {
+                            Navigator.pop(context, emailController.text.trim());
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -131,70 +152,116 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     // Confirm email
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppTheme.warningAmber),
-            SizedBox(width: 12),
-            Text('Confirm Email'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Are you sure this is the correct email address?'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryPurple.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppTheme.primaryPurple.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.email_outlined,
-                    color: AppTheme.primaryPurple,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      email,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 500,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.warningAmber.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppTheme.warningAmber,
+                        size: 28,
                       ),
                     ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Confirm Email',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Are you sure this is the correct email address?',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                    ),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.email_outlined,
+                        color: AppTheme.primaryPurple,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          email,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OneUIPillButton(
+                        text: 'Send',
+                        icon: Icons.send_rounded,
+                        backgroundColor: AppTheme.successGreen,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.send_rounded, size: 18),
-            label: const Text('Send'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.successGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
       ),
     );
 
@@ -278,14 +345,16 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
         ),
         const SizedBox(height: 6),
         Container(
-          height: 48,
+          height: 56,
           decoration: BoxDecoration(
             color: isDark 
-                ? AppTheme.backgroundDark 
-                : Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
+                ? Colors.white.withValues(alpha: 0.05) 
+                : Colors.black.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.15) 
+                  : Colors.black.withValues(alpha: 0.15),
             ),
           ),
           child: Row(
@@ -311,7 +380,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
               Container(
                 width: 1, 
                 height: 24, 
-                color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+                color: isDark 
+                    ? Colors.white.withValues(alpha: 0.15) 
+                    : Colors.black.withValues(alpha: 0.15),
               ),
               if (isPassword && onToggleVisibility != null)
                 IconButton(
@@ -334,7 +405,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                 Container(
                   width: 1, 
                   height: 24, 
-                  color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.15) 
+                      : Colors.black.withValues(alpha: 0.15),
                 ),
               IconButton(
                 icon: Icon(
@@ -374,15 +447,15 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     }
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
         width: 550,
         constraints: const BoxConstraints(maxHeight: 700),
         decoration: BoxDecoration(
-          color: isDark ? AppTheme.cardBackgroundDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.2),
@@ -527,25 +600,18 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OneUIPillButton(
+                          text: 'Copy All',
                           onPressed: _downloadCredentials,
-                          icon: const Icon(Icons.copy_all_rounded, size: 18),
-                          label: const Text('Copy All Credentials'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            foregroundColor: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary,
-                            side: BorderSide(
-                              color: isDark ? AppTheme.borderColorDark : Colors.grey.shade300,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                          icon: Icons.copy_all_rounded,
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: OneUIPillButton(
+                          text: _sending ? 'Sending...' : 'Email',
                           onPressed: _sending
                               ? null
                               : () async {
@@ -553,28 +619,10 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                                     await _sendViaEmail(cred);
                                   }
                                 },
-                          icon: _sending
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.email_outlined, size: 18),
-                          label: Text(
-                            _sending ? 'Sending...' : 'Email Credentials',
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            foregroundColor: AppTheme.primaryPurple,
-                            side: const BorderSide(
-                              color: AppTheme.primaryPurple,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                          isLoading: _sending,
+                          icon: Icons.email_outlined,
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: AppTheme.primaryPurple,
                         ),
                       ),
                     ],
@@ -582,24 +630,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
+                    child: OneUIPillButton(
+                      text: 'Done',
                       onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryPurple,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Done',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ),
                 ],

@@ -342,14 +342,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               backgroundColor: theme.scaffoldBackgroundColor,
               elevation: 0,
               actions: [
-                Container(
+                  Container(
                   margin: const EdgeInsets.symmetric(
                     vertical: 12,
                     horizontal: 8,
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 10,
+                    horizontal: 20,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     color: _isLoadingUserInfo
@@ -357,15 +357,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         : _isConnected
                         ? AppTheme.successGreen
                         : AppTheme.errorRed,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (_isLoadingUserInfo)
                         SizedBox(
-                          width: 10,
-                          height: 10,
+                          width: 12,
+                          height: 12,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -405,15 +405,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       horizontal: 4,
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryBlue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-                        width: 1,
+                        width: 1.5,
                       ),
                     ),
                     child: Row(

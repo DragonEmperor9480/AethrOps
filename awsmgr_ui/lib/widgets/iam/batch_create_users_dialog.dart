@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../oneui_widgets.dart';
 
 /// Dialog for batch-creating multiple IAM users at once.
 class BatchCreateUsersDialog extends StatefulWidget {
@@ -114,8 +115,9 @@ class _BatchCreateUsersDialogState extends State<BatchCreateUsersDialog> {
             ),
 
             // Users list
-            Expanded(
+            Flexible(
               child: ListView.builder(
+                shrinkWrap: true,
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
                 itemCount: _users.length,
@@ -317,17 +319,11 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: TextField(
+                  child: OneUIPillTextField(
                     controller: widget.entry.usernameController,
-                    decoration: InputDecoration(
-                      labelText: 'Username *',
-                      hintText: 'Enter username',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      prefixIcon: const Icon(Icons.person, size: 20),
-                      isDense: true,
-                    ),
+                    label: 'Username *',
+                    hint: 'Enter username',
+                    icon: Icons.person,
                     onChanged: (_) => widget.onChanged(),
                   ),
                 ),
@@ -362,31 +358,26 @@ class _UserEntryWidgetState extends State<_UserEntryWidget> {
             ),
             if (widget.entry.setPassword) ...[
               const SizedBox(height: 8),
-              TextField(
+              OneUIPillTextField(
                 controller: widget.entry.passwordController,
                 obscureText: widget.entry.obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password *',
-                  hintText: 'Enter password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                label: 'Password *',
+                hint: 'Enter password',
+                icon: Icons.lock,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    widget.entry.obscurePassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    size: 20,
+                    color: Colors.grey,
                   ),
-                  prefixIcon: const Icon(Icons.lock, size: 20),
-                  isDense: true,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      widget.entry.obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        widget.entry.obscurePassword =
-                            !widget.entry.obscurePassword;
-                      });
-                    },
-                  ),
+                  onPressed: () {
+                    setState(() {
+                      widget.entry.obscurePassword =
+                          !widget.entry.obscurePassword;
+                    });
+                  },
                 ),
               ),
               const SizedBox(height: 8),

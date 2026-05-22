@@ -202,7 +202,7 @@ class _AboutScreenState extends State<AboutScreen> {
                     'Visit Website',
                     'Checkout our cool website!',
                     Icons.language,
-                    'https://aethrops.vercel.app/',
+                    'https://aethrops.amrutlabs.in/',
                     isDark,
                   ),
                   const SizedBox(height: 12),
@@ -210,7 +210,7 @@ class _AboutScreenState extends State<AboutScreen> {
                     'Documentation',
                     'Learn about AethrOps',
                     Icons.menu_book,
-                    'https://aethrops.vercel.app/docs',
+                    'https://aethrops.amrutlabs.in/docs',
                     isDark,
                   ),
 
@@ -256,22 +256,29 @@ class _AboutScreenState extends State<AboutScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Version: ',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-            ),
-            Text(
-              _version,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Quantify',
-                color: isDark ? Colors.white : Colors.black,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  'Version: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                Text(
+                  _version,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Quantify',
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 12),
             Container(
