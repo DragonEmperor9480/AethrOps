@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class ToastUtils {
-  static void show(BuildContext context, String message, {bool isError = false}) {
+  static void show(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
@@ -23,7 +27,7 @@ class ToastUtils {
     );
 
     overlay.insert(overlayEntry);
-    
+
     // Auto remove after duration + animation buffer
     Future.delayed(const Duration(seconds: 4), () {
       if (overlayEntry.mounted) {
@@ -48,7 +52,8 @@ class _ToastWidget extends StatefulWidget {
   State<_ToastWidget> createState() => _ToastWidgetState();
 }
 
-class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderStateMixin {
+class _ToastWidgetState extends State<_ToastWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacity;
   late Animation<Offset> _slide;
@@ -61,9 +66,10 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
       duration: const Duration(milliseconds: 300),
     );
 
-    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _opacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _slide = Tween<Offset>(
       begin: const Offset(0, -0.5),
@@ -109,7 +115,9 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                widget.isError ? Icons.error_outline : Icons.check_circle_outline,
+                widget.isError
+                    ? Icons.error_outline
+                    : Icons.check_circle_outline,
                 color: Colors.white,
               ),
               const SizedBox(width: 12),

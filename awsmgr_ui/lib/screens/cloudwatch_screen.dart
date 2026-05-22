@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../services/cloudwatch_service.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/list_header_with_search.dart';
@@ -55,7 +55,7 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
     });
 
     try {
-      final functions = await CloudWatchService.listLambdaFunctions();
+      final functions = await ApiService.listLambdaFunctions();
       setState(() {
         _functions = functions;
         _filteredFunctions = functions;

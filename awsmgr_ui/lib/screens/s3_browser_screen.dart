@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
+import '../models/s3_item.dart';
 import '../services/api_service.dart';
 import '../services/s3_service.dart';
 import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
-import '../widgets/progress_dialog.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import 's3_file_viewer_screen.dart';
 
 class S3BrowserScreen extends StatefulWidget {
   final String bucketName;
@@ -19,110 +20,6 @@ class S3BrowserScreen extends StatefulWidget {
 
   @override
   State<S3BrowserScreen> createState() => _S3BrowserScreenState();
-}
-
-class S3Item {
-  final String key;
-  final int size;
-  final String lastModified;
-  final bool isFolder;
-
-  S3Item({
-    required this.key,
-    required this.size,
-    required this.lastModified,
-    required this.isFolder,
-  });
-
-  factory S3Item.fromJson(Map<String, dynamic> json) {
-    return S3Item(
-      key: json['Key'] ?? '',
-      size: json['Size'] ?? 0,
-      lastModified: json['LastModified'] ?? '',
-      isFolder: json['IsFolder'] ?? false,
-    );
-  }
-
-  String get displayName {
-    if (key.isEmpty) return '';
-    final parts = key.split('/');
-    if (isFolder) {
-      return parts.length > 1 ? parts[parts.length - 2] : parts[0];
-    }
-    return parts.last;
-  }
-
-  String get formattedSize {
-    if (isFolder) return '';
-    if (size < 1024) return '$size B';
-    if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
-    if (size < 1024 * 1024 * 1024) {
-      return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
-
-  IconData get icon {
-    if (isFolder) return Icons.folder;
-    
-    final ext = key.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'zip':
-      case 'rar':
-      case '7z':
-        return Icons.folder_zip;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return Icons.image;
-      case 'mp4':
-      case 'avi':
-      case 'mov':
-        return Icons.video_file;
-      case 'mp3':
-      case 'wav':
-        return Icons.audio_file;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'txt':
-      case 'md':
-        return Icons.text_snippet;
-      case 'json':
-      case 'xml':
-        return Icons.code;
-      default:
-        return Icons.insert_drive_file;
-    }
-  }
-
-  Color get iconColor {
-    if (isFolder) return Colors.amber;
-    
-    final ext = key.split('.').last.toLowerCase();
-    switch (ext) {
-      case 'pdf':
-        return Colors.red;
-      case 'zip':
-      case 'rar':
-        return Colors.orange;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return Colors.purple;
-      case 'mp4':
-      case 'avi':
-        return Colors.blue;
-      case 'mp3':
-      case 'wav':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
 }
 
 enum SortOption { nameAsc, nameDesc, sizeAsc, sizeDesc, dateAsc, dateDesc }
@@ -136,11 +33,10 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   String _lastSearchText = '';
   SortOption _sortOption = SortOption.nameAsc;
   final TextEditingController _searchController = TextEditingController();
-  
+
   // Versioning and MFA Delete state
   bool _versioningEnabled = false;
   bool _mfaDeleteEnabled = false;
-  bool _loadingVersioning = false;
 
   @override
   void initState() {
@@ -152,7 +48,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   void _onSearchChanged() {
     final text = _searchController.text;
-    
+
     // Logic to detect if user is typing a path
     if (text.contains('/')) {
       final lastSlashIndex = text.lastIndexOf('/');
@@ -203,7 +99,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   void _navigateToBreadcrumb(int index) {
     final parts = _breadcrumbs;
     if (index < 0 || index >= parts.length) return;
-    
+
     final newPath = '${parts.sublist(0, index + 1).join('/')}/';
     setState(() => _currentPrefix = newPath);
     _loadItems();
@@ -215,7 +111,9 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((item) {
-        return item.displayName.toLowerCase().contains(_searchQuery.toLowerCase());
+        return item.displayName.toLowerCase().contains(
+          _searchQuery.toLowerCase(),
+        );
       }).toList();
     }
 
@@ -225,14 +123,18 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         filtered.sort((a, b) {
           if (a.isFolder && !b.isFolder) return -1;
           if (!a.isFolder && b.isFolder) return 1;
-          return a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase());
+          return a.displayName.toLowerCase().compareTo(
+            b.displayName.toLowerCase(),
+          );
         });
         break;
       case SortOption.nameDesc:
         filtered.sort((a, b) {
           if (a.isFolder && !b.isFolder) return -1;
           if (!a.isFolder && b.isFolder) return 1;
-          return b.displayName.toLowerCase().compareTo(a.displayName.toLowerCase());
+          return b.displayName.toLowerCase().compareTo(
+            a.displayName.toLowerCase(),
+          );
         });
         break;
       case SortOption.sizeAsc:
@@ -294,11 +196,12 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   Future<void> _loadVersioningStatus() async {
     if (!mounted) return;
-    setState(() => _loadingVersioning = true);
     try {
-      final versioningStatus = await ApiService.getBucketVersioning(widget.bucketName);
+      final versioningStatus = await ApiService.getBucketVersioning(
+        widget.bucketName,
+      );
       final mfaStatus = await ApiService.getBucketMFADelete(widget.bucketName);
-      
+
       if (!mounted) return;
       setState(() {
         _versioningEnabled = versioningStatus['status'] == 'Enabled';
@@ -308,7 +211,6 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       debugPrint('Failed to load versioning status: $e');
     } finally {
       if (mounted) {
-        setState(() => _loadingVersioning = false);
       }
     }
   }
@@ -333,56 +235,62 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Text(
-              value
-                  ? 'Enabling versioning will:'
-                  : 'Disabling versioning will:',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            if (value) ...[
-              const Text('• Keep multiple versions of objects'),
-              const Text('• Allow recovery of deleted objects'),
-              const Text('• Enable MFA Delete protection'),
-              const Text('• May increase storage costs'),
-            ] else ...[
-              const Text('• Stop creating new object versions'),
-              const Text('• Existing versions will be kept'),
-              const Text('• Disable MFA Delete protection'),
-              const Text('• Cannot be fully reversed'),
-            ],
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: value ? Colors.blue.shade50 : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: value ? Colors.blue.shade200 : Colors.orange.shade200,
-                ),
+              Text(
+                value
+                    ? 'Enabling versioning will:'
+                    : 'Disabling versioning will:',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: value ? Colors.blue.shade700 : Colors.orange.shade700,
+              const SizedBox(height: 8),
+              if (value) ...[
+                const Text('• Keep multiple versions of objects'),
+                const Text('• Allow recovery of deleted objects'),
+                const Text('• Enable MFA Delete protection'),
+                const Text('• May increase storage costs'),
+              ] else ...[
+                const Text('• Stop creating new object versions'),
+                const Text('• Existing versions will be kept'),
+                const Text('• Disable MFA Delete protection'),
+                const Text('• Cannot be fully reversed'),
+              ],
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: value ? Colors.blue.shade50 : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: value
+                        ? Colors.blue.shade200
+                        : Colors.orange.shade200,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      value
-                          ? 'This is a recommended security practice for production buckets.'
-                          : 'This action cannot be fully undone. Proceed with caution.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: value ? Colors.blue.shade900 : Colors.orange.shade900,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: value
+                          ? Colors.blue.shade700
+                          : Colors.orange.shade700,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        value
+                            ? 'This is a recommended security practice for production buckets.'
+                            : 'This action cannot be fully undone. Proceed with caution.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: value
+                              ? Colors.blue.shade900
+                              : Colors.orange.shade900,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
             ],
           ),
         ),
@@ -405,28 +313,26 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    setState(() => _loadingVersioning = true);
     try {
       await ApiService.setBucketVersioning(
         widget.bucketName,
         value ? 'Enabled' : 'Suspended',
       );
-      
+
       if (!mounted) return;
       setState(() => _versioningEnabled = value);
-      
+
       // If disabling versioning, also disable MFA delete
       if (!value && _mfaDeleteEnabled) {
         if (!mounted) return;
         setState(() => _mfaDeleteEnabled = false);
       }
-      
+
       _showSuccess('Versioning ${value ? 'enabled' : 'disabled'} successfully');
     } catch (e) {
       _showError('Failed to update versioning: $e');
     } finally {
       if (mounted) {
-        setState(() => _loadingVersioning = false);
       }
     }
   }
@@ -453,14 +359,13 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     final mfaToken = await _showMFATokenDialog();
     if (mfaToken == null || !mounted) return;
 
-    setState(() => _loadingVersioning = true);
     try {
       await ApiService.updateBucketMFADelete(
         widget.bucketName,
         value ? 'Enabled' : 'Disabled',
         mfaToken,
       );
-      
+
       if (!mounted) return;
       setState(() => _mfaDeleteEnabled = value);
       _showSuccess('MFA Delete ${value ? 'enabled' : 'disabled'} successfully');
@@ -468,14 +373,13 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       _showError('Failed to update MFA Delete: $e');
     } finally {
       if (mounted) {
-        setState(() => _loadingVersioning = false);
       }
     }
   }
 
   Future<String?> _showMFATokenDialog() async {
     if (!mounted) return null;
-    
+
     return showDialog<String>(
       context: context,
       builder: (context) => _MFATokenDialog(),
@@ -489,12 +393,14 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   void _navigateBack() {
     if (_currentPrefix.isEmpty) return;
-    
+
     final parts = _currentPrefix.split('/');
     parts.removeLast(); // Remove empty string after last /
     if (parts.isNotEmpty) {
       parts.removeLast(); // Remove current folder
-      setState(() => _currentPrefix = parts.isEmpty ? '' : '${parts.join('/')}/');
+      setState(
+        () => _currentPrefix = parts.isEmpty ? '' : '${parts.join('/')}/',
+      );
     } else {
       setState(() => _currentPrefix = '');
     }
@@ -524,14 +430,15 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       // Create progress stream controller
       progressController = StreamController<double>.broadcast();
 
-      // Show animated progress dialog with real progress
+      if (!mounted) return;
+      
+      // Show loading animation
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AnimatedProgressDialog(
-          title: 'Uploading File',
-          message: '$fileName (${_formatBytes(fileSize)})',
-          progressStream: progressController!.stream,
+        builder: (context) => LoadingAnimation(
+          message: 'Uploading $fileName',
+          showQuote: true,
         ),
       );
 
@@ -552,7 +459,9 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           if (total > 0 && !progressController!.isClosed) {
             final progress = sent / total;
             progressController.add(progress);
-            print('Upload progress: ${(progress * 100).toStringAsFixed(1)}%');
+            debugPrint(
+              'Upload progress: ${(progress * 100).toStringAsFixed(1)}%',
+            );
           }
         },
       );
@@ -593,26 +502,138 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
+  bool _canPreviewFile(String fileName) {
+    final ext = fileName.toLowerCase().split('.').last;
+    return [
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'bmp',
+      'webp',
+      'txt',
+      'md',
+      'log',
+      'json',
+      'xml',
+      'yaml',
+      'yml',
+      'csv',
+      'html',
+      'css',
+      'js',
+      'ts',
+      'dart',
+      'py',
+      'java',
+      'go',
+      'c',
+      'cpp',
+      'h',
+      'sh',
+      'bat',
+      'sql',
+      'env',
+      'pdf',
+    ].contains(ext);
+  }
+
+  void _viewFile(S3Item item) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => S3FileViewerScreen(
+          bucketName: widget.bucketName,
+          objectKey: item.key,
+          fileName: item.displayName,
+        ),
+      ),
+    );
+    // File viewer closed, data is automatically cleared when screen is disposed
+  }
+
   Future<void> _downloadFile(S3Item item) async {
     // Request storage permission first
     final hasPermission = await DownloadService.requestStoragePermission();
-    
+
     if (!hasPermission) {
       _showError(DownloadService.getPermissionDeniedMessage());
       return;
     }
 
+    if (!mounted) return;
+
     // Create progress stream controller
     final progressController = StreamController<double>();
+    int bytesReceived = 0;
+    int totalBytes = 0;
 
     // Show animated progress dialog with real progress
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AnimatedProgressDialog(
-        title: 'Downloading File',
-        message: '${item.displayName} (${item.formattedSize})',
-        progressStream: progressController.stream,
+      builder: (context) => StreamBuilder<double>(
+        stream: progressController.stream,
+        builder: (context, snapshot) {
+          final progress = snapshot.data ?? 0.0;
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        height: 100,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 8,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.primaryPurple,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryPurple,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Downloading File',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.displayName,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                if (totalBytes > 0) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_formatBytes(bytesReceived)} / ${_formatBytes(totalBytes)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
 
@@ -622,6 +643,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         item.key,
         (received, total) {
           if (total > 0) {
+            bytesReceived = received;
+            totalBytes = total;
             progressController.add(received / total);
           }
         },
@@ -647,7 +670,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     } catch (e) {
       // Close progress stream
       await progressController.close();
-      
+
       // Hide progress dialog if showing
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
       _showError('Download failed: $e');
@@ -685,26 +708,26 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     );
 
     if (confirm == true) {
-      // Show animated progress dialog
+      if (!mounted) return;
+      
+      // Show loading animation
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AnimatedProgressDialog(
-          title: 'Deleting Item',
-          message: item.displayName,
+        builder: (context) => LoadingAnimation(
+          message: 'Deleting ${item.displayName}',
+          showQuote: true,
         ),
       );
 
       try {
         await ApiService.deleteS3Object(widget.bucketName, item.key);
 
-        // Hide progress dialog
         if (mounted) Navigator.of(context).pop();
 
         _showSuccess('Deleted: ${item.displayName}');
         await _loadItems();
       } catch (e) {
-        // Hide progress dialog if showing
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
         _showError('Delete failed: $e');
       }
@@ -749,13 +772,15 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     );
 
     if (result != null && result.isNotEmpty) {
-      // Show animated progress dialog
+      if (!mounted) return;
+      
+      // Show loading animation
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AnimatedProgressDialog(
-          title: 'Creating Folder',
-          message: result,
+        builder: (context) => LoadingAnimation(
+          message: 'Creating folder $result',
+          showQuote: true,
         ),
       );
 
@@ -765,13 +790,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           _currentPrefix + result,
         );
 
-        // Hide progress dialog
         if (mounted) Navigator.of(context).pop();
 
         _showSuccess('Created folder: $result');
         await _loadItems();
       } catch (e) {
-        // Hide progress dialog if showing
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
         _showError('Create folder failed: $e');
       }
@@ -786,7 +809,9 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         border: Border(
-          bottom: BorderSide(color: isDark ? AppTheme.borderColorDark : Colors.grey.shade200),
+          bottom: BorderSide(
+            color: isDark ? AppTheme.borderColorDark : Colors.grey.shade200,
+          ),
         ),
       ),
       child: Row(
@@ -799,7 +824,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _currentPrefix.isEmpty 
+                color: _currentPrefix.isEmpty
                     ? AppTheme.s3Color.withValues(alpha: 0.1)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
@@ -809,8 +834,8 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                   Icon(
                     Icons.home,
                     size: 16,
-                    color: _currentPrefix.isEmpty 
-                        ? AppTheme.s3Color 
+                    color: _currentPrefix.isEmpty
+                        ? AppTheme.s3Color
                         : theme.textTheme.bodyMedium?.color,
                   ),
                   const SizedBox(width: 4),
@@ -818,11 +843,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     widget.bucketName,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: _currentPrefix.isEmpty 
-                          ? FontWeight.bold 
+                      fontWeight: _currentPrefix.isEmpty
+                          ? FontWeight.bold
                           : FontWeight.normal,
-                      color: _currentPrefix.isEmpty 
-                          ? AppTheme.s3Color 
+                      color: _currentPrefix.isEmpty
+                          ? AppTheme.s3Color
                           : theme.textTheme.bodyLarge?.color,
                     ),
                   ),
@@ -832,11 +857,18 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
           ),
           if (_breadcrumbs.isNotEmpty) ...[
             for (int i = 0; i < _breadcrumbs.length; i++) ...[
-              Icon(Icons.chevron_right, size: 16, color: theme.textTheme.bodyMedium?.color),
+              Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: theme.textTheme.bodyMedium?.color,
+              ),
               InkWell(
                 onTap: () => _navigateToBreadcrumb(i),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: i == _breadcrumbs.length - 1
                         ? AppTheme.s3Color.withValues(alpha: 0.1)
@@ -867,13 +899,12 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return WillPopScope(
-      onWillPop: () async {
-        if (_currentPrefix.isNotEmpty) {
+    return PopScope(
+      canPop: _currentPrefix.isEmpty,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _currentPrefix.isNotEmpty) {
           _navigateBack();
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -897,15 +928,23 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
             if (_currentPrefix.isEmpty) ...[
               SpeedDialMenuItem(
                 icon: Icons.history,
-                label: _versioningEnabled ? 'Disable Versioning' : 'Enable Versioning',
-                color: _versioningEnabled ? AppTheme.successGreen : AppTheme.primaryPurple,
+                label: _versioningEnabled
+                    ? 'Disable Versioning'
+                    : 'Enable Versioning',
+                color: _versioningEnabled
+                    ? AppTheme.successGreen
+                    : AppTheme.primaryPurple,
                 onTap: () => _toggleVersioning(!_versioningEnabled),
               ),
               if (_versioningEnabled)
                 SpeedDialMenuItem(
                   icon: Icons.security,
-                  label: _mfaDeleteEnabled ? 'Disable MFA Delete' : 'Enable MFA Delete',
-                  color: _mfaDeleteEnabled ? Colors.orange : AppTheme.primaryPurple,
+                  label: _mfaDeleteEnabled
+                      ? 'Disable MFA Delete'
+                      : 'Enable MFA Delete',
+                  color: _mfaDeleteEnabled
+                      ? Colors.orange
+                      : AppTheme.primaryPurple,
                   onTap: () => _toggleMFADelete(!_mfaDeleteEnabled),
                 ),
             ],
@@ -936,22 +975,33 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
               _buildBreadcrumbs(),
             ListHeaderWithSearch(
               title: widget.bucketName,
-              subtitle: '${_filteredItems.length} items${_searchQuery.isNotEmpty ? " (filtered)" : ""}',
+              subtitle:
+                  '${_filteredItems.length} items${_searchQuery.isNotEmpty ? " (filtered)" : ""}',
               icon: Icons.storage,
-              iconBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.15),
+              iconBackgroundColor: AppTheme.primaryPurple.withValues(
+                alpha: 0.15,
+              ),
               iconColor: AppTheme.primaryPurple,
               searchController: _searchController,
               searchHint: 'Search files and folders...',
-              headerBackgroundColor: AppTheme.primaryPurple.withValues(alpha: 0.08),
+              headerBackgroundColor: AppTheme.primaryPurple.withValues(
+                alpha: 0.08,
+              ),
               actionWidget: PopupMenuButton<SortOption>(
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.primaryPurple.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: AppTheme.primaryPurple.withValues(alpha: 0.2),
+                    ),
                   ),
-                  child: const Icon(Icons.sort, size: 20, color: AppTheme.primaryPurple),
+                  child: const Icon(
+                    Icons.sort,
+                    size: 20,
+                    color: AppTheme.primaryPurple,
+                  ),
                 ),
                 tooltip: 'Sort by',
                 onSelected: (option) {
@@ -963,7 +1013,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     value: SortOption.nameAsc,
                     child: Row(
                       children: [
-                        Icon(Icons.sort_by_alpha, size: 18, color: AppTheme.primaryPurple),
+                        Icon(
+                          Icons.sort_by_alpha,
+                          size: 18,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 12),
                         const Text('Name (A-Z)'),
                       ],
@@ -973,7 +1027,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     value: SortOption.nameDesc,
                     child: Row(
                       children: [
-                        Icon(Icons.sort_by_alpha, size: 18, color: AppTheme.primaryPurple),
+                        Icon(
+                          Icons.sort_by_alpha,
+                          size: 18,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 12),
                         const Text('Name (Z-A)'),
                       ],
@@ -983,7 +1041,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     value: SortOption.sizeAsc,
                     child: Row(
                       children: [
-                        Icon(Icons.data_usage, size: 18, color: AppTheme.primaryPurple),
+                        Icon(
+                          Icons.data_usage,
+                          size: 18,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 12),
                         const Text('Size (Smallest)'),
                       ],
@@ -993,7 +1055,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     value: SortOption.sizeDesc,
                     child: Row(
                       children: [
-                        Icon(Icons.data_usage, size: 18, color: AppTheme.primaryPurple),
+                        Icon(
+                          Icons.data_usage,
+                          size: 18,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 12),
                         const Text('Size (Largest)'),
                       ],
@@ -1003,7 +1069,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     value: SortOption.dateAsc,
                     child: Row(
                       children: [
-                        Icon(Icons.access_time, size: 18, color: AppTheme.primaryPurple),
+                        Icon(
+                          Icons.access_time,
+                          size: 18,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 12),
                         const Text('Date (Oldest)'),
                       ],
@@ -1013,7 +1083,11 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
                     value: SortOption.dateDesc,
                     child: Row(
                       children: [
-                        Icon(Icons.access_time, size: 18, color: AppTheme.primaryPurple),
+                        Icon(
+                          Icons.access_time,
+                          size: 18,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 12),
                         const Text('Date (Newest)'),
                       ],
@@ -1026,157 +1100,182 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
               child: _loading
                   ? const LoadingAnimation(message: 'Loading items...')
                   : _filteredItems.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _searchQuery.isNotEmpty 
-                                    ? Icons.search_off 
-                                    : Icons.folder_open_outlined,
-                                size: 80, 
-                                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchQuery.isNotEmpty 
-                                    ? 'No matching items' 
-                                    : 'No items found',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: theme.textTheme.bodyMedium?.color,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _searchQuery.isNotEmpty 
-                                    ? 'Try a different search term' 
-                                    : 'Upload files or create folders',
-                                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _searchQuery.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.folder_open_outlined,
+                            size: 80,
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.3),
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _filteredItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _filteredItems[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: InkWell(
-                                onTap: item.isFolder
-                                    ? () => _navigateToFolder(item.key)
-                                    : null,
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          color: item.iconColor.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          item.icon,
-                                          color: item.iconColor,
-                                          size: 28,
-                                        ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isNotEmpty
+                                ? 'No matching items'
+                                : 'No items found',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _searchQuery.isNotEmpty
+                                ? 'Try a different search term'
+                                : 'Upload files or create folders',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _filteredItems[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: item.isFolder
+                                ? () => _navigateToFolder(item.key)
+                                : (_canPreviewFile(item.displayName)
+                                      ? () => _viewFile(item)
+                                      : null),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: item.iconColor.withValues(
+                                        alpha: 0.1,
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      item.icon,
+                                      color: item.iconColor,
+                                      size: 28,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.displayName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
                                           children: [
-                                            Text(
-                                              item.displayName,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 14,
+                                            if (!item.isFolder) ...[
+                                              Icon(
+                                                Icons.storage,
+                                                size: 12,
+                                                color: Colors.grey[600],
                                               ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              children: [
-                                                if (!item.isFolder) ...[
-                                                  Icon(Icons.storage,
-                                                      size: 12, color: Colors.grey[600]),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    item.formattedSize,
-                                                    style: TextStyle(
-                                                      color: Colors.grey[600],
-                                                      fontSize: 12,
-                                                    ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                item.formattedSize,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                            ],
+                                            if (item
+                                                .lastModified
+                                                .isNotEmpty) ...[
+                                              Icon(
+                                                Icons.access_time,
+                                                size: 12,
+                                                color: Colors.grey[600],
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  item.lastModified,
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 12,
                                                   ),
-                                                  const SizedBox(width: 16),
-                                                ],
-                                                if (item.lastModified.isNotEmpty) ...[
-                                                  Icon(Icons.access_time,
-                                                      size: 12, color: Colors.grey[600]),
-                                                  const SizedBox(width: 4),
-                                                  Expanded(
-                                                    child: Text(
-                                                      item.lastModified,
-                                                      style: TextStyle(
-                                                        color: Colors.grey[600],
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
+                                                ),
+                                              ),
+                                            ],
                                           ],
                                         ),
-                                      ),
-                                      if (!item.isFolder) ...[
-                                        IconButton(
-                                          icon: const Icon(Icons.download),
-                                          color: AppTheme.primaryPurple,
-                                          tooltip: 'Download',
-                                          onPressed: () => _downloadFile(item),
-                                          style: IconButton.styleFrom(
-                                            backgroundColor:
-                                                AppTheme.primaryPurple.withValues(alpha: 0.1),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
                                       ],
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline),
-                                        color: AppTheme.errorRed,
-                                        tooltip: 'Delete',
-                                        onPressed: () => _deleteItem(item),
-                                        style: IconButton.styleFrom(
-                                          backgroundColor:
-                                              AppTheme.errorRed.withValues(alpha: 0.1),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                      ),
-                                      if (item.isFolder) ...[
-                                        const SizedBox(width: 8),
-                                        Icon(Icons.chevron_right, color: Colors.grey[400]),
-                                      ],
-                                    ],
+                                    ),
                                   ),
-                                ),
+                                  if (!item.isFolder) ...[
+                                    IconButton(
+                                      icon: const Icon(Icons.download),
+                                      color: AppTheme.primaryPurple,
+                                      tooltip: 'Download',
+                                      onPressed: () => _downloadFile(item),
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: AppTheme.primaryPurple
+                                            .withValues(alpha: 0.1),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    color: AppTheme.errorRed,
+                                    tooltip: 'Delete',
+                                    onPressed: () => _deleteItem(item),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: AppTheme.errorRed
+                                          .withValues(alpha: 0.1),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                  if (item.isFolder) ...[
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ],
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

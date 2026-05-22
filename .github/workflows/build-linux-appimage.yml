@@ -2,6 +2,7 @@ name: AethrOps Linux AppImage
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -52,7 +53,7 @@ jobs:
       - name: Build backend
         run: |
           cd backend
-          GOOS=linux GOARCH=amd64 go build -o awsmgr_backend main.go
+          GOOS=linux GOARCH=amd64 go build -o aethrops_core main.go
 
       - name: Build Flutter Linux app
         working-directory: awsmgr_ui
@@ -65,45 +66,44 @@ jobs:
           set -e
 
           PROJECT_ROOT="$GITHUB_WORKSPACE"
-          APPDIR="$PROJECT_ROOT/build/appimage/aws-manager.AppDir"
+          APPDIR="$PROJECT_ROOT/build/appimage/aethrops.AppDir"
           RELEASE_DIR="$PROJECT_ROOT/release/linux"
 
           rm -rf "$PROJECT_ROOT/build/appimage"
           mkdir -p "$APPDIR" "$RELEASE_DIR"
 
           cp -r awsmgr_ui/build/linux/x64/release/bundle/* "$APPDIR/"
-          cp backend/awsmgr_backend "$APPDIR/"
-          chmod +x "$APPDIR/awsmgr_backend"
-          mv "$APPDIR/aethrops" "$APPDIR/aws-manager"
+          cp backend/aethrops_core "$APPDIR/"
+          chmod +x "$APPDIR/aethrops_core"
 
       - name: Create AppRun
         run: |
-          cat > build/appimage/aws-manager.AppDir/AppRun << 'EOF'
+          cat > build/appimage/aethrops.AppDir/AppRun << 'EOF'
           #!/bin/bash
           APPDIR="$(dirname "$(readlink -f "$0")")"
           export LD_LIBRARY_PATH="$APPDIR/lib:$LD_LIBRARY_PATH"
           cd "$APPDIR"
-          ./awsmgr_backend &
-          exec "$APPDIR/aws-manager" "$@"
+          ./aethrops_core &
+          exec "$APPDIR/aethrops" "$@"
           EOF
-          chmod +x build/appimage/aws-manager.AppDir/AppRun
+          chmod +x build/appimage/aethrops.AppDir/AppRun
 
       - name: Create desktop file
         run: |
-          cat > build/appimage/aws-manager.AppDir/awsmgr.desktop << EOF
+          cat > build/appimage/aethrops.AppDir/aethrops.desktop << EOF
           [Desktop Entry]
-          Name=AWS Manager
-          Exec=aws-manager
-          Icon=aws-manager
+          Name=AethrOps
+          Exec=aethrops
+          Icon=aethrops
           Type=Application
           Categories=Development;
           EOF
-          chmod +x build/appimage/aws-manager.AppDir/awsmgr.desktop
+          chmod +x build/appimage/aethrops.AppDir/aethrops.desktop
 
       - name: Setup icon
         run: |
-          cp awsmgr_ui/linux/icon.png build/appimage/aws-manager.AppDir/aws-manager.png
-          ln -sf aws-manager.png build/appimage/aws-manager.AppDir/.DirIcon
+          cp awsmgr_ui/linux/icon.png build/appimage/aethrops.AppDir/aethrops.png
+          ln -sf aethrops.png build/appimage/aethrops.AppDir/.DirIcon
 
       - name: Download appimagetool
         run: |
@@ -118,7 +118,7 @@ jobs:
           export ARCH=x86_64
           ./appimagetool.AppImage \
             --appimage-extract-and-run \
-            aws-manager.AppDir \
+            aethrops.AppDir \
             AethrOps-${VERSION}-x86_64.AppImage
 
           mv AethrOps-${VERSION}-x86_64.AppImage \

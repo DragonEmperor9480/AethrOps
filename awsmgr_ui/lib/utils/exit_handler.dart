@@ -1,10 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:http/http.dart' as http;
 import '../theme/app_theme.dart';
 import '../services/backend_service.dart';
-import '../widgets/loading_animation.dart';
 
 /// Shared exit handler for both Windows close button and Android back button
 class ExitHandler {
@@ -23,9 +22,7 @@ class ExitHandler {
             const Text('Exit AethrOps?'),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to exit? The backend service will be stopped.',
-        ),
+        content: const Text('Are you sure you want to exit?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -45,39 +42,17 @@ class ExitHandler {
     );
 
     if (shouldExit == true) {
-      // Show shutting down animation
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => PopScope(
-          canPop: false,
-          child: const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LoadingAnimation(
-                  message: 'Shutting down...',
-                  size: 40,
-                  style: LoadingStyle.orbital,
-                  showQuote: false,
-                ),
-                SizedBox(height: 16),
-                Text('Shutting down...', style: TextStyle(fontSize: 16)),
-              ],
-            ),
-          ),
-        ),
-      );
+      // Send shutdown request to backend
+      try {
+        await http
+            .post(Uri.parse('${BackendService.baseUrl}/api/shutdown'))
+            .timeout(const Duration(milliseconds: 500));
+      } catch (_) {
+        // Ignore errors - backend might already be down
+      }
 
-      // Give the animation a moment to render
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Stop the backend before exiting
-      BackendService.stop();
-
-      // Small delay to show the animation
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      // Exit immediately
+      await exitApp();
       return true;
     }
 
@@ -87,7 +62,7 @@ class ExitHandler {
   /// Handles app exit based on platform
   static Future<void> exitApp() async {
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      await windowManager.destroy();
+      exit(0); // Force immediate exit
     } else {
       SystemNavigator.pop();
     }

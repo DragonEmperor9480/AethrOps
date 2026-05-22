@@ -22,10 +22,10 @@ class LoadingAnimation extends StatefulWidget {
 }
 
 enum LoadingStyle {
-  orbital,      // Multiple orbiting rings (default, professional)
-  pulse,        // Pulsing gradient orb
-  dots,         // Bouncing dots
-  wave,         // Wave effect
+  orbital, // Multiple orbiting rings (default, professional)
+  pulse, // Pulsing gradient orb
+  dots, // Bouncing dots
+  wave, // Wave effect
 }
 
 class _LoadingAnimationState extends State<LoadingAnimation>
@@ -37,7 +37,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
   @override
   void initState() {
     super.initState();
-    
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
@@ -49,7 +49,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
     )..repeat();
 
     // Get random quote on init - either contextual or completely random
-    _currentQuote = widget.message != null 
+    _currentQuote = widget.message != null
         ? AppConstants.getContextualLoadingMessage(widget.message!)
         : AppConstants.getRandomQuote();
   }
@@ -65,7 +65,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -76,11 +76,13 @@ class _LoadingAnimationState extends State<LoadingAnimation>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                _currentQuote,
+                widget.message ?? _currentQuote,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  fontStyle: FontStyle.italic,
-                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                  fontStyle: widget.message != null ? FontStyle.normal : FontStyle.italic,
+                  color: isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondary,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,
@@ -125,13 +127,15 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppTheme.primaryPurple.withValues(alpha: isDark ? 0.15 : 0.08),
+                      AppTheme.primaryPurple.withValues(
+                        alpha: isDark ? 0.15 : 0.08,
+                      ),
                       AppTheme.primaryPurple.withValues(alpha: 0.0),
                     ],
                   ),
                 ),
               ),
-              
+
               // Outer ring - clockwise
               Transform.rotate(
                 angle: _controller.value * 2 * math.pi,
@@ -145,7 +149,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                   ),
                 ),
               ),
-              
+
               // Middle ring - counter-clockwise
               Transform.rotate(
                 angle: -_secondaryController.value * 2 * math.pi,
@@ -159,7 +163,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                   ),
                 ),
               ),
-              
+
               // Inner ring - clockwise (faster)
               Transform.rotate(
                 angle: _controller.value * 3 * math.pi,
@@ -173,7 +177,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                   ),
                 ),
               ),
-              
+
               // Center gradient orb
               Container(
                 width: widget.size * 0.28,
@@ -183,10 +187,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.primaryPurple,
-                      AppTheme.primaryBlue,
-                    ],
+                    colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -210,7 +211,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
       animation: _controller,
       builder: (context, child) {
         final pulse = (math.sin(_controller.value * 2 * math.pi) + 1) / 2;
-        
+
         return Container(
           width: widget.size * (1.0 + pulse * 0.3),
           height: widget.size * (1.0 + pulse * 0.3),
@@ -250,7 +251,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
               final delay = index * 0.15;
               final value = (_controller.value - delay) % 1.0;
               final bounce = (math.sin(value * 2 * math.pi)).abs();
-              
+
               return Transform.translate(
                 offset: Offset(0, -bounce * 15),
                 child: Container(
@@ -260,14 +261,25 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        [AppTheme.primaryPurple, AppTheme.primaryBlue, AppTheme.accentCyan][index],
-                        [AppTheme.primaryBlue, AppTheme.accentCyan, AppTheme.primaryPurple][index],
+                        [
+                          AppTheme.primaryPurple,
+                          AppTheme.primaryBlue,
+                          AppTheme.accentCyan,
+                        ][index],
+                        [
+                          AppTheme.primaryBlue,
+                          AppTheme.accentCyan,
+                          AppTheme.primaryPurple,
+                        ][index],
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: [AppTheme.primaryPurple, AppTheme.primaryBlue, AppTheme.accentCyan][index]
-                            .withValues(alpha: 0.3),
+                        color: [
+                          AppTheme.primaryPurple,
+                          AppTheme.primaryBlue,
+                          AppTheme.accentCyan,
+                        ][index].withValues(alpha: 0.3),
                         blurRadius: 5,
                         spreadRadius: 1,
                       ),
@@ -296,7 +308,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
               final delay = index * 0.1;
               final value = (_controller.value - delay) % 1.0;
               final height = (math.sin(value * 2 * math.pi) + 1) / 2;
-              
+
               return Container(
                 width: widget.size * 0.12,
                 height: widget.size * (0.2 + height * 0.3),
@@ -305,10 +317,7 @@ class _LoadingAnimationState extends State<LoadingAnimation>
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [
-                      AppTheme.primaryPurple,
-                      AppTheme.primaryBlue,
-                    ],
+                    colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
                   ),
                 ),
               );
@@ -385,20 +394,15 @@ class LoadingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Stack(
       children: [
         child,
         if (isLoading)
           Container(
-            color: (isDark 
-                ? AppTheme.backgroundDark 
-                : AppTheme.backgroundLight)
+            color: (isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight)
                 .withValues(alpha: 0.95),
-            child: LoadingAnimation(
-              message: message,
-              style: style,
-            ),
+            child: LoadingAnimation(message: message, style: style),
           ),
       ],
     );

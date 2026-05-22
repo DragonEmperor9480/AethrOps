@@ -1,11 +1,11 @@
 #!/bin/bash
-# Build AppImage for AWS Manager
+# Build AppImage for AethrOps
 # AppImage is a universal Linux package format that works on most distributions
 
 set -e
 
 echo "=========================================="
-echo "Building AWS Manager AppImage"
+echo "Building AethrOps AppImage"
 echo "=========================================="
 
 # Change to project root
@@ -15,7 +15,7 @@ PROJECT_ROOT=$(pwd)
 # Fetch version from GitHub
 echo ""
 echo "Fetching version from GitHub..."
-GITHUB_JSON=$(curl -s --max-time 10 "https://raw.githubusercontent.com/DragonEmperor9480/aws-manager/awsmgr-gui/version.json" 2>/dev/null)
+GITHUB_JSON=$(curl -s --max-time 10 "https://raw.githubusercontent.com/DragonEmperor9480/aethrops/awsmgr-gui/version.json" 2>/dev/null)
 
 if [ -n "$GITHUB_JSON" ]; then
     # Try jq first, fall back to python
@@ -43,9 +43,9 @@ if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
     VERSION="Preview Beta 1"
 fi
 
-APP_NAME="aws-manager"
-APPIMAGE_NAME="aws-manager-${VERSION}-x86_64.AppImage"
-APPDIR="$PROJECT_ROOT/build/appimage/aws-manager.AppDir"
+APP_NAME="aethrops"
+APPIMAGE_NAME="aethrops-${VERSION}-x86_64.AppImage"
+APPDIR="$PROJECT_ROOT/build/appimage/aethrops.AppDir"
 RELEASE_DIR="$PROJECT_ROOT/release/linux"
 
 echo "App: $APP_NAME"
@@ -87,7 +87,7 @@ cp -r awsmgr_ui/build/linux/x64/release/bundle/* "$APPDIR/"
 echo "Creating AppRun script..."
 cat > "$APPDIR/AppRun" << 'EOF'
 #!/bin/bash
-# AppRun script for AWS Manager
+# AppRun script for AethrOps
 
 # Get the directory where this AppImage is mounted
 APPDIR="$(dirname "$(readlink -f "$0")")"
@@ -99,7 +99,7 @@ export LD_LIBRARY_PATH="$APPDIR/lib:$LD_LIBRARY_PATH"
 cd "$APPDIR"
 
 # Start the backend in background
-./awsmgr_backend &
+./aethrops_core &
 BACKEND_PID=$!
 
 # Function to cleanup on exit
@@ -109,23 +109,23 @@ cleanup() {
 trap cleanup EXIT
 
 # Run the Flutter app
-exec "$APPDIR/aws-manager" "$@"
+exec "$APPDIR/aethrops" "$@"
 EOF
 chmod +x "$APPDIR/AppRun"
 
 # Create desktop file
 echo "Creating desktop entry..."
-cat > "$APPDIR/awsmgr.desktop" << EOF
+cat > "$APPDIR/aethrops.desktop" << EOF
 [Desktop Entry]
-Name=AWS Manager
+Name=AethrOps
 Comment=AWS Resource Management Tool
-Exec=aws-manager
-Icon=aws-manager
+Exec=aethrops
+Icon=aethrops
 Terminal=false
 Type=Application
 Categories=Development;Utility;
 Keywords=aws;cloud;management;iam;s3;lambda;
-StartupWMClass=aws-manager
+StartupWMClass=aethrops
 X-AppImage-Version=$VERSION
 EOF
 
@@ -135,10 +135,10 @@ ICON_CREATED=false
 
 # Try to find existing icon
 if [ -f "awsmgr_ui/assets/icon.png" ]; then
-    cp "awsmgr_ui/assets/icon.png" "$APPDIR/aws-manager.png"
+    cp "awsmgr_ui/assets/icon.png" "$APPDIR/aethrops.png"
     ICON_CREATED=true
-elif [ -f "awsmgr_ui/linux/awsmgr.png" ]; then
-    cp "awsmgr_ui/linux/awsmgr.png" "$APPDIR/aws-manager.png"
+elif [ -f "awsmgr_ui/linux/aethrops.png" ]; then
+    cp "awsmgr_ui/linux/aethrops.png" "$APPDIR/aethrops.png"
     ICON_CREATED=true
 fi
 
@@ -150,22 +150,22 @@ if [ "$ICON_CREATED" = false ]; then
         magick -size 256x256 xc:transparent \
                 -fill '#6B46C1' -draw 'circle 128,128 128,20' \
                 -fill white -pointsize 80 -gravity center -annotate +0+0 'AWS' \
-                "$APPDIR/aws-manager.png"
+                "$APPDIR/aethrops.png"
     elif command -v convert &> /dev/null; then
         convert -size 256x256 xc:transparent \
                 -fill '#6B46C1' -draw 'circle 128,128 128,20' \
                 -fill white -pointsize 80 -gravity center -annotate +0+0 'AWS' \
-                "$APPDIR/aws-manager.png"
+                "$APPDIR/aethrops.png"
     else
         echo "⚠️  ImageMagick not found. AppImage will use default icon."
         echo "   Install ImageMagick (magick or convert) or add icon.png to awsmgr_ui/assets/"
         # Create a minimal 1x1 transparent PNG as fallback
-        echo -n "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > "$APPDIR/aws-manager.png"
+        echo -n "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > "$APPDIR/aethrops.png"
     fi
 fi
 
 # Create .DirIcon symlink (required for AppImage)
-ln -sf aws-manager.png "$APPDIR/.DirIcon"
+ln -sf aethrops.png "$APPDIR/.DirIcon"
 
 # Download appimagetool if not present
 APPIMAGETOOL="$PROJECT_ROOT/build/appimage/appimagetool-x86_64.AppImage"
@@ -190,7 +190,7 @@ export ARCH=x86_64
 
 # Build AppImage
 # Build AppImage (using extract-and-run to avoid FUSE dependency)
-"$APPIMAGETOOL" --appimage-extract-and-run --no-appstream "aws-manager.AppDir" "$APPIMAGE_NAME"
+"$APPIMAGETOOL" --appimage-extract-and-run --no-appstream "aethrops.AppDir" "$APPIMAGE_NAME"
 
 if [ $? -ne 0 ]; then
     echo "❌ Failed to build AppImage"
@@ -220,7 +220,7 @@ echo "To run:"
 echo "  $RELEASE_DIR/$APPIMAGE_NAME"
 echo ""
 echo "To install (optional):"
-echo "  mv $RELEASE_DIR/$APPIMAGE_NAME ~/.local/bin/awsmgr"
+echo "  mv $RELEASE_DIR/$APPIMAGE_NAME ~/.local/bin/aethrops"
 echo "  # Or move to /usr/local/bin for system-wide installation"
 echo ""
 echo "The AppImage is portable and can be:"

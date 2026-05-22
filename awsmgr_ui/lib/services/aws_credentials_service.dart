@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -16,25 +17,71 @@ class AWSCredentialsService {
     required String secretKey,
     required String region,
   }) async {
+    // Save to secure storage
     await _storage.write(key: _keyAccessKey, value: accessKey);
     await _storage.write(key: _keySecretKey, value: secretKey);
     await _storage.write(key: _keyRegion, value: region);
+
+    // Also save to backend (creates credential files)
+    try {
+      final response = await http.post(
+        Uri.parse('${BackendService.baseUrl}/api/aws/config'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'access_key_id': accessKey,
+          'secret_access_key': secretKey,
+          'region': region,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint(
+          'Warning: Failed to save credentials to backend: ${response.body}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Warning: Failed to call backend config endpoint: $e');
+    }
   }
 
   // Get AWS credentials
   static Future<Map<String, String?>> getCredentials() async {
-    final accessKey = await _storage.read(key: _keyAccessKey);
-    final secretKey = await _storage.read(key: _keySecretKey);
-    final region = await _storage.read(key: _keyRegion);
+    try {
+      final accessKey = await _storage.read(key: _keyAccessKey);
+      final secretKey = await _storage.read(key: _keySecretKey);
+      final region = await _storage.read(key: _keyRegion);
 
-    return {'accessKey': accessKey, 'secretKey': secretKey, 'region': region};
+      return {'accessKey': accessKey, 'secretKey': secretKey, 'region': region};
+    } catch (e) {
+      // Handle decryption errors (e.g., when app signature changes)
+      // Clear corrupted data
+      try {
+        await _storage.deleteAll();
+      } catch (clearError) {
+        // Ignore clear errors
+      }
+
+      return {'accessKey': null, 'secretKey': null, 'region': null};
+    }
   }
 
   // Check if credentials exist
   static Future<bool> hasCredentials() async {
-    final accessKey = await _storage.read(key: _keyAccessKey);
-    final secretKey = await _storage.read(key: _keySecretKey);
-    return accessKey != null && secretKey != null;
+    try {
+      final accessKey = await _storage.read(key: _keyAccessKey);
+      final secretKey = await _storage.read(key: _keySecretKey);
+      return accessKey != null && secretKey != null;
+    } catch (e) {
+      // Handle decryption errors
+      // Clear corrupted data
+      try {
+        await _storage.deleteAll();
+      } catch (clearError) {
+        // Ignore clear errors
+      }
+
+      return false;
+    }
   }
 
   // Delete all credentials

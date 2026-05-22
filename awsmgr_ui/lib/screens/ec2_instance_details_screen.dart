@@ -9,12 +9,14 @@ class EC2InstanceDetailsScreen extends StatefulWidget {
   final String instanceId;
   final String instanceName;
   final String state;
+  final String? region;
 
   const EC2InstanceDetailsScreen({
     super.key,
     required this.instanceId,
     required this.instanceName,
     required this.state,
+    this.region,
   });
 
   @override
@@ -41,7 +43,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     });
 
     try {
-      final details = await ApiService.getEC2Instance(widget.instanceId);
+      final details = await ApiService.getEC2Instance(
+        widget.instanceId,
+        region: widget.region,
+      );
       setState(() {
         _instanceDetails = details;
         _loading = false;
@@ -78,7 +83,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.startEC2Instance(widget.instanceId);
+        await ApiService.startEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance start initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -101,7 +109,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.stopEC2Instance(widget.instanceId);
+        await ApiService.stopEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance stop initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -124,7 +135,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.rebootEC2Instance(widget.instanceId);
+        await ApiService.rebootEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance reboot initiated');
         await Future.delayed(const Duration(seconds: 2));
         await _loadInstanceDetails();
@@ -149,7 +163,10 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     if (confirm == true) {
       setState(() => _operationInProgress = true);
       try {
-        await ApiService.terminateEC2Instance(widget.instanceId);
+        await ApiService.terminateEC2Instance(
+          widget.instanceId,
+          region: widget.region,
+        );
         _showSuccess('Instance termination initiated');
         await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
@@ -200,121 +217,31 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     );
   }
 
-  void _showActionsMenu() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        final state = widget.state.toLowerCase();
-        final isRunning = state == 'running';
-        final isStopped = state == 'stopped';
-        final isPending = state == 'pending' || state == 'stopping';
-
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-
-                decoration: BoxDecoration(
-                  color: Theme.of(context).dividerColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Instance Actions',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              if (isStopped)
-                _buildActionTile(
-                  icon: Icons.play_circle,
-                  label: 'Start Instance',
-                  color: AppTheme.successGreen,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _startInstance();
-                  },
-                ),
-              if (isRunning)
-                _buildActionTile(
-                  icon: Icons.stop_circle,
-                  label: 'Stop Instance',
-                  color: AppTheme.warningAmber,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _stopInstance();
-                  },
-                ),
-              if (isRunning)
-                _buildActionTile(
-                  icon: Icons.refresh,
-                  label: 'Reboot Instance',
-                  color: AppTheme.primaryBlue,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _rebootInstance();
-                  },
-                ),
-              if (!isPending)
-                _buildActionTile(
-                  icon: Icons.delete_forever,
-                  label: 'Terminate Instance',
-                  color: AppTheme.errorRed,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _terminateInstance();
-                  },
-                  isDangerous: true,
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildActionTile({
+  Widget _buildMenuItemContent({
     required IconData icon,
     required String label,
     required Color color,
-    required VoidCallback onTap,
     bool isDangerous = false,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, color: color, size: 20),
         ),
-        child: Icon(icon, color: color, size: 24),
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isDangerous
-              ? AppTheme.errorRed
-              : Theme.of(context).textTheme.bodyLarge?.color,
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: isDangerous ? AppTheme.errorRed : null,
+          ),
         ),
-      ),
-      onTap: onTap,
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+      ],
     );
   }
 
@@ -341,10 +268,75 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
         title: const Text('Instance Details'),
         elevation: 0,
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            onPressed: _showActionsMenu,
             tooltip: 'Actions',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            offset: const Offset(0, 50),
+            onSelected: (value) {
+              switch (value) {
+                case 'start':
+                  _startInstance();
+                  break;
+                case 'stop':
+                  _stopInstance();
+                  break;
+                case 'reboot':
+                  _rebootInstance();
+                  break;
+                case 'terminate':
+                  _terminateInstance();
+                  break;
+              }
+            },
+            itemBuilder: (context) {
+              final state = widget.state.toLowerCase();
+              final isRunning = state == 'running';
+              final isStopped = state == 'stopped';
+              final isPending = state == 'pending' || state == 'stopping';
+
+              return [
+                if (isStopped)
+                  PopupMenuItem(
+                    value: 'start',
+                    child: _buildMenuItemContent(
+                      icon: Icons.play_circle,
+                      label: 'Start Instance',
+                      color: AppTheme.successGreen,
+                    ),
+                  ),
+                if (isRunning)
+                  PopupMenuItem(
+                    value: 'stop',
+                    child: _buildMenuItemContent(
+                      icon: Icons.stop_circle,
+                      label: 'Stop Instance',
+                      color: AppTheme.warningAmber,
+                    ),
+                  ),
+                if (isRunning)
+                  PopupMenuItem(
+                    value: 'reboot',
+                    child: _buildMenuItemContent(
+                      icon: Icons.refresh,
+                      label: 'Reboot Instance',
+                      color: AppTheme.primaryBlue,
+                    ),
+                  ),
+                if (!isPending)
+                  PopupMenuItem(
+                    value: 'terminate',
+                    child: _buildMenuItemContent(
+                      icon: Icons.delete_forever,
+                      label: 'Terminate Instance',
+                      color: AppTheme.errorRed,
+                      isDangerous: true,
+                    ),
+                  ),
+              ];
+            },
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

@@ -41,6 +41,7 @@ class ListHeaderWithSearch extends StatefulWidget {
 class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
     with SingleTickerProviderStateMixin {
   late AnimationController _searchAnimationController;
+  // ignore: unused_field
   late Animation<double> _searchAnimation;
   bool _searchExpanded = false;
 
@@ -108,102 +109,95 @@ class _ListHeaderWithSearchState extends State<ListHeaderWithSearch>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: widget.svgAsset != null
-                    ? SvgPicture.asset(
-                        widget.svgAsset!,
-                        width: 22,
-                        height: 22,
-                      )
+                    ? SvgPicture.asset(widget.svgAsset!, width: 22, height: 22)
                     : Icon(widget.icon!, color: widget.iconColor, size: 22),
               ),
               const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  if (!_searchExpanded)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        widget.subtitle,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
+              if (!_searchExpanded)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          letterSpacing: -0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          widget.subtitle,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 12),
+                    ],
+                  ),
+                ),
               if (_searchExpanded &&
                   widget.showSearch &&
                   widget.searchController != null)
                 Expanded(
-                  child: SizeTransition(
-                    sizeFactor: _searchAnimation,
-                    axis: Axis.horizontal,
-                    axisAlignment: 1,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: TextField(
-                        controller: widget.searchController,
-                        focusNode: widget.searchFocusNode,
-                        autofocus: true,
-                        style: theme.textTheme.bodyMedium,
-                        decoration: InputDecoration(
-                          hintText: widget.searchHint,
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: isDark
-                                ? Colors.grey.shade600
-                                : Colors.grey.shade400,
-                            size: 20,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade300,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: widget.iconColor,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          hintStyle: TextStyle(
-                            color: isDark
-                                ? Colors.grey.shade600
-                                : Colors.grey.shade400,
-                            fontSize: 14,
-                          ),
-                          filled: true,
-                          fillColor: theme.cardColor,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: TextField(
+                      controller: widget.searchController,
+                      focusNode: widget.searchFocusNode,
+                      autofocus: true,
+                      style: theme.textTheme.bodyMedium,
+                      decoration: InputDecoration(
+                        hintText: widget.searchHint,
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: isDark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade400,
+                          size: 20,
                         ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.grey.shade700
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.grey.shade700
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: widget.iconColor,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        hintStyle: TextStyle(
+                          color: isDark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade400,
+                          fontSize: 14,
+                        ),
+                        filled: true,
+                        fillColor: theme.cardColor,
                       ),
                     ),
                   ),
-                )
-              else
-                const Spacer(),
+                ),
+              if (!_searchExpanded) const SizedBox(width: 12),
               if (widget.showSearch && widget.searchController != null)
                 IconButton(
                   icon: Icon(

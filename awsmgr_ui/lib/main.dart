@@ -5,7 +5,7 @@ import 'package:window_manager/window_manager.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
-import 'services/backend_service.dart';
+import 'providers/aws_config_provider.dart';
 import 'utils/exit_handler.dart';
 
 // Global navigator key to access navigator context for dialogs
@@ -35,8 +35,11 @@ void main() async {
   }
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => AwsConfigProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -70,27 +73,16 @@ class _MyAppState extends State<MyApp> with WindowListener {
 
   @override
   Future<void> onWindowClose() async {
-    // Get the overlay context from navigator (has both Navigator and MaterialLocalizations)
+    // Get the overlay context from navigator
     final overlayContext = navigatorKey.currentState?.overlay?.context;
 
     if (overlayContext == null) {
-      // If no proper context available, just close gracefully
-      BackendService.stop();
       await windowManager.destroy();
       return;
     }
 
-    try {
-      final shouldExit = await ExitHandler.showExitConfirmation(overlayContext);
-      if (shouldExit) {
-        await ExitHandler.exitApp();
-      }
-    } catch (e) {
-      // If dialog fails, just close gracefully
-      debugPrint('Failed to show exit dialog: $e');
-      BackendService.stop();
-      await windowManager.destroy();
-    }
+    // Show exit confirmation and handle exit
+    await ExitHandler.showExitConfirmation(overlayContext);
   }
 
   @override

@@ -5,11 +5,13 @@ import '../services/email_config_service.dart';
 import '../services/api_service.dart';
 import 'credentials_setup_screen.dart';
 import 'about_screen.dart';
+import 'security_settings_screen.dart';
 import '../widgets/email_config_dialog.dart';
 import '../widgets/mfa_device_dialog.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../utils/toast_utils.dart';
+import '../widgets/oneui_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -92,11 +94,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _updateCredentials() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const CredentialsSetupScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
     );
-    
+
     if (result == true || mounted) {
       _loadCredentialStatus();
     }
@@ -105,24 +105,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteCredentials() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Credentials'),
-        content: const Text(
-          'Are you sure you want to delete your AWS credentials? '
-          'You will need to re-enter them to use AWS services.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 500,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorRed.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppTheme.errorRed,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete Credentials',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Are you sure you want to delete your AWS credentials? You will need to re-enter them to use AWS services.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      OneUIPillButton(
+                        text: 'Delete',
+                        icon: Icons.delete,
+                        backgroundColor: AppTheme.errorRed,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -132,21 +201,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _hasCredentials = false;
           _region = null;
         });
-        
+
         if (mounted) {
           ToastUtils.show(context, 'Credentials deleted', isError: false);
-          
+
           // Navigate to credentials setup screen
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (_) => const CredentialsSetupScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
             (route) => false,
           );
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.show(context, 'Failed to delete credentials: $e', isError: true);
+          ToastUtils.show(
+            context,
+            'Failed to delete credentials: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -157,7 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => const EmailConfigDialog(),
     );
-    
+
     if (result == true) {
       _loadEmailConfigStatus();
       if (mounted) {
@@ -169,24 +240,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteEmailConfig() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Email Configuration'),
-        content: const Text(
-          'Are you sure you want to delete your email configuration? '
-          'You will need to re-enter it to send credentials via email.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 500,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorRed.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppTheme.errorRed,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete Email Configuration',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Are you sure you want to delete your email configuration? You will need to re-enter it to send credentials via email.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      OneUIPillButton(
+                        text: 'Delete',
+                        icon: Icons.delete,
+                        backgroundColor: AppTheme.errorRed,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -196,13 +336,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _hasEmailConfig = false;
           _senderEmail = null;
         });
-        
+
         if (mounted) {
-          ToastUtils.show(context, 'Email configuration deleted', isError: false);
+          ToastUtils.show(
+            context,
+            'Email configuration deleted',
+            isError: false,
+          );
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.show(context, 'Failed to delete email configuration: $e', isError: true);
+          ToastUtils.show(
+            context,
+            'Failed to delete email configuration: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -213,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => const MFADeviceDialog(),
     );
-    
+
     if (result == true) {
       _loadMFADeviceStatus();
       if (mounted) {
@@ -225,24 +373,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteMFADevice() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete MFA Device'),
-        content: const Text(
-          'Are you sure you want to delete your MFA device configuration? '
-          'You will need to re-enter it for MFA operations.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 500,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorRed.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppTheme.errorRed,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete MFA Device',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Are you sure you want to delete your MFA device configuration? You will need to re-enter it for MFA operations.',
+                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      OneUIPillButton(
+                        text: 'Delete',
+                        icon: Icons.delete,
+                        backgroundColor: AppTheme.errorRed,
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorRed),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true) {
@@ -252,13 +469,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _hasMFADevice = false;
           _mfaDeviceName = null;
         });
-        
+
         if (mounted) {
           ToastUtils.show(context, 'MFA device deleted', isError: false);
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.show(context, 'Failed to delete MFA device: $e', isError: true);
+          ToastUtils.show(
+            context,
+            'Failed to delete MFA device: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -268,9 +489,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -280,30 +499,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('Appearance'),
                 const SizedBox(height: 16),
                 _buildDarkModeCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // AWS Credentials Section
                 _buildSectionHeader('AWS Credentials'),
                 const SizedBox(height: 16),
                 _buildCredentialsCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Email Configuration Section
                 _buildSectionHeader('Email Configuration'),
                 const SizedBox(height: 16),
                 _buildEmailConfigCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // MFA Device Section
                 _buildSectionHeader('MFA Device'),
                 const SizedBox(height: 16),
                 _buildMFADeviceCard(),
-                
+
                 const SizedBox(height: 32),
-                
+
+                // Security Section
+                _buildSectionHeader('Security'),
+                const SizedBox(height: 16),
+                _buildSecurityNavigationCard(),
+
+                const SizedBox(height: 32),
+
                 // About Section
                 _buildSectionHeader('About'),
                 const SizedBox(height: 16),
@@ -314,17 +540,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge,
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 
   Widget _buildDarkModeCard() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         final isDark = themeProvider.themeMode == ThemeMode.dark;
-        
+
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -363,7 +586,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isDark ? 'Dark theme is enabled' : 'Light theme is enabled',
+                      isDark
+                          ? 'Dark theme is enabled'
+                          : 'Light theme is enabled',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -422,7 +647,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _hasCredentials ? 'Credentials Configured' : 'No Credentials',
+                      _hasCredentials
+                          ? 'Credentials Configured'
+                          : 'No Credentials',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
@@ -444,26 +671,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Update',
+                    icon: Icons.edit,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.primaryPurple,
                     onPressed: _updateCredentials,
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Update'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryPurple,
-                      side: BorderSide(color: AppTheme.primaryPurple),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Delete',
+                    icon: Icons.delete_outline,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.errorRed,
                     onPressed: _deleteCredentials,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(color: AppTheme.errorRed),
-                    ),
                   ),
                 ),
               ],
@@ -472,15 +695,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: OneUIPillButton(
+                text: 'Add Credentials',
+                icon: Icons.add,
+                backgroundColor: AppTheme.primaryPurple,
                 onPressed: _updateCredentials,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Credentials'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
               ),
             ),
           ],
@@ -517,7 +736,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  _hasEmailConfig ? Icons.mark_email_read : Icons.email_outlined,
+                  _hasEmailConfig
+                      ? Icons.mark_email_read
+                      : Icons.email_outlined,
                   color: _hasEmailConfig
                       ? AppTheme.successGreen
                       : AppTheme.warningAmber,
@@ -552,26 +773,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Update',
+                    icon: Icons.edit,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.primaryPurple,
                     onPressed: _configureEmail,
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Update'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryPurple,
-                      side: BorderSide(color: AppTheme.primaryPurple),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Delete',
+                    icon: Icons.delete_outline,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.errorRed,
                     onPressed: _deleteEmailConfig,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(color: AppTheme.errorRed),
-                    ),
                   ),
                 ),
               ],
@@ -580,15 +797,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: OneUIPillButton(
+                text: 'Configure Email',
+                icon: Icons.add,
+                backgroundColor: AppTheme.primaryPurple,
                 onPressed: _configureEmail,
-                icon: const Icon(Icons.add),
-                label: const Text('Configure Email'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
               ),
             ),
           ],
@@ -650,14 +863,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              ElevatedButton.icon(
+              OneUIPillButton(
+                text: _hasMFADevice ? 'Update' : 'Configure',
+                icon: _hasMFADevice ? Icons.edit : Icons.add,
+                backgroundColor: AppTheme.primaryBlue,
+                width: null,
                 onPressed: _configureMFADevice,
-                icon: Icon(_hasMFADevice ? Icons.edit : Icons.add, size: 18),
-                label: Text(_hasMFADevice ? 'Update' : 'Configure'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                ),
               ),
             ],
           ),
@@ -668,14 +879,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OneUIPillButton(
+                    text: 'Delete',
+                    icon: Icons.delete_outline,
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppTheme.errorRed,
                     onPressed: _deleteMFADevice,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorRed,
-                      side: BorderSide(color: AppTheme.errorRed.withValues(alpha: 0.5)),
-                    ),
                   ),
                 ),
               ],
@@ -686,15 +895,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildSecurityNavigationCard() {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.successGreen.withValues(alpha: 0.1),
+              AppTheme.primaryPurple.withValues(alpha: 0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.successGreen.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppTheme.successGreen, AppTheme.primaryPurple],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.successGreen.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.lock_outline,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'App Security',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'PIN & Biometric authentication',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 18,
+              color: AppTheme.successGreen,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAboutNavigationCard() {
     final theme = Theme.of(context);
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const AboutScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const AboutScreen()),
         );
       },
       borderRadius: BorderRadius.circular(12),

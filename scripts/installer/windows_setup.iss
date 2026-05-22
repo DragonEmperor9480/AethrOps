@@ -6,7 +6,7 @@
 #define MyAppVersionTag "preview-beta-2"
 #define MyAppNumericVersion "0.1.0"
 #define MyAppPublisher "DragonEmperor9480"
-#define MyAppURL "https://github.com/DragonEmperor9480/aws-manager"
+#define MyAppURL "https://github.com/DragonEmperor9480/AethrOps"
 #define MyAppExeName "AethrOps.exe"
 #define MyAppDescription "AWS Resource Management Tool"
 
@@ -58,7 +58,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 ; Copy ALL files from Release folder (includes all Flutter plugin DLLs)
 Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Backend executable (copied by build script)
-Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\awsmgr_backend.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\aethrops_core.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -71,8 +71,8 @@ Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Fil
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{localappdata}\awsmgr"
-Type: filesandordirs; Name: "{userappdata}\awsmgr"
+Type: filesandordirs; Name: "{localappdata}\aethrops"
+Type: filesandordirs; Name: "{userappdata}\aethrops"
 
 [Code]
 // Custom code for installation checks

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Install AWS Manager on Linux
+# Install AethrOps on Linux
 
 set -e
 
-APP_NAME="AWS Manager"
-BINARY_NAME="aws-manager"
-INSTALL_DIR="$HOME/.local/share/aws-manager"
+APP_NAME="AethrOps"
+BINARY_NAME="aethrops"
+INSTALL_DIR="$HOME/.local/share/aethrops"
 BIN_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/512x512/apps"
@@ -21,8 +21,8 @@ cd "$(dirname "$0")/.."
 echo ""
 echo "Step 1: Building Go backend..."
 cd backend
-go build -o awsmgr_backend main.go
-chmod +x awsmgr_backend
+go build -o aethrops_core main.go
+chmod +x aethrops_core
 cd ..
 echo "✓ Backend compiled"
 
@@ -40,14 +40,11 @@ if [ $? -ne 0 ]; then
 fi
 echo "✓ Flutter app built"
 
-# Rename binary to aws-manager
-mv awsmgr_ui/build/linux/x64/release/bundle/aethrops awsmgr_ui/build/linux/x64/release/bundle/aws-manager
-
 # Step 3: Copy backend to bundle
 echo ""
 echo "Step 3: Bundling backend with application..."
-cp ../backend/awsmgr_backend build/linux/x64/release/bundle/
-chmod +x build/linux/x64/release/bundle/awsmgr_backend
+cp ../backend/aethrops_core build/linux/x64/release/bundle/
+chmod +x build/linux/x64/release/bundle/aethrops_core
 echo "✓ Backend bundled"
 
 cd ..
@@ -71,9 +68,9 @@ echo ""
 echo "Step 6: Creating launcher..."
 cat > "$BIN_DIR/$BINARY_NAME" << 'EOF'
 #!/bin/bash
-# AWS Manager Launcher
-cd "$HOME/.local/share/aws-manager"
-./aws-manager "$@"
+# AethrOps Launcher
+cd "$HOME/.local/share/aethrops"
+./aethrops "$@"
 EOF
 
 chmod +x "$BIN_DIR/$BINARY_NAME"
@@ -83,7 +80,7 @@ echo "✓ Launcher created at $BIN_DIR/$BINARY_NAME"
 echo ""
 echo "Step 7: Installing application icon..."
 if [ -f "awsmgr_ui/linux/icon.png" ]; then
-    cp awsmgr_ui/linux/icon.png "$ICON_DIR/aws-manager.png"
+    cp awsmgr_ui/linux/icon.png "$ICON_DIR/aethrops.png"
     echo "✓ Icon installed"
 else
     echo "⚠ Warning: Icon not found at awsmgr_ui/linux/icon.png"
@@ -93,21 +90,21 @@ fi
 # Step 8: Create desktop entry
 echo ""
 echo "Step 8: Creating desktop entry..."
-cat > "$DESKTOP_DIR/aws-manager.desktop" << EOF
+cat > "$DESKTOP_DIR/aethrops.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=$APP_NAME
 Comment=Manage your AWS infrastructure
 Exec=$BIN_DIR/$BINARY_NAME
-Icon=aws-manager
+Icon=aethrops
 Terminal=false
 Categories=Development;Utility;
 Keywords=aws;cloud;s3;iam;management;
 StartupNotify=true
 EOF
 
-chmod +x "$DESKTOP_DIR/aws-manager.desktop"
+chmod +x "$DESKTOP_DIR/aethrops.desktop"
 echo "✓ Desktop entry created"
 
 # Step 9: Update desktop database
@@ -129,7 +126,7 @@ echo ""
 echo "Installation Details:"
 echo "  Application: $INSTALL_DIR"
 echo "  Launcher: $BIN_DIR/$BINARY_NAME"
-echo "  Desktop Entry: $DESKTOP_DIR/aws-manager.desktop"
+echo "  Desktop Entry: $DESKTOP_DIR/aethrops.desktop"
 echo ""
 echo "You can now:"
 echo "  1. Run from terminal: $BINARY_NAME"
@@ -139,5 +136,5 @@ echo ""
 echo "To uninstall, run:"
 echo "  rm -rf $INSTALL_DIR"
 echo "  rm $BIN_DIR/$BINARY_NAME"
-echo "  rm $DESKTOP_DIR/aws-manager.desktop"
-echo "  rm $ICON_DIR/aws-manager.svg"
+echo "  rm $DESKTOP_DIR/aethrops.desktop"
+echo "  rm $ICON_DIR/aethrops.svg"

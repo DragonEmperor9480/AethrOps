@@ -1,5 +1,11 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# Set default generator if not specified (optional, can be overridden)
+if(NOT DEFINED CMAKE_GENERATOR)
+  set(CMAKE_GENERATOR "Visual Studio 17 2022" CACHE STRING "CMake generator" FORCE)
+endif()
+
 project(aethrops LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change

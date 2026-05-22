@@ -67,10 +67,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
           },
         ),
         // Grid overlay
-        CustomPaint(
-          painter: GridPainter(),
-          size: Size.infinite,
-        ),
+        CustomPaint(painter: GridPainter(), size: Size.infinite),
         // Content
         widget.child,
       ],
@@ -93,7 +90,7 @@ class Particle {
     speedX = (random.nextDouble() - 0.5) * 0.002;
     speedY = (random.nextDouble() - 0.5) * 0.002;
     size = random.nextDouble() * 3 + 1;
-    
+
     final colors = [
       Colors.blue.shade400,
       Colors.cyan.shade400,
@@ -139,15 +136,14 @@ class ParticlePainter extends CustomPainter {
 
       // Draw connections
       for (var other in particles) {
-        final otherPos = Offset(
-          other.x * size.width,
-          other.y * size.height,
-        );
+        final otherPos = Offset(other.x * size.width, other.y * size.height);
 
         final distance = (position - otherPos).distance;
         if (distance < 150) {
           final linePaint = Paint()
-            ..color = particle.color.withValues(alpha: 0.1 * (1 - distance / 150))
+            ..color = particle.color.withValues(
+              alpha: 0.1 * (1 - distance / 150),
+            )
             ..strokeWidth = 0.5;
 
           canvas.drawLine(position, otherPos, linePaint);
@@ -171,20 +167,12 @@ class GridPainter extends CustomPainter {
 
     // Vertical lines
     for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
 
     // Horizontal lines
     for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
   }
 

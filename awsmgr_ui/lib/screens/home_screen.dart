@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _shimmerController;
+  Timer? _loadingMessageTimer;
 
   String _username = 'User';
   String _region = '';
@@ -94,16 +96,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _cycleLoadingMessages() {
     final messages = AppConstants.userLoadingMessages;
     int index = 0;
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 2));
-      if (_isLoadingUserInfo && mounted) {
-        setState(() {
-          index = (index + 1) % messages.length;
-          _loadingMessage = messages[index];
-        });
-        return true;
+    _loadingMessageTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!_isLoadingUserInfo || !mounted) {
+        timer.cancel();
+        return;
       }
-      return false;
+      setState(() {
+        index = (index + 1) % messages.length;
+        _loadingMessage = messages[index];
+      });
     });
   }
 
@@ -131,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final credentials = await AWSCredentialsService.getCredentials();
         _region = credentials['region'] ?? '';
       } catch (_) {}
-      
+
       setState(() {
         _username = 'User';
         _greeting = _getGreeting();
@@ -159,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _loadingMessageTimer?.cancel();
     _shimmerController.dispose();
     super.dispose();
   }
@@ -340,14 +342,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               backgroundColor: theme.scaffoldBackgroundColor,
               elevation: 0,
               actions: [
-                Container(
+                  Container(
                   margin: const EdgeInsets.symmetric(
                     vertical: 12,
                     horizontal: 8,
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 10,
+                    horizontal: 20,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
                     color: _isLoadingUserInfo
@@ -355,15 +357,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         : _isConnected
                         ? AppTheme.successGreen
                         : AppTheme.errorRed,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (_isLoadingUserInfo)
                         SizedBox(
-                          width: 10,
-                          height: 10,
+                          width: 12,
+                          height: 12,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -403,15 +405,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       horizontal: 4,
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryBlue.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-                        width: 1,
+                        width: 1.5,
                       ),
                     ),
                     child: Row(

@@ -1,13 +1,21 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'backend_service.dart';
 
 class S3Service {
-  static final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:9480/api',
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(minutes: 5),
-  ));
+  static final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: '${BackendService.baseUrl}/api',
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(minutes: 5),
+      sendTimeout: const Duration(minutes: 10),
+      // Optimize for large file transfers
+      receiveDataWhenStatusError: false,
+      validateStatus: (status) => status != null && status < 500,
+    ),
+  );
 
   /// Download S3 object with progress tracking
   static Future<List<int>> downloadWithProgress(
@@ -16,26 +24,27 @@ class S3Service {
     Function(int received, int total) onProgress,
   ) async {
     try {
-      print('Starting download: $bucketName/$objectKey');
-      
+      debugPrint('Starting download: $bucketName/$objectKey');
+
       final response = await _dio.get<List<int>>(
         '/s3/buckets/$bucketName/objects/$objectKey',
         options: Options(
           responseType: ResponseType.bytes,
           receiveTimeout: const Duration(minutes: 5),
+          // Disable compression for binary data
+          headers: {'Accept-Encoding': 'identity'},
         ),
         onReceiveProgress: (received, total) {
-          print('Progress: $received / $total bytes');
           if (total != -1) {
             onProgress(received, total);
           }
         },
       );
 
-      print('Download complete');
+      debugPrint('Download complete: ${response.data?.length ?? 0} bytes');
       return response.data ?? [];
     } catch (e) {
-      print('Download error: $e');
+      debugPrint('Download error: $e');
       throw Exception('Download failed: $e');
     }
   }
@@ -48,17 +57,14 @@ class S3Service {
     Function(int sent, int total) onProgress,
   ) async {
     try {
-      print('Starting upload: $bucketName/$objectKey');
+      debugPrint('Starting upload: $bucketName/$objectKey');
       final fileSize = await file.length();
-      print('File size: $fileSize bytes');
+      debugPrint('File size: $fileSize bytes');
 
       final fileName = objectKey.split('/').last;
       final formData = FormData.fromMap({
         'key': objectKey,
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: fileName,
-        ),
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
       });
 
       // Use streaming response to get progress updates from backend
@@ -75,14 +81,14 @@ class S3Service {
       // Parse streaming JSON responses
       final stream = response.data!.stream;
       final buffer = StringBuffer();
-      
+
       await for (final chunk in stream) {
         final text = String.fromCharCodes(chunk);
         buffer.write(text);
-        
+
         // Split by newlines to get individual JSON objects
         final lines = buffer.toString().split('\n');
-        
+
         // Process all complete lines
         for (int i = 0; i < lines.length - 1; i++) {
           final line = lines[i].trim();
@@ -92,18 +98,18 @@ class S3Service {
               if (data['progress'] != null && data['total'] != null) {
                 final progress = data['progress'] as int;
                 final total = data['total'] as int;
-                print('Upload progress: $progress / $total');
+                debugPrint('Upload progress: $progress / $total');
                 onProgress(progress, total);
               }
               if (data['error'] != null) {
                 throw Exception(data['error']);
               }
             } catch (e) {
-              print('Failed to parse progress: $e');
+              debugPrint('Failed to parse progress: $e');
             }
           }
         }
-        
+
         // Keep the last incomplete line in buffer
         buffer.clear();
         if (lines.isNotEmpty) {
@@ -111,9 +117,9 @@ class S3Service {
         }
       }
 
-      print('Upload complete');
+      debugPrint('Upload complete');
     } catch (e) {
-      print('Upload error: $e');
+      debugPrint('Upload error: $e');
       throw Exception('Upload failed: $e');
     }
   }

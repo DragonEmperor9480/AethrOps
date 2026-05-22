@@ -2,6 +2,7 @@ name: AethrOps Android Build
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   build:

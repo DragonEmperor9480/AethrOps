@@ -34,15 +34,19 @@ dependencies:
   dio: ^5.4.0
   ffi: ^2.1.3
   path_provider: ^2.1.1
-  file_picker: ^8.1.4
-  flutter_secure_storage: ^9.2.2
+  file_picker: ^10.3.10
+  flutter_secure_storage: ^10.0.0
   url_launcher: ^6.3.1
-  permission_handler: ^11.3.1
+  permission_handler: ^12.0.1
   cupertino_icons: ^1.0.8
   provider: ^6.1.1
   shared_preferences: ^2.2.2
   window_manager: ^0.5.1
   flutter_svg: ^2.2.3
+  local_auth: ^3.0.1
+  crypto: ^3.0.3
+  lottie: ^3.1.0
+  scrollable_positioned_list: ^0.3.8
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +58,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  msix: ^3.16.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -71,6 +76,7 @@ flutter:
     - assets/how_to_get_access_credentials/
     - assets/ami-assets/
     - assets/icons/
+    - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -78,22 +84,43 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # Custom fonts
+  fonts:
+    - family: Anurati
+      fonts:
+        - asset: assets/fonts/Anurati-Regular.otf
+    - family: RubikGlitch
+      fonts:
+        - asset: assets/fonts/RubikGlitch-Regular.ttf
+    - family: Aquire
+      fonts:
+        - asset: assets/fonts/Aquire-BW0ox.otf
+        - asset: assets/fonts/AquireBold-8Ma60.otf
+          weight: 700
+        - asset: assets/fonts/AquireLight-YzE0o.otf
+          weight: 300
+    - family: Blanka
+      fonts:
+        - asset: assets/fonts/Blanka-Regular.otf
+    - family: OdibeeSans
+      fonts:
+        - asset: assets/fonts/OdibeeSans-Regular.ttf
+    - family: Potra
+      fonts:
+        - asset: assets/fonts/Potra-E0Ye.ttf
+    - family: Quantify
+      fonts:
+        - asset: assets/fonts/Quantify.ttf
+        - asset: assets/fonts/Quantify Bold.ttf
+          weight: 700
+
+msix_config:
+  display_name: AethrOps
+  publisher_display_name: DragonEmperor9480
+  publisher: CN=B01A34F2-E6E3-4364-8CC4-CF2B52A75AE5
+  identity_name: DragonEmperor9480.AethrOps
+  msix_version: 1.0.0.0
+  logo_path: windows/runner/resources/app_icon.png
+  capabilities: internetClient
+  languages: en-us
+  store: true

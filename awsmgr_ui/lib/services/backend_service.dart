@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
@@ -29,7 +30,6 @@ class BackendService {
     try {
       // Check if backend is already running
       if (await isRunning()) {
-        debugPrint('Backend already running');
         return;
       }
 
@@ -41,57 +41,56 @@ class BackendService {
 
       // Wait for backend to be ready
       await _waitForBackend();
-      debugPrint('✓ Backend started successfully');
     } catch (e) {
-      debugPrint('❌ Failed to start backend: $e');
+      debugPrint('Failed to start backend: $e');
       rethrow;
     }
   }
 
   static Future<void> _startMobile() async {
-    debugPrint('Starting backend via FFI...');
+    try {
+      // Load the native library
+      if (Platform.isAndroid) {
+        _lib = DynamicLibrary.open('libbackend.so');
+      } else if (Platform.isIOS) {
+        _lib = DynamicLibrary.process();
+      }
 
-    // Load the native library
-    if (Platform.isAndroid) {
-      _lib = DynamicLibrary.open('libbackend.so');
-    } else if (Platform.isIOS) {
-      _lib = DynamicLibrary.process();
+      if (_lib == null) {
+        throw Exception('Failed to load native library');
+      }
+
+      // Get app data directory
+      final appDir = await getApplicationDocumentsDirectory();
+
+      // Set data directory
+      final setDataDir = _lib!
+          .lookupFunction<SetDataDirectoryNative, SetDataDirectoryDart>(
+            'SetDataDirectory',
+          );
+
+      final dirPtr = appDir.path.toNativeUtf8();
+      setDataDir(dirPtr);
+      calloc.free(dirPtr);
+
+      // Start backend
+      final startBackend = _lib!
+          .lookupFunction<StartBackendNative, StartBackendDart>('StartBackend');
+
+      final result = startBackend();
+
+      if (result != 0) {
+        throw Exception('Backend failed to start (code: $result)');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error in _startMobile: $e');
+      debugPrint('Stack trace: $stackTrace');
+      rethrow;
     }
-
-    if (_lib == null) {
-      throw Exception('Failed to load native library');
-    }
-
-    // Get app data directory
-    final appDir = await getApplicationDocumentsDirectory();
-    debugPrint('App data directory: ${appDir.path}');
-
-    // Set data directory
-    final setDataDir = _lib!
-        .lookupFunction<SetDataDirectoryNative, SetDataDirectoryDart>(
-          'SetDataDirectory',
-        );
-    final dirPtr = appDir.path.toNativeUtf8();
-    setDataDir(dirPtr);
-    calloc.free(dirPtr);
-
-    // Start backend
-    final startBackend = _lib!
-        .lookupFunction<StartBackendNative, StartBackendDart>('StartBackend');
-    final result = startBackend();
-
-    if (result != 0) {
-      throw Exception('Backend failed to start (code: $result)');
-    }
-
-    debugPrint('✓ Backend FFI initialized');
   }
 
   static Future<void> _startDesktop() async {
-    debugPrint('Starting backend as process...');
-
     final backend = _getBackendPath();
-    debugPrint('Backend path: $backend');
 
     // Start backend process
     _process = await Process.start(
@@ -108,8 +107,6 @@ class BackendService {
     _process!.stderr.listen((data) {
       debugPrint('Backend Error: ${String.fromCharCodes(data)}');
     });
-
-    debugPrint('✓ Backend process started');
   }
 
   static String _getBackendPath() {
@@ -121,11 +118,11 @@ class BackendService {
     );
 
     if (Platform.isWindows) {
-      return '$exeDir${Platform.pathSeparator}awsmgr_backend.exe';
+      return '$exeDir${Platform.pathSeparator}aethrops_core.exe';
     } else if (Platform.isMacOS) {
-      return '$exeDir${Platform.pathSeparator}awsmgr_backend_macos';
+      return '$exeDir${Platform.pathSeparator}aethrops_core_macos';
     } else {
-      return '$exeDir${Platform.pathSeparator}awsmgr_backend';
+      return '$exeDir${Platform.pathSeparator}aethrops_core';
     }
   }
 
@@ -178,56 +175,61 @@ class BackendService {
         calloc.free(secretKeyPtr);
         calloc.free(regionPtr);
 
-        if (result == 0) {
-          debugPrint('✓ AWS credentials set via FFI');
-          return true;
-        } else {
-          debugPrint('❌ Failed to set AWS credentials via FFI (code: $result)');
-          return false;
-        }
+        return result == 0;
       } catch (e) {
-        debugPrint('❌ Error setting credentials via FFI: $e');
+        debugPrint('Error setting credentials via FFI: $e');
         return false;
       }
     }
 
     // Use HTTP API for desktop
     try {
-      debugPrint('Setting AWS credentials via HTTP API...');
       final response = await http.post(
         Uri.parse('$baseUrl/api/aws/config'),
         headers: {'Content-Type': 'application/json'},
-        body:
-            '{"access_key_id":"$accessKey","secret_access_key":"$secretKey","region":"$region"}',
+        body: json.encode({
+          'access_key_id': accessKey,
+          'secret_access_key': secretKey,
+          'region': region,
+        }),
       );
 
-      if (response.statusCode == 200) {
-        debugPrint('✓ AWS credentials configured via API');
-        return true;
-      } else {
-        debugPrint('❌ Failed to configure AWS credentials: ${response.body}');
-        return false;
-      }
+      return response.statusCode == 200;
     } catch (e) {
-      debugPrint('❌ Error configuring credentials via API: $e');
+      debugPrint('Error configuring credentials via API: $e');
       return false;
     }
   }
 
-  static void stop() {
-    if (_lib != null) {
-      try {
+  static Future<void> stop() async {
+    try {
+      // Mobile: Use FFI to stop
+      if (_lib != null) {
         final stopBackend = _lib!
             .lookupFunction<StopBackendNative, StopBackendDart>('StopBackend');
         stopBackend();
-        debugPrint('✓ Backend stopped (FFI)');
-      } catch (e) {
-        debugPrint('Error stopping backend: $e');
+        return;
       }
-    }
 
-    _process?.kill();
-    _process = null;
-    debugPrint('✓ Backend stopped (process)');
+      // Desktop: Call graceful shutdown endpoint and wait for process to exit
+      if (_process != null) {
+        await http
+            .post(Uri.parse('$baseUrl/shutdown'))
+            .timeout(const Duration(seconds: 1));
+
+        // Wait for process to exit (backend handles its own cleanup)
+        await _process!.exitCode.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => -1,
+        );
+
+        _process = null;
+      }
+    } catch (e) {
+      debugPrint('Error stopping backend: $e');
+      // Force kill if graceful shutdown fails
+      _process?.kill(ProcessSignal.sigkill);
+      _process = null;
+    }
   }
 }

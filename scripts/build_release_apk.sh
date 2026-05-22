@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# AWS Manager - Release APK Build Script
+# AethrOps - Release APK Build Script
 # ============================================
 # Builds and signs APKs for GitHub release
 
@@ -12,10 +12,10 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 FLUTTER_DIR="$PROJECT_ROOT/awsmgr_ui"
 ANDROID_DIR="$FLUTTER_DIR/android"
 OUTPUT_DIR="$PROJECT_ROOT/release/android"
-VERSION="preview-beta-1"
+VERSION="preview-beta-3"
 
 echo "============================================"
-echo "  AWS Manager - Release APK Builder"
+echo "  AethrOps - Release APK Builder"
 echo "============================================"
 echo ""
 
@@ -102,7 +102,7 @@ for arch in "${ARCHS[@]}"; do
     GOARCH=$GO_ARCH \
     GOARM=$GO_ARM \
     CC=$CC_COMPILER \
-    go build -buildmode=c-shared -o libbackend_$arch.so main.go
+    go build -buildmode=c-shared -o libbackend_$arch.so .
 
     if [ $? -ne 0 ]; then
         echo "❌ Failed to build Go backend for $arch"
@@ -155,9 +155,9 @@ echo "📁 Copying APKs to release directory..."
 
 APK_DIR="$FLUTTER_DIR/build/app/outputs/flutter-apk"
 
-cp "$APK_DIR/app-arm64-v8a-release.apk" "$OUTPUT_DIR/aws-manager-$VERSION-arm64-v8a.apk"
-cp "$APK_DIR/app-armeabi-v7a-release.apk" "$OUTPUT_DIR/aws-manager-$VERSION-armeabi-v7a.apk"
-cp "$APK_DIR/app-x86_64-release.apk" "$OUTPUT_DIR/aws-manager-$VERSION-x86_64.apk"
+cp "$APK_DIR/app-arm64-v8a-release.apk" "$OUTPUT_DIR/aethrops-$VERSION-arm64-v8a.apk"
+cp "$APK_DIR/app-armeabi-v7a-release.apk" "$OUTPUT_DIR/aethrops-$VERSION-armeabi-v7a.apk"
+cp "$APK_DIR/app-x86_64-release.apk" "$OUTPUT_DIR/aethrops-$VERSION-x86_64.apk"
 
 # Generate checksums
 echo "🔒 Generating checksums..."
