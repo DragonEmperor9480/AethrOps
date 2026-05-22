@@ -5,9 +5,7 @@ permissions:
   contents: write
 
 on:
-    push:
-        branches:
-            - production
+    workflow_dispatch:
 
 jobs:
 
@@ -72,8 +70,6 @@ jobs:
 
 
               
-
-
 
 
 
