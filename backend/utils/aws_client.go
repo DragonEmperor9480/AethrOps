@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/DragonEmperor9480/AethrOps/db_service"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
@@ -31,9 +33,66 @@ var (
 	ec2ClientCache sync.Map // map[string]*ec2.Client
 )
 
-// InitAWSClients initializes AWS SDK clients
+// InitAWSClients initializes AWS SDK clients from the active database account
 func InitAWSClients() error {
-	// Use custom credentials location (~/.aethrops instead of ~/.aws)
+	// 1. Check if DB is initialized
+	if db_service.DB == nil {
+		log.Println("Database not initialized, loading AWS config from files...")
+		return initAWSClientsFromFile()
+	}
+
+	// 2. Fetch active AWS account
+	var activeAccount db_service.AWSAccount
+	err := db_service.DB.Where("is_active = ?", true).First(&activeAccount).Error
+	if err != nil {
+		log.Println("No active database AWS account found, falling back to file-based config...")
+		return initAWSClientsFromFile()
+	}
+
+	// 3. Decrypt the secret access key
+	decryptedSecret, err := db_service.Decrypt(activeAccount.SecretAccessKey)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt AWS secret key: %w", err)
+	}
+
+	// Dynamic min helper
+	minVal := func(a, b int) int {
+		if a < b {
+			return a
+		}
+		return b
+	}
+	log.Printf("Initializing AWS clients for profile: %s (Region: %s, AccessKey: %s...)",
+		activeAccount.ProfileName, activeAccount.Region, activeAccount.AccessKeyID[:minVal(5, len(activeAccount.AccessKeyID))])
+
+	// 4. Create in-memory config using the decrypted static credentials
+	ctx := context.TODO()
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(activeAccount.Region),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			activeAccount.AccessKeyID,
+			decryptedSecret,
+			"",
+		)),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to load AWS default config: %w", err)
+	}
+
+	// Store config for creating region-specific clients
+	awsConfig = cfg
+
+	EC2Client = ec2.NewFromConfig(cfg)
+	IAMClient = iam.NewFromConfig(cfg)
+	LogsClient = cloudwatchlogs.NewFromConfig(cfg)
+	LambdaClient = lambda.NewFromConfig(cfg)
+	S3Client = s3.NewFromConfig(cfg)
+	STSClient = sts.NewFromConfig(cfg)
+	return nil
+}
+
+// initAWSClientsFromFile is a legacy fallback to load AWS credentials from ~/.aethrops/credentials and config files
+func initAWSClientsFromFile() error {
 	credPath := getAethrOpsCredentialsPath()
 	configPath := getAethrOpsConfigPath()
 
@@ -167,12 +226,9 @@ func GetEC2ClientForRegion(region string) (*ec2.Client, error) {
 		return cached.(*ec2.Client), nil
 	}
 
-	// Load config with the specified region
-	ctx := context.TODO()
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config for region %s: %w", region, err)
-	}
+	// Clone the existing config and change the region
+	cfg := awsConfig
+	cfg.Region = region
 
 	client := ec2.NewFromConfig(cfg)
 
