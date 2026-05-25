@@ -213,6 +213,14 @@ class _AboutScreenState extends State<AboutScreen> {
                     'https://aethrops.amrutlabs.in/docs',
                     isDark,
                   ),
+                  const SizedBox(height: 12),
+                  _buildLinkCard(
+                    'Source Code',
+                    'Checkout our GitHub repository!',
+                    Icons.code,
+                    'https://github.com/DragonEmperor9480/AethrOps',
+                    isDark,
+                  ),
 
                   const SizedBox(height: 24),
 
