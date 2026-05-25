@@ -32,10 +32,7 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 ; Branding images
-WizardImageFile=assets\wizard_image.bmp
 WizardSmallImageFile=assets\wizard_small_image.bmp
-WizardImageStretch=no
-WizardImageBackColor=$120B1F
 ; Privileges
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
@@ -79,68 +76,33 @@ Type: filesandordirs; Name: "{localappdata}\aethrops"
 Type: filesandordirs; Name: "{userappdata}\aethrops"
 
 [Code]
-// Custom code for installation checks and upgrade handling
+// Detect an existing installation and notify the user of an in-place upgrade.
+// InnoSetup matches installations via AppId, so files are overwritten automatically.
 
-// Returns the currently installed version string, or empty string if not installed
 function GetInstalledVersion(): String;
 var
-  InstalledVersion: String;
+  Ver: String;
 begin
-  InstalledVersion := '';
-  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
-    'DisplayVersion', InstalledVersion) then
-    Result := InstalledVersion
-  else if RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
-    'DisplayVersion', InstalledVersion) then
-    Result := InstalledVersion
-  else
-    Result := '';
-end;
-
-// Returns the uninstall string for a prior installation
-function GetUninstallString(): String;
-var
-  UninstallStr: String;
-begin
-  UninstallStr := '';
-  if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
-    'UninstallString', UninstallStr) then
-    RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
-      'UninstallString', UninstallStr);
-  Result := UninstallStr;
+  Ver := '';
+  if not RegQueryStringValue(HKLM,
+    'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
+    'DisplayVersion', Ver) then
+    RegQueryStringValue(HKCU,
+      'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
+      'DisplayVersion', Ver);
+  Result := Ver;
 end;
 
 function InitializeSetup(): Boolean;
 var
-  InstalledVersion, UninstallStr: String;
-  ResultCode: Integer;
-  Response: Integer;
+  InstalledVersion: String;
 begin
   Result := True;
   InstalledVersion := GetInstalledVersion();
 
   if InstalledVersion <> '' then
-  begin
-    Response := MsgBox(
+    MsgBox(
       'AethrOps ' + InstalledVersion + ' is already installed.' + #13#10 + #13#10 +
-      'Click Yes to automatically uninstall the previous version before installing the new one.' + #13#10 +
-      'Click No to cancel this installation.',
-      mbConfirmation, MB_YESNO);
-
-    if Response = IDYES then
-    begin
-      UninstallStr := GetUninstallString();
-      if UninstallStr <> '' then
-      begin
-        UninstallStr := RemoveQuotes(UninstallStr);
-        if not Exec(UninstallStr, '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
-        begin
-          MsgBox('Failed to uninstall the previous version (error ' + IntToStr(ResultCode) + '). Please uninstall it manually from Control Panel.', mbError, MB_OK);
-          Result := False;
-        end;
-      end;
-    end
-    else
-      Result := False;
-  end;
+      'The installer will upgrade it in place. Your settings will be preserved.',
+      mbInformation, MB_OK);
 end;
