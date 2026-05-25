@@ -31,9 +31,16 @@ SetupIconFile=..\..\awsmgr_ui\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+; Branding images
+WizardImageFile=assets\wizard_image.bmp
+WizardSmallImageFile=assets\wizard_small_image.bmp
+WizardImageStretch=no
+WizardImageBackColor=$120B1F
 ; Privileges
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
+; Minimum Windows version (Windows 10 - October 2018 Update)
+MinVersion=10.0.17763
 ; Architecture
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -46,26 +53,23 @@ VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppDescription} Setup
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppNumericVersion}
+LicenseFile=..\..\LICENSE
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1; Check: not IsAdminInstallMode
 
 [Files]
 ; Copy ALL files from Release folder (includes all Flutter plugin DLLs)
 Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Backend executable (copied by build script)
-Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\aethrops_core.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Comment: "{#MyAppDescription}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Comment: "{#MyAppDescription}"
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -75,22 +79,68 @@ Type: filesandordirs; Name: "{localappdata}\aethrops"
 Type: filesandordirs; Name: "{userappdata}\aethrops"
 
 [Code]
-// Custom code for installation checks
+// Custom code for installation checks and upgrade handling
+
+// Returns the currently installed version string, or empty string if not installed
+function GetInstalledVersion(): String;
+var
+  InstalledVersion: String;
+begin
+  InstalledVersion := '';
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
+    'DisplayVersion', InstalledVersion) then
+    Result := InstalledVersion
+  else if RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
+    'DisplayVersion', InstalledVersion) then
+    Result := InstalledVersion
+  else
+    Result := '';
+end;
+
+// Returns the uninstall string for a prior installation
+function GetUninstallString(): String;
+var
+  UninstallStr: String;
+begin
+  UninstallStr := '';
+  if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
+    'UninstallString', UninstallStr) then
+    RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
+      'UninstallString', UninstallStr);
+  Result := UninstallStr;
+end;
+
 function InitializeSetup(): Boolean;
+var
+  InstalledVersion, UninstallStr: String;
+  ResultCode: Integer;
+  Response: Integer;
 begin
   Result := True;
-end;
+  InstalledVersion := GetInstalledVersion();
 
-// Check if running on Windows 10 or later (recommended)
-function IsWindows10OrLater(): Boolean;
-begin
-  Result := (GetWindowsVersion >= $0A000000);
-end;
-
-procedure InitializeWizard();
-begin
-  if not IsWindows10OrLater() then
+  if InstalledVersion <> '' then
   begin
-    MsgBox('Note: AethrOps is optimized for Windows 10 and later. It may work on older versions but is not officially supported.', mbInformation, MB_OK);
+    Response := MsgBox(
+      'AethrOps ' + InstalledVersion + ' is already installed.' + #13#10 + #13#10 +
+      'Click Yes to automatically uninstall the previous version before installing the new one.' + #13#10 +
+      'Click No to cancel this installation.',
+      mbConfirmation, MB_YESNO);
+
+    if Response = IDYES then
+    begin
+      UninstallStr := GetUninstallString();
+      if UninstallStr <> '' then
+      begin
+        UninstallStr := RemoveQuotes(UninstallStr);
+        if not Exec(UninstallStr, '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
+        begin
+          MsgBox('Failed to uninstall the previous version (error ' + IntToStr(ResultCode) + '). Please uninstall it manually from Control Panel.', mbError, MB_OK);
+          Result := False;
+        end;
+      end;
+    end
+    else
+      Result := False;
   end;
 end;

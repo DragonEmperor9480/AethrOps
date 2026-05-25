@@ -710,86 +710,47 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildMadeWithLove(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return Center(
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Made with',
+                'Made with ',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  color: isDark ? Colors.white54 : Colors.black54,
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.favorite, color: AppTheme.errorRed, size: 24),
-              const SizedBox(width: 8),
+              const Icon(Icons.favorite, color: AppTheme.errorRed, size: 16),
               Text(
-                'by',
+                ' by ',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                ),
+              ),
+              InkWell(
+                onTap: () => _launchURL('https://github.com/DragonEmperor9480'),
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text(
+                    'Amrutesh',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryPurple,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppTheme.primaryPurple.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: () => _launchURL('https://github.com/DragonEmperor9480'),
-            borderRadius: BorderRadius.circular(32),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
-                    ).createShader(bounds),
-                    child: const Text(
-                      'Amrutesh',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.open_in_new,
-                    size: 18,
-                    color: AppTheme.primaryPurple,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             '© 2025-2026 AethrOps',
             style: TextStyle(
