@@ -17,53 +17,110 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    final isLandscape = width > height || width >= 900;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Settings'),
+        centerTitle: isLandscape,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // Dark Mode Section
-          _buildSectionHeader('Appearance'),
-          const SizedBox(height: 16),
-          _buildDarkModeCard(),
+      body: isLandscape
+          ? SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Column: Core Identity
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader('Appearance'),
+                            const SizedBox(height: 16),
+                            _buildDarkModeCard(),
+                            const SizedBox(height: 32),
+                            _buildSectionHeader('AWS Profiles'),
+                            const SizedBox(height: 16),
+                            _buildProfilesNavigationCard(),
+                            const SizedBox(height: 32),
+                            _buildSectionHeader('Security'),
+                            const SizedBox(height: 16),
+                            _buildSecurityNavigationCard(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      // Right Column: Advanced Configs & Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader('Configurations'),
+                            const SizedBox(height: 16),
+                            _buildConfigurationsNavigationCard(),
+                            const SizedBox(height: 32),
+                            _buildSectionHeader('About'),
+                            const SizedBox(height: 16),
+                            _buildAboutNavigationCard(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                // Dark Mode Section
+                _buildSectionHeader('Appearance'),
+                const SizedBox(height: 16),
+                _buildDarkModeCard(),
 
-          const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-          // AWS Profiles Section
-          _buildSectionHeader('AWS Profiles'),
-          const SizedBox(height: 16),
-          _buildProfilesNavigationCard(),
+                // AWS Profiles Section
+                _buildSectionHeader('AWS Profiles'),
+                const SizedBox(height: 16),
+                _buildProfilesNavigationCard(),
 
-          const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-          // Configurations Section (SMTP Email & MFA)
-          _buildSectionHeader('Configurations'),
-          const SizedBox(height: 16),
-          _buildConfigurationsNavigationCard(),
+                // Configurations Section (SMTP Email & MFA)
+                _buildSectionHeader('Configurations'),
+                const SizedBox(height: 16),
+                _buildConfigurationsNavigationCard(),
 
-          const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-          // Security Section
-          _buildSectionHeader('Security'),
-          const SizedBox(height: 16),
-          _buildSecurityNavigationCard(),
+                // Security Section
+                _buildSectionHeader('Security'),
+                const SizedBox(height: 16),
+                _buildSecurityNavigationCard(),
 
-          const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-          // About Section
-          _buildSectionHeader('About'),
-          const SizedBox(height: 16),
-          _buildAboutNavigationCard(),
-        ],
-      ),
+                // About Section
+                _buildSectionHeader('About'),
+                const SizedBox(height: 16),
+                _buildAboutNavigationCard(),
+              ],
+            ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+    );
   }
 
   Widget _buildDarkModeCard() {
@@ -75,12 +132,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -90,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryPurple.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   isDark ? Icons.dark_mode : Icons.light_mode,
@@ -131,6 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildConfigurationsNavigationCard() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -138,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MaterialPageRoute(builder: (_) => const ConfigurationsScreen()),
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -150,16 +214,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppTheme.primaryPurple.withValues(alpha: 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
             color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-            width: 1,
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -171,7 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 gradient: LinearGradient(
                   colors: [AppTheme.primaryBlue, AppTheme.primaryPurple],
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primaryBlue.withValues(alpha: 0.3),
@@ -223,6 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSecurityNavigationCard() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -230,7 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -242,16 +309,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppTheme.primaryPurple.withValues(alpha: 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
             color: AppTheme.successGreen.withValues(alpha: 0.3),
-            width: 1,
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -263,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 gradient: LinearGradient(
                   colors: [AppTheme.successGreen, AppTheme.primaryPurple],
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.successGreen.withValues(alpha: 0.3),
@@ -315,6 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildAboutNavigationCard() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -322,7 +392,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MaterialPageRoute(builder: (_) => const AboutScreen()),
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -334,16 +404,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppTheme.primaryBlue.withValues(alpha: 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
             color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-            width: 1,
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -407,6 +479,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildProfilesNavigationCard() {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -414,7 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           MaterialPageRoute(builder: (_) => const AccountSelectorScreen()),
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -426,16 +499,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               AppTheme.primaryBlue.withValues(alpha: 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
             color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-            width: 1,
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),

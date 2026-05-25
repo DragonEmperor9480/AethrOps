@@ -368,20 +368,30 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+    return Padding(
+      padding: const EdgeInsets.only(left: 12.0),
+      child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+    );
   }
 
   Widget _buildEmailConfigCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -396,7 +406,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
                   color: _hasEmailConfig
                       ? AppTheme.successGreen.withValues(alpha: 0.1)
                       : AppTheme.warningAmber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   _hasEmailConfig
@@ -460,16 +470,23 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
   }
 
   Widget _buildMFADeviceCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -483,7 +500,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
                   color: _hasMFADevice
                       ? AppTheme.successGreen.withValues(alpha: 0.1)
                       : AppTheme.warningAmber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   _hasMFADevice ? Icons.security : Icons.security_outlined,
