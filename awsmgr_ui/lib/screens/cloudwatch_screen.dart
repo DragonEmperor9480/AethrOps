@@ -56,12 +56,14 @@ class _CloudWatchScreenState extends State<CloudWatchScreen> {
 
     try {
       final functions = await ApiService.listLambdaFunctions();
+      if (!mounted) return;
       setState(() {
         _functions = functions;
         _filteredFunctions = functions;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;

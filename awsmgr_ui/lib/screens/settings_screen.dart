@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/aws_credentials_service.dart';
 import '../services/email_config_service.dart';
 import '../services/api_service.dart';
-import 'credentials_setup_screen.dart';
 import 'about_screen.dart';
 import 'security_settings_screen.dart';
+import 'account_selector_screen.dart';
 import '../widgets/email_config_dialog.dart';
 import '../widgets/mfa_device_dialog.dart';
 import '../theme/app_theme.dart';
@@ -21,39 +20,31 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _hasCredentials = false;
   bool _hasEmailConfig = false;
   bool _hasMFADevice = false;
   bool _loading = true;
-  String? _region;
   String? _senderEmail;
   String? _mfaDeviceName;
 
   @override
   void initState() {
     super.initState();
-    _loadCredentialStatus();
-    _loadEmailConfigStatus();
-    _loadMFADeviceStatus();
+    _loadSettings();
   }
 
-  Future<void> _loadCredentialStatus() async {
+  Future<void> _loadSettings() async {
     setState(() => _loading = true);
     try {
-      final hasCredentials = await AWSCredentialsService.hasCredentials();
-      if (hasCredentials) {
-        final creds = await AWSCredentialsService.getCredentials();
-        setState(() {
-          _hasCredentials = true;
-          _region = creds['region'];
-        });
-      } else {
-        setState(() => _hasCredentials = false);
-      }
+      await Future.wait([
+        _loadEmailConfigStatus(),
+        _loadMFADeviceStatus(),
+      ]);
     } catch (e) {
-      debugPrint('Error loading credentials: $e');
+      debugPrint('Error loading settings: $e');
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -91,137 +82,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _updateCredentials() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
-    );
-
-    if (result == true || mounted) {
-      _loadCredentialStatus();
-    }
-  }
-
-  Future<void> _deleteCredentials() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 500,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorRed.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: AppTheme.errorRed,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Delete Credentials',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Are you sure you want to delete your AWS credentials? You will need to re-enter them to use AWS services.',
-                              style: TextStyle(fontSize: 13, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      OneUIPillButton(
-                        text: 'Delete',
-                        icon: Icons.delete,
-                        backgroundColor: AppTheme.errorRed,
-                        onPressed: () => Navigator.pop(context, true),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey,
-                          minimumSize: const Size(double.infinity, 56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (confirmed == true) {
-      try {
-        await AWSCredentialsService.deleteCredentials();
-        setState(() {
-          _hasCredentials = false;
-          _region = null;
-        });
-
-        if (mounted) {
-          ToastUtils.show(context, 'Credentials deleted', isError: false);
-
-          // Navigate to credentials setup screen
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
-            (route) => false,
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ToastUtils.show(
-            context,
-            'Failed to delete credentials: $e',
-            isError: true,
-          );
-        }
-      }
-    }
-  }
 
   Future<void> _configureEmail() async {
     final result = await showDialog<bool>(
@@ -502,10 +362,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: 32),
 
-                // AWS Credentials Section
-                _buildSectionHeader('AWS Credentials'),
+                // AWS Profiles Section
+                _buildSectionHeader('AWS Profiles'),
                 const SizedBox(height: 16),
-                _buildCredentialsCard(),
+                _buildProfilesNavigationCard(),
 
                 const SizedBox(height: 32),
 
@@ -603,108 +463,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildCredentialsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _hasCredentials
-                      ? AppTheme.successGreen.withValues(alpha: 0.1)
-                      : AppTheme.warningAmber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  _hasCredentials ? Icons.check_circle : Icons.warning_amber,
-                  color: _hasCredentials
-                      ? AppTheme.successGreen
-                      : AppTheme.warningAmber,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _hasCredentials
-                          ? 'Credentials Configured'
-                          : 'No Credentials',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _hasCredentials
-                          ? 'Region: ${_region ?? 'Unknown'}'
-                          : 'Configure your AWS credentials',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (_hasCredentials) ...[
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OneUIPillButton(
-                    text: 'Update',
-                    icon: Icons.edit,
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: AppTheme.primaryPurple,
-                    onPressed: _updateCredentials,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OneUIPillButton(
-                    text: 'Delete',
-                    icon: Icons.delete_outline,
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: AppTheme.errorRed,
-                    onPressed: _deleteCredentials,
-                  ),
-                ),
-              ],
-            ),
-          ] else ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: OneUIPillButton(
-                text: 'Add Credentials',
-                icon: Icons.add,
-                backgroundColor: AppTheme.primaryPurple,
-                onPressed: _updateCredentials,
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 
@@ -1060,6 +818,98 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Learn more about this app',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 18,
+              color: AppTheme.primaryPurple,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfilesNavigationCard() {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AccountSelectorScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primaryPurple.withValues(alpha: 0.1),
+              AppTheme.primaryBlue.withValues(alpha: 0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.switch_account_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'AWS Profiles',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Switch or manage your AWS account profiles',
                     style: TextStyle(
                       fontSize: 13,
                       color: theme.textTheme.bodyMedium?.color,
