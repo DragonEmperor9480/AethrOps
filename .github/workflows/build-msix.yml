@@ -30,7 +30,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $v = (Get-Content 'version.json' | ConvertFrom-Json).windows.version
+          $v   = (Get-Content 'version.json' | ConvertFrom-Json).windows.version
           $tag = $v.ToLower().Replace(' ', '-')
           echo "display=$v" >> $env:GITHUB_OUTPUT
           echo "tag=$tag"   >> $env:GITHUB_OUTPUT
@@ -44,38 +44,43 @@ jobs:
           go build -o aethrops_core.exe main.go
 
       - name: Build Flutter Windows app
-        shell: cmd
         working-directory: awsmgr_ui
+        shell: cmd
         run: |
           flutter clean
           flutter pub get
           flutter build windows --release
 
       - name: Copy Go backend into Flutter bundle
-        shell: cmd
+        shell: pwsh
         run: |
-          copy backend\aethrops_core.exe awsmgr_ui\build\windows\x64\runner\Release\
+          $src = "$env:GITHUB_WORKSPACE\backend\aethrops_core.exe"
+          $dst = "$env:GITHUB_WORKSPACE\awsmgr_ui\build\windows\x64\runner\Release"
+
+          Copy-Item $src $dst
+          Write-Host "Copied aethrops_core.exe -> $dst"
 
       - name: Create MSIX package
-        shell: cmd
         working-directory: awsmgr_ui
+        shell: cmd
         run: dart run msix:create
 
       - name: Prepare release artifact
         shell: pwsh
         run: |
-          $version  = "${{ steps.version.outputs.tag }}"
-          $releaseDir = "release\windows"
+          $version    = "${{ steps.version.outputs.tag }}"
+          $releaseDir = "$env:GITHUB_WORKSPACE\release\windows"
+          $buildDir   = "$env:GITHUB_WORKSPACE\awsmgr_ui\build\windows"
+
           New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 
-          $msix = Get-ChildItem -Recurse -Filter "*.msix" awsmgr_ui\build\windows | Select-Object -First 1
+          $msix = Get-ChildItem -Recurse -Filter "*.msix" $buildDir | Select-Object -First 1
           if (-not $msix) { Write-Error "No .msix file found!"; exit 1 }
 
           $dest = "$releaseDir\AethrOps-$version.msix"
           Copy-Item $msix.FullName $dest
           Write-Host "Artifact: $dest"
 
-          # Checksum
           Get-FileHash $dest -Algorithm SHA256 |
             ForEach-Object { "$($_.Hash)  AethrOps-$version.msix" } |
             Out-File "$releaseDir\checksums-sha256.txt" -Encoding ascii
