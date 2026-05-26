@@ -75,34 +75,3 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 Type: filesandordirs; Name: "{localappdata}\aethrops"
 Type: filesandordirs; Name: "{userappdata}\aethrops"
 
-[Code]
-// Detect an existing installation and notify the user of an in-place upgrade.
-// InnoSetup matches installations via AppId, so files are overwritten automatically.
-
-function GetInstalledVersion(): String;
-var
-  Ver: String;
-begin
-  Ver := '';
-  if not RegQueryStringValue(HKLM,
-    'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
-    'DisplayVersion', Ver) then
-    RegQueryStringValue(HKCU,
-      'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{A8F2B9C1-D4E5-4F6A-8B9C-1D2E3F4A5B6C}_is1',
-      'DisplayVersion', Ver);
-  Result := Ver;
-end;
-
-function InitializeSetup(): Boolean;
-var
-  InstalledVersion: String;
-begin
-  Result := True;
-  InstalledVersion := GetInstalledVersion();
-
-  if InstalledVersion <> '' then
-    MsgBox(
-      'AethrOps ' + InstalledVersion + ' is already installed.' + #13#10 + #13#10 +
-      'The installer will upgrade it in place. Your settings will be preserved.',
-      mbInformation, MB_OK);
-end;
