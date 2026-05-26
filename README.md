@@ -13,7 +13,7 @@
     <img src="https://img.shields.io/github/v/release/DragonEmperor9480/AethrOps?style=for-the-badge" alt="Latest release" />
   </a>
   <a href="https://github.com/DragonEmperor9480/AethrOps/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/DragonEmperor9480/AethrOps?style=for-the-badge" alt="MIT license" />
+    <img src="https://img.shields.io/github/license/DragonEmperor9480/AethrOps?style=for-the-badge" alt="GPL-3.0 license" />
   </a>
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20Linux-111827?style=for-the-badge" alt="Platforms" />
   <img src="https://img.shields.io/badge/Frontend-Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter frontend" />
@@ -207,7 +207,7 @@ AethrOps is the evolution of the earlier CLI-based AWS manager, [`awsmgr`](https
 
 ## License
 
-This project is released under the [MIT License](LICENSE).
+This project is released under the [GNU GPL v3 License](LICENSE).
 
 <p align="center">
   <strong>Made by developers, for developers.</strong>
