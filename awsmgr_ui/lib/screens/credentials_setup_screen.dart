@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import '../services/aws_credentials_service.dart';
+import '../services/aws_profile_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/credentials_tutorial_dialog.dart';
 import '../widgets/oneui_widgets.dart';
@@ -16,6 +16,7 @@ class CredentialsSetupScreen extends StatefulWidget {
 
 class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _profileNameController = TextEditingController();
   final _accessKeyController = TextEditingController();
   final _secretKeyController = TextEditingController();
   final _regionController = TextEditingController(text: 'us-east-1');
@@ -25,6 +26,7 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
 
   @override
   void dispose() {
+    _profileNameController.dispose();
     _accessKeyController.dispose();
     _secretKeyController.dispose();
     _regionController.dispose();
@@ -37,23 +39,28 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
     setState(() => _saving = true);
 
     try {
-      await AWSCredentialsService.saveCredentials(
+      final result = await AWSProfileService.createAccount(
+        profileName: _profileNameController.text.trim(),
         accessKey: _accessKeyController.text.trim(),
         secretKey: _secretKeyController.text.trim(),
         region: _regionController.text.trim(),
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => SplashScreen(
-              isReload: true,
-              accessKey: _accessKeyController.text.trim(),
-              secretKey: _secretKeyController.text.trim(),
-              region: _regionController.text.trim(),
-            ),
-          ),
-        );
+        if (result['success'] == true) {
+          ToastUtils.show(context, result['message'], isError: false);
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(true);
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const SplashScreen(isReload: true),
+              ),
+            );
+          }
+        } else {
+          ToastUtils.show(context, result['message'], isError: true);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -125,6 +132,22 @@ class _CredentialsSetupScreenState extends State<CredentialsSetupScreen> {
                 const SizedBox(height: 40),
 
                 // Input Fields
+                // AWS Profile Name
+                OneUIPillTextField(
+                  controller: _profileNameController,
+                  label: 'AWS Profile Name',
+                  hint: 'e.g. Personal Dev',
+                  icon: Icons.badge_rounded,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Profile Name is required';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
                 // AWS Access Key
                 OneUIPillTextField(
                   controller: _accessKeyController,

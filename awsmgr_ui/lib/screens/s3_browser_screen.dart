@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/s3_item.dart';
 import '../services/api_service.dart';
 import '../services/s3_service.dart';
-import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
-import 's3_file_viewer_screen.dart';
 
 class S3BrowserScreen extends StatefulWidget {
   final String bucketName;
@@ -419,26 +418,86 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
 
   Future<void> _uploadFile() async {
     StreamController<double>? progressController;
+    int bytesSent = 0;
+    int totalBytes = 0;
     try {
-      final result = await FilePicker.platform.pickFiles();
+      final result = await FilePicker.pickFiles();
       if (result == null) return;
 
       final file = File(result.files.single.path!);
       final fileName = result.files.single.name;
-      final fileSize = await file.length();
 
       // Create progress stream controller
       progressController = StreamController<double>.broadcast();
 
       if (!mounted) return;
       
-      // Show loading animation
+      // Show animated progress dialog with real progress
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => LoadingAnimation(
-          message: 'Uploading $fileName',
-          showQuote: true,
+        builder: (context) => StreamBuilder<double>(
+          stream: progressController!.stream,
+          builder: (context, snapshot) {
+            final progress = snapshot.data ?? 0.0;
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: CircularProgressIndicator(
+                            value: progress,
+                            strokeWidth: 8,
+                            backgroundColor: Colors.grey[200],
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppTheme.primaryPurple,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${(progress * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryPurple,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Uploading File',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    fileName,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (totalBytes > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_formatBytes(bytesSent)} / ${_formatBytes(totalBytes)}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
         ),
       );
 
@@ -450,13 +509,15 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
         progressController.add(0.0);
       }
 
-      // Track real-time progress from backend
+      // Track real-time progress from S3Service
       await S3Service.uploadWithProgress(
         widget.bucketName,
         _currentPrefix + fileName,
         file,
         (sent, total) {
           if (total > 0 && !progressController!.isClosed) {
+            bytesSent = sent;
+            totalBytes = total;
             final progress = sent / total;
             progressController.add(progress);
             debugPrint(
@@ -503,177 +564,51 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
   }
 
   bool _canPreviewFile(String fileName) {
-    final ext = fileName.toLowerCase().split('.').last;
-    return [
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'bmp',
-      'webp',
-      'txt',
-      'md',
-      'log',
-      'json',
-      'xml',
-      'yaml',
-      'yml',
-      'csv',
-      'html',
-      'css',
-      'js',
-      'ts',
-      'dart',
-      'py',
-      'java',
-      'go',
-      'c',
-      'cpp',
-      'h',
-      'sh',
-      'bat',
-      'sql',
-      'env',
-      'pdf',
-    ].contains(ext);
+    // Since we open files in the device's system-default viewer app,
+    // all file types (images, videos, docs, zips, code, etc.) can be opened.
+    return true;
   }
 
   void _viewFile(S3Item item) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => S3FileViewerScreen(
-          bucketName: widget.bucketName,
-          objectKey: item.key,
-          fileName: item.displayName,
-        ),
-      ),
-    );
-    // File viewer closed, data is automatically cleared when screen is disposed
+    try {
+      // 1. Get secure presigned GET URL from Go backend
+      final presignedUrl = await S3Service.getPresignedDownloadUrl(
+        widget.bucketName,
+        item.key,
+      );
+
+      final uri = Uri.parse(presignedUrl);
+      if (await canLaunchUrl(uri)) {
+        // 2. Open presigned URL directly in the default system web browser/handler for instant streaming
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        _showSuccess('Opening ${item.displayName}...');
+      } else {
+        throw Exception('Could not launch default handler.');
+      }
+    } catch (e) {
+      _showError('Failed to open file: $e');
+    }
   }
 
   Future<void> _downloadFile(S3Item item) async {
-    // Request storage permission first
-    final hasPermission = await DownloadService.requestStoragePermission();
-
-    if (!hasPermission) {
-      _showError(DownloadService.getPermissionDeniedMessage());
-      return;
-    }
-
-    if (!mounted) return;
-
-    // Create progress stream controller
-    final progressController = StreamController<double>();
-    int bytesReceived = 0;
-    int totalBytes = 0;
-
-    // Show animated progress dialog with real progress
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StreamBuilder<double>(
-        stream: progressController.stream,
-        builder: (context, snapshot) {
-          final progress = snapshot.data ?? 0.0;
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 100,
-                        height: 100,
-                        child: CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 8,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppTheme.primaryPurple,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${(progress * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryPurple,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Downloading File',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  item.displayName,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-                if (totalBytes > 0) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_formatBytes(bytesReceived)} / ${_formatBytes(totalBytes)}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
-
     try {
-      final bytes = await S3Service.downloadWithProgress(
+      // 1. Get secure presigned GET URL from Go backend (passing download: true to force attachment header)
+      final presignedUrl = await S3Service.getPresignedDownloadUrl(
         widget.bucketName,
         item.key,
-        (received, total) {
-          if (total > 0) {
-            bytesReceived = received;
-            totalBytes = total;
-            progressController.add(received / total);
-          }
-        },
+        download: true,
       );
 
-      // Save file using DownloadService
-      final result = await DownloadService.saveToDownloads(
-        bytes: bytes,
-        fileName: item.displayName,
-      );
-
-      // Close progress stream
-      await progressController.close();
-
-      // Hide progress dialog
-      if (mounted) Navigator.of(context).pop();
-
-      if (result['success']) {
-        _showSuccess('Downloaded to ${result['displayPath']}');
+      final uri = Uri.parse(presignedUrl);
+      if (await canLaunchUrl(uri)) {
+        // 2. Open presigned URL in the default system web browser to download natively
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        _showSuccess('Starting download in browser...');
       } else {
-        _showError('Failed to save file: ${result['error']}');
+        throw Exception('Could not launch default browser.');
       }
     } catch (e) {
-      // Close progress stream
-      await progressController.close();
-
-      // Hide progress dialog if showing
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-      _showError('Download failed: $e');
+      _showError('Failed to start download: $e');
     }
   }
 

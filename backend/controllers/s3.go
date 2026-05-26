@@ -3,11 +3,9 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"strings"
+	"time"
 
 	"github.com/DragonEmperor9480/AethrOps/models/s3"
 	"github.com/DragonEmperor9480/AethrOps/service"
@@ -187,7 +185,7 @@ func UpdateBucketMFADelete(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DownloadS3Object downloads an object from S3 bucket with streaming support
+// DownloadS3Object generates a secure presigned URL for downloading an S3 object
 func DownloadS3Object(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bucketname := vars["bucketname"]
@@ -195,55 +193,38 @@ func DownloadS3Object(w http.ResponseWriter, r *http.Request) {
 
 	// Get AWS S3 client
 	client := utils.GetS3Client()
-	ctx := context.TODO()
+
+	// Create a PresignClient wrapper
+	presignClient := s3sdk.NewPresignClient(client)
+
+	// Check if the client requested a forced download/attachment
+	download := r.URL.Query().Get("download")
 
 	input := &s3sdk.GetObjectInput{
 		Bucket: &bucketname,
 		Key:    &objectkey,
 	}
 
-	result, err := client.GetObject(ctx, input)
+	if download == "true" {
+		disposition := "attachment"
+		input.ResponseContentDisposition = &disposition
+	} else {
+		contentType := detectContentType(objectkey)
+		if contentType != "" {
+			input.ResponseContentType = &contentType
+		}
+	}
+
+	// Sign for 15 minutes
+	presignedReq, err := presignClient.PresignGetObject(context.TODO(), input, func(opts *s3sdk.PresignOptions) {
+		opts.Expires = 15 * time.Minute
+	})
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer result.Body.Close()
 
-	// Get metadata to set proper content type
-	if result.ContentType != nil {
-		w.Header().Set("Content-Type", *result.ContentType)
-	}
-
-	// Set headers for file download
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+objectkey+"\"")
-
-	// CRITICAL: Set content length for Dio progress tracking
-	if result.ContentLength != nil {
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", *result.ContentLength))
-	}
-
-	w.WriteHeader(http.StatusOK)
-
-	// Stream the data with maximum speed - use 1MB chunks for localhost performance
-	buffer := make([]byte, 1024*1024) // 1MB chunks for maximum throughput
-	for {
-		n, err := result.Body.Read(buffer)
-		if n > 0 {
-			if _, writeErr := w.Write(buffer[:n]); writeErr != nil {
-				return
-			}
-			// Flush to send data immediately
-			if flusher, ok := w.(http.Flusher); ok {
-				flusher.Flush()
-			}
-		}
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return
-		}
-	}
+	respondJSON(w, http.StatusOK, map[string]string{"url": presignedReq.URL})
 }
 
 // ListS3ObjectsWithPrefix lists objects in a bucket with a prefix (for folder navigation)
@@ -266,114 +247,46 @@ func ListS3ObjectsWithPrefix(w http.ResponseWriter, r *http.Request) {
 }
 
 // UploadS3Object uploads a file to S3 with streaming progress
+// UploadS3Object generates a secure presigned URL for uploading an S3 object (PUT request direct to S3)
 func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	bucketname := vars["bucketname"]
 
-	// Set headers for streaming response
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
+	var req struct {
+		Key string `json:"key"`
+	}
 
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		respondError(w, http.StatusInternalServerError, "Streaming not supported")
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body: "+err.Error())
 		return
 	}
 
-	// Limit request body size to 500MB to prevent memory exhaustion
-	r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
-
-	// Parse multipart form (max 500MB)
-	err := r.ParseMultipartForm(500 << 20)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "Failed to parse form: "+err.Error())
+	if req.Key == "" {
+		respondError(w, http.StatusBadRequest, "key is required")
 		return
 	}
 
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "Failed to get file: "+err.Error())
-		return
-	}
-	defer file.Close()
+	// Get AWS S3 client
+	client := utils.GetS3Client()
 
-	objectKey := r.FormValue("key")
-	if objectKey == "" {
-		objectKey = header.Filename
-	}
+	// Create a PresignClient wrapper
+	presignClient := s3sdk.NewPresignClient(client)
 
-	fileSize := header.Size
-
-	// Get temp directory - use app's data directory if available (for mobile)
-	tempDir := os.Getenv("AETHROPS_DATA_DIR")
-	if tempDir == "" {
-		tempDir = os.TempDir()
+	input := &s3sdk.PutObjectInput{
+		Bucket: &bucketname,
+		Key:    &req.Key,
 	}
 
-	// Create temp file in the appropriate directory
-	tempFile, err := os.CreateTemp(tempDir, "s3upload-*-"+header.Filename)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to create temp file: "+err.Error())
-		return
-	}
-	tempFilePath := tempFile.Name()
-	defer tempFile.Close()
-	defer os.Remove(tempFilePath)
-
-	// Copy file to temp location (this is fast for localhost)
-	_, err = io.Copy(tempFile, file)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to save file: "+err.Error())
-		return
-	}
-
-	// Close the file before uploading
-	if err := tempFile.Close(); err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to close temp file: "+err.Error())
-		return
-	}
-
-	// Start the response with initial progress
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]interface{}{
-		"progress": 0,
-		"total":    fileSize,
+	// Sign for 15 minutes
+	presignedReq, err := presignClient.PresignPutObject(context.TODO(), input, func(opts *s3sdk.PresignOptions) {
+		opts.Expires = 15 * time.Minute
 	})
-	flusher.Flush()
-
-	// Upload to S3 with progress tracking
-	progressSent := int64(0)
-	err = s3.UploadS3ObjectWithProgress(bucketname, objectKey, tempFilePath, func(current, total int64) {
-		// Send progress updates every 10% to avoid flooding while maintaining responsiveness
-		if current-progressSent > total/10 || current == total {
-			progressSent = current
-			_, _ = w.Write([]byte("\n"))
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"progress": current,
-				"total":    total,
-			})
-			flusher.Flush()
-		}
-	})
-
 	if err != nil {
-		_, _ = w.Write([]byte("\n"))
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": "Failed to upload to S3: " + err.Error(),
-		})
-		flusher.Flush()
+		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Send completion
-	_, _ = w.Write([]byte("\n"))
-	_ = json.NewEncoder(w).Encode(map[string]interface{}{
-		"progress": fileSize,
-		"total":    fileSize,
-		"complete": true,
-		"message":  "Upload successful",
-	})
-	flusher.Flush()
+	respondJSON(w, http.StatusOK, map[string]string{"url": presignedReq.URL})
 }
 
 // DeleteS3Object deletes an object from S3
@@ -425,4 +338,50 @@ func CreateS3Folder(w http.ResponseWriter, r *http.Request) {
 		"bucketname":  bucketname,
 		"folder_path": req.FolderPath,
 	})
+}
+
+// detectContentType returns the appropriate MIME type based on the file extension
+func detectContentType(key string) string {
+	idx := strings.LastIndex(key, ".")
+	if idx == -1 || idx == len(key)-1 {
+		return ""
+	}
+	ext := strings.ToLower(key[idx:])
+
+	switch ext {
+	case ".mp4":
+		return "video/mp4"
+	case ".mkv":
+		return "video/x-matroska"
+	case ".avi":
+		return "video/x-msvideo"
+	case ".mov":
+		return "video/quicktime"
+	case ".webm":
+		return "video/webm"
+	case ".mp3":
+		return "audio/mpeg"
+	case ".wav":
+		return "audio/wav"
+	case ".ogg":
+		return "audio/ogg"
+	case ".pdf":
+		return "application/pdf"
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	case ".txt", ".log":
+		return "text/plain; charset=utf-8"
+	case ".html":
+		return "text/html; charset=utf-8"
+	case ".json":
+		return "application/json; charset=utf-8"
+	default:
+		return ""
+	}
 }

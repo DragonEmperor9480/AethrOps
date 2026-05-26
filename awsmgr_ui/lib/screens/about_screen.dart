@@ -62,6 +62,116 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    final isLandscape = width > height || width >= 900;
+
+    if (isLandscape) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('About AethrOps'),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column: Branding, Version & Credits
+                  Expanded(
+                    flex: 5,
+                    child: Column(
+                      children: [
+                        _buildLandscapeBranding(isDark),
+                        const SizedBox(height: 24),
+                        _buildVersionCard(isDark),
+                        const SizedBox(height: 24),
+                        _buildMadeWithLove(isDark),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 48),
+                  // Right Column: Explore & Resources & Tech Stack
+                  Expanded(
+                    flex: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle('Explore', isDark),
+                        const SizedBox(height: 16),
+                        _buildNavigationCard(
+                          'Features',
+                          'Checkout all the features you can use',
+                          Icons.auto_awesome,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const FeaturesScreen(),
+                              ),
+                            );
+                          },
+                          isDark,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildNavigationCard(
+                          'Contributors',
+                          'Checkout contributors!',
+                          Icons.people,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ContributorsScreen(),
+                              ),
+                            );
+                          },
+                          isDark,
+                        ),
+                        const SizedBox(height: 32),
+                        _buildSectionTitle('Resources', isDark),
+                        const SizedBox(height: 16),
+                        _buildLinkCard(
+                          'Visit Website',
+                          'Checkout our cool website!',
+                          Icons.language,
+                          'https://aethrops.amrutlabs.in/',
+                          isDark,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLinkCard(
+                          'Documentation',
+                          'Learn about AethrOps',
+                          Icons.menu_book,
+                          'https://aethrops.amrutlabs.in/docs',
+                          isDark,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLinkCard(
+                          'Source Code',
+                          'Checkout our GitHub repository!',
+                          Icons.code,
+                          'https://github.com/DragonEmperor9480/AethrOps',
+                          isDark,
+                        ),
+                        const SizedBox(height: 32),
+                        _buildSectionTitle('Built With', isDark),
+                        const SizedBox(height: 16),
+                        _buildTechStack(isDark),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -195,7 +305,7 @@ class _AboutScreenState extends State<AboutScreen> {
                     isDark,
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
                   // Website & Docs Links
                   _buildLinkCard(
@@ -213,8 +323,16 @@ class _AboutScreenState extends State<AboutScreen> {
                     'https://aethrops.amrutlabs.in/docs',
                     isDark,
                   ),
+                  const SizedBox(height: 12),
+                  _buildLinkCard(
+                    'Source Code',
+                    'Checkout our GitHub repository!',
+                    Icons.code,
+                    'https://github.com/DragonEmperor9480/AethrOps',
+                    isDark,
+                  ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
                   // Tech Stack
                   _buildSectionTitle('Built With', isDark),
@@ -236,6 +354,62 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
+  Widget _buildLandscapeBranding(bool isDark) {
+    return Column(
+      children: [
+        const SizedBox(height: 24),
+        Container(
+          width: 110,
+          height: 110,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.35),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.cloud_outlined,
+            size: 55,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 20),
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AppTheme.primaryPurple, AppTheme.primaryBlue, AppTheme.accentCyan],
+          ).createShader(bounds),
+          child: const Text(
+            'AethrOps',
+            style: TextStyle(
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Anurati',
+              color: Colors.white,
+              letterSpacing: 3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Cloud Management Platform',
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.white60 : Colors.black54,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   Widget _buildVersionCard(bool isDark) {
     return Center(
       child: Container(
@@ -247,11 +421,20 @@ class _AboutScreenState extends State<AboutScreen> {
               AppTheme.primaryBlue.withValues(alpha: 0.15),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: AppTheme.primaryPurple.withValues(alpha: 0.3),
+            color: AppTheme.primaryPurple.withValues(alpha: 0.35),
             width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.35)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -318,37 +501,42 @@ class _AboutScreenState extends State<AboutScreen> {
   ) {
     return InkWell(
       onTap: () => _launchURL(url),
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(24),
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.15)
-                : Colors.black.withValues(alpha: 0.15),
-            width: 1,
+            color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+            width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryPurple.withValues(alpha: 0.2),
-                    AppTheme.primaryBlue.withValues(alpha: 0.2),
+                    AppTheme.primaryPurple.withValues(alpha: 0.15),
+                    AppTheme.primaryBlue.withValues(alpha: 0.15),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: AppTheme.primaryPurple, size: 22),
+              child: Icon(icon, color: AppTheme.primaryPurple, size: 24),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,16 +544,16 @@ class _AboutScreenState extends State<AboutScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     description,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: isDark ? Colors.white60 : Colors.black54,
                     ),
                   ),
@@ -392,37 +580,42 @@ class _AboutScreenState extends State<AboutScreen> {
   ) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(24),
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.15)
-                : Colors.black.withValues(alpha: 0.15),
-            width: 1,
+            color: isDark ? AppTheme.borderColorDark : AppTheme.borderColor,
+            width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryPurple.withValues(alpha: 0.2),
-                    AppTheme.primaryBlue.withValues(alpha: 0.2),
+                    AppTheme.primaryPurple.withValues(alpha: 0.15),
+                    AppTheme.primaryBlue.withValues(alpha: 0.15),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: AppTheme.primaryPurple, size: 22),
+              child: Icon(icon, color: AppTheme.primaryPurple, size: 24),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,16 +623,16 @@ class _AboutScreenState extends State<AboutScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     description,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: isDark ? Colors.white60 : Colors.black54,
                     ),
                   ),
@@ -458,12 +651,15 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildSectionTitle(String title, bool isDark) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-        color: isDark ? Colors.white : Colors.black,
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: isDark ? Colors.white : Colors.black,
+        ),
       ),
     );
   }
@@ -480,24 +676,32 @@ class _AboutScreenState extends State<AboutScreen> {
       spacing: 12,
       runSpacing: 12,
       children: stack.map((tech) {
+        final techColor = tech['color'] as Color;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(24),
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(32),
             border: Border.all(
-              color: (tech['color'] as Color).withValues(alpha: 0.3),
+              color: techColor.withValues(alpha: 0.4),
               width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.02),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Text(
             tech['name'] as String,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: tech['color'] as Color,
+              fontWeight: FontWeight.bold,
+              color: techColor,
             ),
           ),
         );
@@ -506,80 +710,47 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildMadeWithLove(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.15)
-              : Colors.black.withValues(alpha: 0.15),
-          width: 1,
-        ),
-      ),
+    return Center(
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Made with',
+                'Made with ',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  color: isDark ? Colors.white54 : Colors.black54,
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.favorite, color: AppTheme.errorRed, size: 24),
-              const SizedBox(width: 8),
+              const Icon(Icons.favorite, color: AppTheme.errorRed, size: 16),
               Text(
-                'by',
+                ' by ',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                ),
+              ),
+              InkWell(
+                onTap: () => _launchURL('https://github.com/DragonEmperor9480'),
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text(
+                    'Amrutesh',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryPurple,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppTheme.primaryPurple.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: () => _launchURL('https://github.com/DragonEmperor9480'),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [AppTheme.primaryPurple, AppTheme.primaryBlue],
-                    ).createShader(bounds),
-                    child: const Text(
-                      'Amrutesh',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.open_in_new,
-                    size: 18,
-                    color: AppTheme.primaryPurple,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             '© 2025-2026 AethrOps',
             style: TextStyle(

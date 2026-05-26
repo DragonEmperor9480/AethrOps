@@ -71,6 +71,11 @@ echo Step 5: Updating version in Inno Setup script...
 REM Update display version (MyAppVersion) and tag version (MyAppVersionTag)
 powershell -Command "$content = Get-Content 'scripts\installer\windows_setup.iss' -Raw; $content = $content -replace '(?m)^#define MyAppVersion \"[^\"]*\"', '#define MyAppVersion \"%VERSION_DISPLAY%\"'; $content = $content -replace '(?m)^#define MyAppVersionTag \"[^\"]*\"', '#define MyAppVersionTag \"%VERSION%\"'; Set-Content 'scripts\installer\windows_setup.iss' -Value $content -NoNewline"
 
+if %errorlevel% neq 0 (
+    echo Failed to update version in Inno Setup script
+    exit /b 1
+)
+
 echo.
 echo Step 6: Building installer with Inno Setup...
 echo.

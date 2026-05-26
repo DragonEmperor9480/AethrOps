@@ -2,9 +2,14 @@ package db_service
 
 import "gorm.io/gorm"
 
-// UserCredential stores IAM user credentials
-type UserCredential struct {
+// AWSAccount stores encrypted AWS credentials and region config
+type AWSAccount struct {
 	gorm.Model
-	Username string `gorm:"uniqueIndex;not null"`
-	Password string // Encrypted
+	ProfileName     string `gorm:"uniqueIndex;not null"`
+	AccessKeyID     string `gorm:"not null"`
+	SecretAccessKey string `gorm:"not null"` // Encrypted
+	Region          string `gorm:"not null"`
+	Output          string `gorm:"default:'json'"`
+	IsActive        bool   `gorm:"default:false"`
 }
+

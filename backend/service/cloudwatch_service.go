@@ -60,15 +60,194 @@ func ParseLogLine(line string) cloudwatch_model.LogEntry {
 	}
 }
 
+// dedupCache implements a rolling FIFO cache for event ID deduplication with bounded memory
+type dedupCache struct {
+	seen map[string]struct{}
+	fifo []string
+	max  int
+}
+
+func newDedupCache(max int) *dedupCache {
+	return &dedupCache{
+		seen: make(map[string]struct{}, max),
+		fifo: make([]string, 0, max),
+		max:  max,
+	}
+}
+
+func (c *dedupCache) Add(id string) bool {
+	if _, exists := c.seen[id]; exists {
+		return false // Already seen
+	}
+	c.seen[id] = struct{}{}
+	c.fifo = append(c.fifo, id)
+
+	if len(c.fifo) > c.max {
+		oldest := c.fifo[0]
+		c.fifo = c.fifo[1:]
+		delete(c.seen, oldest)
+	}
+	return true
+}
+
+// Singleflight Shared Stream observable registry
+type sharedStream struct {
+	mu         sync.RWMutex
+	logChan    chan cloudwatch_model.LogEntry
+	clients    map[chan<- cloudwatch_model.LogEntry]struct{}
+	cancelFunc context.CancelFunc
+}
+
+var (
+	activeStreams      = make(map[string]*sharedStream)
+	activeStreamsMutex sync.Mutex
+)
+
 // StreamLambdaLogs streams logs from a Lambda function log group using AWS SDK.
-// Uses adaptive polling, deduplication, and a goroutine pipeline for efficiency.
+// It tries native StartLiveTail stream first and falls back to Singleflight Adaptive Polling on error.
 func StreamLambdaLogs(ctx context.Context, logGroupName string, logChan chan<- cloudwatch_model.LogEntry, errChan chan<- error) {
-	// Internal channel: polling goroutine → processing goroutine
-	rawChan := make(chan cwltypes.FilteredLogEvent, 200)
+	// 1. Try Native AWS StartLiveTail stream first
+	log.Printf("Attempting native HTTP/2 StartLiveTail stream for log group: %s", logGroupName)
+	err := streamLiveTailNative(ctx, logGroupName, logChan)
+	if err == nil {
+		log.Printf("Native StartLiveTail completed normally for: %s", logGroupName)
+		close(logChan)
+		return
+	}
+
+	if ctx.Err() != nil {
+		close(logChan)
+		return
+	}
+
+	log.Printf("Native StartLiveTail not supported or failed (%v). Falling back to optimized Adaptive Polling...", err)
+
+	// 2. Fallback to Shared Singleflight Adaptive Polling stream
+	streamLambdaLogsFallback(ctx, logGroupName, logChan, errChan)
+}
+
+// streamLiveTailNative initiates and consumes the native AWS StartLiveTail HTTP/2 stream
+func streamLiveTailNative(ctx context.Context, logGroupName string, logChan chan<- cloudwatch_model.LogEntry) error {
+	input := &cloudwatchlogs.StartLiveTailInput{
+		LogGroupIdentifiers: []string{logGroupName},
+	}
+
+	output, err := utils.LogsClient.StartLiveTail(ctx, input)
+	if err != nil {
+		return err
+	}
+
+	stream := output.GetStream()
+	defer stream.Close()
+
+	eventsChan := stream.Events()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case event, ok := <-eventsChan:
+			if !ok {
+				if err := stream.Err(); err != nil {
+					return err
+				}
+				return nil
+			}
+
+			switch e := event.(type) {
+			case *cwltypes.StartLiveTailResponseStreamMemberSessionStart:
+				log.Printf("StartLiveTail native stream session started for log group: %s", logGroupName)
+			case *cwltypes.StartLiveTailResponseStreamMemberSessionUpdate:
+				for _, sessionResult := range e.Value.SessionResults {
+					message := aws.ToString(sessionResult.Message)
+					if message == "" {
+						continue
+					}
+
+					entry := ParseLogLine(message)
+					if sessionResult.Timestamp != nil {
+						entry.Timestamp = *sessionResult.Timestamp
+					}
+
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case logChan <- entry:
+					}
+				}
+			}
+		}
+	}
+}
+
+// streamLambdaLogsFallback implements singleflight polling fallback fanning out logs to all active readers
+func streamLambdaLogsFallback(ctx context.Context, logGroupName string, logChan chan<- cloudwatch_model.LogEntry, errChan chan<- error) {
+	activeStreamsMutex.Lock()
+	stream, exists := activeStreams[logGroupName]
+	if !exists {
+		// Start exactly one background polling observable loop per log group
+		sharedCtx, cancel := context.WithCancel(context.Background())
+		stream = &sharedStream{
+			logChan:    make(chan cloudwatch_model.LogEntry, 1000),
+			clients:    make(map[chan<- cloudwatch_model.LogEntry]struct{}),
+			cancelFunc: cancel,
+		}
+		activeStreams[logGroupName] = stream
+
+		go runSharedPollingLoop(sharedCtx, logGroupName, stream, errChan)
+	}
+
+	// Register the reader's channel
+	stream.mu.Lock()
+	stream.clients[logChan] = struct{}{}
+	stream.mu.Unlock()
+	activeStreamsMutex.Unlock()
+
+	defer func() {
+		// Clean up on disconnect
+		activeStreamsMutex.Lock()
+		stream.mu.Lock()
+		delete(stream.clients, logChan)
+		clientCount := len(stream.clients)
+		stream.mu.Unlock()
+
+		if clientCount == 0 {
+			// Wipe background polling loop once all readers exit
+			stream.cancelFunc()
+			delete(activeStreams, logGroupName)
+		}
+		activeStreamsMutex.Unlock()
+		close(logChan)
+	}()
+
+	// Pipeline logs to client with fast non-blocking drops for slow consumers
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case entry, ok := <-stream.logChan:
+			if !ok {
+				return
+			}
+			select {
+			case logChan <- entry:
+			default:
+				// Slow consumer overflow prevention
+			}
+		}
+	}
+}
+
+// runSharedPollingLoop runs single-instance Go polling pipelines
+func runSharedPollingLoop(ctx context.Context, logGroupName string, stream *sharedStream, errChan chan<- error) {
+	defer close(stream.logChan)
+
+	rawChan := make(chan cwltypes.FilteredLogEvent, 500)
+	parsedChan := make(chan cloudwatch_model.LogEntry, 500)
 
 	var wg sync.WaitGroup
 
-	// Goroutine 1: Polling — fetches raw events from CloudWatch
+	// Fetcher loop
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -76,21 +255,39 @@ func StreamLambdaLogs(ctx context.Context, logGroupName string, logChan chan<- c
 		pollCloudWatchLogs(ctx, logGroupName, rawChan, errChan)
 	}()
 
-	// Goroutine 2: Processing — parses and dispatches log entries
+	// Parsing loop
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processLogEvents(ctx, rawChan, logChan)
+		defer close(parsedChan)
+		processLogEvents(ctx, rawChan, parsedChan)
+	}()
+
+	// Broadcaster
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case entry, ok := <-parsedChan:
+				if !ok {
+					return
+				}
+				select {
+				case stream.logChan <- entry:
+				default:
+				}
+			}
+		}
 	}()
 
 	wg.Wait()
-	close(logChan) // Close logChan when streaming completes
 }
 
-// pollCloudWatchLogs handles the CloudWatch API polling with adaptive intervals,
-// deduplication, startTime advancement, and exponential backoff on errors.
+// pollCloudWatchLogs handles CloudWatch polling with rolling deduplication, zero drops, and adaptive backoff
 func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<- cwltypes.FilteredLogEvent, errChan chan<- error) {
-	// Start from NOW — true live tail, no historical logs
 	startTime := time.Now().UnixMilli()
 
 	input := &cloudwatchlogs.FilterLogEventsInput{
@@ -98,14 +295,12 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 		StartTime:    aws.Int64(startTime),
 	}
 
-	// Deduplication: track seen event IDs
-	seenEvents := make(map[string]struct{}, 256)
+	// Rolling FIFO deduplication cache (holds up to 5,000 seen Event IDs)
+	dedup := newDedupCache(5000)
 
-	// Adaptive polling state
 	idleCount := 0
 	currentInterval := activePollInterval
 
-	// Error backoff state
 	consecutiveErrors := 0
 	currentBackoff := initialBackoff
 
@@ -118,25 +313,21 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 		default:
 		}
 
-		// Apply pagination token if available
 		if nextToken != nil {
 			input.NextToken = nextToken
 		} else {
-			// When no pagination token, ensure we query from the latest startTime
 			input.NextToken = nil
 		}
 
 		result, err := utils.LogsClient.FilterLogEvents(ctx, input)
 		if err != nil {
-			// Check if context was cancelled (client disconnected)
 			if ctx.Err() != nil {
 				return
 			}
 
 			consecutiveErrors++
-			log.Printf("CloudWatch poll error (%d/%d): %v", consecutiveErrors, maxConsecutiveErrors, err)
+			log.Printf("CloudWatch fallback poll error (%d/%d): %v", consecutiveErrors, maxConsecutiveErrors, err)
 
-			// After too many consecutive errors, notify the client
 			if consecutiveErrors >= maxConsecutiveErrors {
 				select {
 				case errChan <- err:
@@ -145,7 +336,6 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 				return
 			}
 
-			// Exponential backoff on error
 			select {
 			case <-ctx.Done():
 				return
@@ -158,11 +348,9 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 			continue
 		}
 
-		// Successful poll — reset error state
 		consecutiveErrors = 0
 		currentBackoff = initialBackoff
 
-		// Track the maximum timestamp seen in this batch
 		newEventsCount := 0
 		maxTimestamp := startTime
 
@@ -172,20 +360,17 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 				continue
 			}
 
-			// Deduplication check
-			if _, seen := seenEvents[eventID]; seen {
+			// Rolling FIFO deduplication (zero log drop algorithm)
+			if !dedup.Add(eventID) {
 				continue
 			}
-			seenEvents[eventID] = struct{}{}
 
-			// Track max timestamp for startTime advancement
 			if event.Timestamp != nil && *event.Timestamp > maxTimestamp {
 				maxTimestamp = *event.Timestamp
 			}
 
 			newEventsCount++
 
-			// Send raw event to processing goroutine
 			select {
 			case <-ctx.Done():
 				return
@@ -193,35 +378,26 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 			}
 		}
 
-		// Handle pagination
 		nextToken = result.NextToken
 
-		// Advance startTime after processing events to avoid re-fetching
+		// ZERO DROPS: Keep StartTime exactly at maxTimestamp (no +1). 
+		// The next poll will retrieve records starting exactly from maxTimestamp,
+		// and dedupCache will cleanly filter out the duplicates.
 		if newEventsCount > 0 {
-			// Advance startTime to (max seen timestamp + 1ms) to avoid re-fetching
-			startTime = maxTimestamp + 1
+			startTime = maxTimestamp
 			input.StartTime = aws.Int64(startTime)
 		}
 
-		// Prune seen events map if it grows too large
-		if len(seenEvents) > maxSeenEvents {
-			seenEvents = make(map[string]struct{}, 256)
-		}
-
-		// Adaptive polling: adjust interval based on activity
 		if newEventsCount > 0 {
-			// Logs are flowing — poll faster
 			idleCount = 0
 			currentInterval = activePollInterval
 		} else if nextToken == nil {
-			// No new events and no more pages — increment idle counter
 			idleCount++
 			if idleCount >= idleThreshold {
 				currentInterval = idlePollInterval
 			}
 		}
 
-		// Wait before next poll (skip wait if there are more pages to fetch)
 		if nextToken == nil {
 			select {
 			case <-ctx.Done():
@@ -233,7 +409,6 @@ func pollCloudWatchLogs(ctx context.Context, logGroupName string, rawChan chan<-
 }
 
 // processLogEvents reads raw CloudWatch events and dispatches parsed LogEntry
-// objects to the output channel. Runs in its own goroutine.
 func processLogEvents(ctx context.Context, rawChan <-chan cwltypes.FilteredLogEvent, logChan chan<- cloudwatch_model.LogEntry) {
 	for {
 		select {
@@ -241,7 +416,6 @@ func processLogEvents(ctx context.Context, rawChan <-chan cwltypes.FilteredLogEv
 			return
 		case event, ok := <-rawChan:
 			if !ok {
-				// rawChan closed, polling goroutine exited
 				return
 			}
 
@@ -251,7 +425,6 @@ func processLogEvents(ctx context.Context, rawChan <-chan cwltypes.FilteredLogEv
 			}
 
 			entry := ParseLogLine(message)
-			// Attach CloudWatch metadata
 			if event.Timestamp != nil {
 				entry.Timestamp = *event.Timestamp
 			}

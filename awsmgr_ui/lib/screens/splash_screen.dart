@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import '../services/api_service.dart';
-import '../services/aws_credentials_service.dart';
+import '../services/aws_profile_service.dart';
 import '../services/backend_service.dart';
 import '../screens/home_screen.dart';
 import '../screens/credentials_setup_screen.dart';
+import '../screens/account_selector_screen.dart';
 import '../widgets/security_wrapper.dart';
 import '../theme/app_theme.dart';
 
@@ -30,107 +31,67 @@ class _SplashScreenState extends State<SplashScreen> {
   String _status = 'Initializing...';
   bool _hasError = false;
 
-  final List<String> _funMessages = [
-    'Waking up the cloud hamsters...',
-    'Convincing AWS to let you in...',
-    'Downloading the internet...',
-    'Spinning up your virtual empire...',
-    'Teaching servers to behave...',
-    'Bribing the load balancers...',
-    'Asking nicely for your data...',
-    'Herding cloud cats...',
-    'Inflating the cloud balloons...',
-    'Summoning the DevOps wizards...',
-  ];
-
   @override
   void initState() {
     super.initState();
     _initialize();
   }
 
-  String _getRandomMessage() {
-    _funMessages.shuffle();
-    return _funMessages.first;
-  }
-
   Future<void> _initialize() async {
     try {
-      bool hasCredentials = false;
-
-      if (widget.isReload) {
-        setState(() => _status = _getRandomMessage());
-        await Future.delayed(const Duration(milliseconds: 800));
-
-        setState(() => _status = 'Establishing secure connection...');
-        await Future.delayed(const Duration(milliseconds: 800));
-
-        if (widget.accessKey != null &&
-            widget.secretKey != null &&
-            widget.region != null) {
-          await BackendService.setAWSCredentials(
-            widget.accessKey!,
-            widget.secretKey!,
-            widget.region!,
-          );
-        }
-        hasCredentials = true;
-      } else {
-        setState(() => _status = 'Checking credentials...');
-        await Future.delayed(const Duration(milliseconds: 600));
-
-        hasCredentials = await AWSCredentialsService.hasCredentials();
-
-        setState(() => _status = _getRandomMessage());
+      // 1. Start the Go backend process (if not already running)
+      if (!widget.isReload) {
+        setState(() => _status = 'Starting local backend...');
         await BackendService.start();
 
         setState(() => _status = 'Establishing secure connection...');
         await Future.delayed(const Duration(milliseconds: 600));
 
         final isRunning = await BackendService.isRunning();
-
         if (!isRunning) {
           throw Exception('Backend health check failed');
         }
-
         debugPrint('✓ Backend loaded successfully');
-
-        if (hasCredentials) {
-          setState(() => _status = 'Configuring AWS services...');
-          final creds = await AWSCredentialsService.getCredentials();
-
-          if (creds['accessKey'] != null &&
-              creds['secretKey'] != null &&
-              creds['region'] != null) {
-            await BackendService.setAWSCredentials(
-              creds['accessKey']!,
-              creds['secretKey']!,
-              creds['region']!,
-            );
-          }
-        }
       }
+
+      // 2. Query auth-status from backend
+      setState(() => _status = 'Checking authentication status...');
+      final authResult = await AWSProfileService.getAuthStatus();
+      final status = authResult['status'] as String;
 
       setState(() => _status = 'Blasting you off into AethrOps! 🚀');
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      if (hasCredentials) {
-        setState(() => _status = 'Almost there...');
-        try {
-          await ApiService.getCallerIdentity();
-        } catch (e) {
-          debugPrint('Failed to prefetch user info: $e');
-        }
-      }
+      await Future.delayed(const Duration(milliseconds: 600));
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => hasCredentials
-                ? const SecurityWrapper(child: HomeScreen())
-                : const CredentialsSetupScreen(),
-          ),
-        );
+        if (status == 'authenticated') {
+          // Prefetch user identity for smooth home experience
+          setState(() => _status = 'Almost there...');
+          try {
+            await ApiService.getCallerIdentity();
+          } catch (e) {
+            debugPrint('Failed to prefetch caller identity: $e');
+          }
+
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const SecurityWrapper(child: HomeScreen()),
+              ),
+            );
+          }
+        } else if (status == 'select_account') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const AccountSelectorScreen(),
+            ),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const CredentialsSetupScreen(),
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint('❌ Backend initialization failed: $e');

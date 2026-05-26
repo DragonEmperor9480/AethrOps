@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -72,6 +73,8 @@ func CreateLogSession(functionName string) (*cloudwatch_model.LogSession, error)
 		return nil, fmt.Errorf("failed to create log file: %w", err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	session := &cloudwatch_model.LogSession{
 		SessionID:    sessionID,
 		FunctionName: functionName,
@@ -80,7 +83,11 @@ func CreateLogSession(functionName string) (*cloudwatch_model.LogSession, error)
 		CreatedAt:    time.Now(),
 		LastAccess:   time.Now(),
 		LogCount:     0,
+		LogChan:      make(chan cloudwatch_model.LogEntry, 5000),
+		CancelFunc:   cancel,
 	}
+
+	startBackgroundWriter(session, ctx)
 
 	logSessionsMutex.Lock()
 	logSessions[sessionID] = session
@@ -89,8 +96,38 @@ func CreateLogSession(functionName string) (*cloudwatch_model.LogSession, error)
 	return session, nil
 }
 
-// WriteLogToFile writes a log entry to the session file (goroutine-safe)
-func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model.LogEntry) {
+// startBackgroundWriter launches a single dedicated background worker for the session log file
+func startBackgroundWriter(session *cloudwatch_model.LogSession, ctx context.Context) {
+	session.WG.Add(1)
+	go func() {
+		defer session.WG.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				// Context cancelled - drain remaining items in channel
+				for {
+					select {
+					case entry, ok := <-session.LogChan:
+						if !ok {
+							return
+						}
+						writeLogToDisk(session, entry)
+					default:
+						return
+					}
+				}
+			case entry, ok := <-session.LogChan:
+				if !ok {
+					return
+				}
+				writeLogToDisk(session, entry)
+			}
+		}
+	}()
+}
+
+// writeLogToDisk performs the actual synchronized write to the file
+func writeLogToDisk(session *cloudwatch_model.LogSession, entry cloudwatch_model.LogEntry) {
 	session.Mutex.Lock()
 	defer session.Mutex.Unlock()
 
@@ -110,9 +147,19 @@ func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model
 	session.LastAccess = time.Now()
 }
 
-// CloseLogSession closes a log session, deletes the log file, and removes the session.
-// Users can download logs via the download endpoint while the session is active,
-// so the file is no longer needed once the stream ends.
+// WriteLogToFile non-blockingly queues a log entry to be written asynchronously by the background writer
+func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model.LogEntry) {
+	if session.LogChan == nil {
+		return
+	}
+	select {
+	case session.LogChan <- entry:
+	default:
+		// Queue full - drop log to prevent blocking main SSE stream
+	}
+}
+
+// CloseLogSession closes a log session, flushes background logs, deletes the log file, and removes the session.
 func CloseLogSession(sessionID string) {
 	logSessionsMutex.Lock()
 	session, exists := logSessions[sessionID]
@@ -122,6 +169,17 @@ func CloseLogSession(sessionID string) {
 	}
 	delete(logSessions, sessionID)
 	logSessionsMutex.Unlock()
+
+	// Stop background writer and close channel
+	if session.CancelFunc != nil {
+		session.CancelFunc()
+	}
+	if session.LogChan != nil {
+		close(session.LogChan)
+	}
+
+	// Wait for background worker to completely drain and exit
+	session.WG.Wait()
 
 	session.Mutex.Lock()
 	defer session.Mutex.Unlock()
@@ -149,7 +207,7 @@ func GetLogSession(sessionID string) (*cloudwatch_model.LogSession, bool) {
 	return session, exists
 }
 
-// DeleteLogSession removes a session and deletes its file
+// DeleteLogSession removes a session, flushes background logs, and deletes its file
 func DeleteLogSession(sessionID string) error {
 	logSessionsMutex.Lock()
 	session, exists := logSessions[sessionID]
@@ -159,6 +217,17 @@ func DeleteLogSession(sessionID string) error {
 	}
 	delete(logSessions, sessionID)
 	logSessionsMutex.Unlock()
+
+	// Stop background writer and close channel
+	if session.CancelFunc != nil {
+		session.CancelFunc()
+	}
+	if session.LogChan != nil {
+		close(session.LogChan)
+	}
+
+	// Wait for background worker to completely drain and exit
+	session.WG.Wait()
 
 	session.Mutex.Lock()
 	defer session.Mutex.Unlock()

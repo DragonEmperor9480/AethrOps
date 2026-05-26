@@ -98,6 +98,13 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/aws/config", api.DeleteAWSConfig).Methods("DELETE")
 	r.HandleFunc("/api/aws/config/reload", api.ReloadAWSCredentials).Methods("POST")
 
+	// AWS Accounts (Database-backed Multi-Profile System)
+	r.HandleFunc("/api/aws/auth-status", api.GetAuthStatus).Methods("GET")
+	r.HandleFunc("/api/aws/accounts", api.ListAccounts).Methods("GET")
+	r.HandleFunc("/api/aws/accounts", api.CreateAccount).Methods("POST")
+	r.HandleFunc("/api/aws/accounts/activate", api.ActivateAccount).Methods("POST")
+	r.HandleFunc("/api/aws/accounts/{id}", api.DeleteAccount).Methods("DELETE")
+
 	// Email Configuration
 	r.HandleFunc("/api/email/config", api.GetEmailConfig).Methods("GET")
 	r.HandleFunc("/api/email/config", api.SaveEmailConfig).Methods("POST")

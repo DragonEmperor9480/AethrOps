@@ -1135,12 +1135,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   }
 
   Widget _buildLogContent(LogEntry log, bool isMatch, bool isCurrentMatch) {
-    // Try to detect and parse JSON
-    final jsonData = _tryParseJson(log.message);
-
-    if (jsonData != null) {
-      // It's JSON, render with syntax highlighting
-      return _buildJsonLog(jsonData, isMatch, isCurrentMatch);
+    if (log.parsedJson != null) {
+      // It's JSON (pre-parsed at ingestion time), render with syntax highlighting
+      return _buildJsonLog(log.jsonPrefix ?? '', log.parsedJson!, isMatch, isCurrentMatch);
     } else if (_searchQuery.isNotEmpty && isMatch) {
       // Regular text with search highlighting
       return _buildHighlightedText(log.message, isCurrentMatch);
@@ -1157,90 +1154,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     }
   }
 
-  Map<String, dynamic>? _tryParseJson(String text) {
-    // Try to find JSON in the text - look for { or [ anywhere in the line
-    final jsonStartIndex = text.indexOf('{');
-    final arrayStartIndex = text.indexOf('[');
-
-    int startIndex = -1;
-    if (jsonStartIndex != -1 && arrayStartIndex != -1) {
-      startIndex = jsonStartIndex < arrayStartIndex
-          ? jsonStartIndex
-          : arrayStartIndex;
-    } else if (jsonStartIndex != -1) {
-      startIndex = jsonStartIndex;
-    } else if (arrayStartIndex != -1) {
-      startIndex = arrayStartIndex;
-    }
-
-    if (startIndex == -1) {
-      return null;
-    }
-
-    // Extract the JSON part
-    final jsonPart = text.substring(startIndex).trim();
-
-    try {
-      final decoded = json.decode(jsonPart);
-      return {'prefix': text.substring(0, startIndex), 'json': decoded};
-    } catch (e) {
-      // Not valid JSON, might be Go struct format like {Key:Value}
-      // Try to convert Go struct format to JSON
-      final goStructMatch = RegExp(r'\{([^}]+)\}').firstMatch(jsonPart);
-      if (goStructMatch != null) {
-        final structContent = goStructMatch.group(1)!;
-        final converted = _convertGoStructToJson(structContent);
-        if (converted != null) {
-          return {'prefix': text.substring(0, startIndex), 'json': converted};
-        }
-      }
-      return null;
-    }
-  }
-
-  Map<String, dynamic>? _convertGoStructToJson(String goStruct) {
-    // Convert Go struct format like "Key:Value Key2:Value2" to JSON
-    try {
-      final result = <String, dynamic>{};
-      final pairs = goStruct.split(RegExp(r'\s+(?=[A-Z])'));
-
-      for (final pair in pairs) {
-        final colonIndex = pair.indexOf(':');
-        if (colonIndex == -1) continue;
-
-        final key = pair.substring(0, colonIndex).trim();
-        final value = pair.substring(colonIndex + 1).trim();
-
-        if (key.isEmpty) continue;
-
-        // Try to parse value as number
-        final numValue = num.tryParse(value);
-        if (numValue != null) {
-          result[key] = numValue;
-        } else if (value.toLowerCase() == 'true') {
-          result[key] = true;
-        } else if (value.toLowerCase() == 'false') {
-          result[key] = false;
-        } else if (value.toLowerCase() == 'null') {
-          result[key] = null;
-        } else {
-          result[key] = value;
-        }
-      }
-
-      return result.isEmpty ? null : result;
-    } catch (e) {
-      return null;
-    }
-  }
-
   Widget _buildJsonLog(
-    Map<String, dynamic> data,
+    String prefix,
+    Map<String, dynamic> jsonObj,
     bool isMatch,
     bool isCurrentMatch,
   ) {
-    final prefix = data['prefix'] as String;
-    final jsonObj = data['json'];
     final prettyJson = const JsonEncoder.withIndent('  ').convert(jsonObj);
 
     final spans = <TextSpan>[];

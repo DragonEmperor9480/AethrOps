@@ -80,7 +80,7 @@ func InitDB() error {
 	}
 
 	// Auto-migrate schema
-	err = DB.AutoMigrate(&UserCredential{})
+	err = DB.AutoMigrate(&AWSAccount{})
 	if err != nil {
 		return err
 	}

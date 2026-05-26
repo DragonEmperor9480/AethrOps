@@ -31,9 +31,13 @@ SetupIconFile=..\..\awsmgr_ui\windows\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+; Branding images
+WizardSmallImageFile=assets\wizard_small_image.bmp
 ; Privileges
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
+; Minimum Windows version (Windows 10 - October 2018 Update)
+MinVersion=10.0.17763
 ; Architecture
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -46,26 +50,23 @@ VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppDescription} Setup
 VersionInfoProductName={#MyAppName}
 VersionInfoProductVersion={#MyAppNumericVersion}
+LicenseFile=..\..\LICENSE
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1; Check: not IsAdminInstallMode
 
 [Files]
 ; Copy ALL files from Release folder (includes all Flutter plugin DLLs)
 Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Backend executable (copied by build script)
-Source: "..\..\awsmgr_ui\build\windows\x64\runner\Release\aethrops_core.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Comment: "{#MyAppDescription}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Comment: "{#MyAppDescription}"
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -74,23 +75,3 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 Type: filesandordirs; Name: "{localappdata}\aethrops"
 Type: filesandordirs; Name: "{userappdata}\aethrops"
 
-[Code]
-// Custom code for installation checks
-function InitializeSetup(): Boolean;
-begin
-  Result := True;
-end;
-
-// Check if running on Windows 10 or later (recommended)
-function IsWindows10OrLater(): Boolean;
-begin
-  Result := (GetWindowsVersion >= $0A000000);
-end;
-
-procedure InitializeWizard();
-begin
-  if not IsWindows10OrLater() then
-  begin
-    MsgBox('Note: AethrOps is optimized for Windows 10 and later. It may work on older versions but is not officially supported.', mbInformation, MB_OK);
-  end;
-end;

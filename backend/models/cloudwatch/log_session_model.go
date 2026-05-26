@@ -16,4 +16,7 @@ type LogSession struct {
 	CreatedAt    time.Time
 	LastAccess   time.Time
 	LogCount     int
+	LogChan      chan LogEntry
+	CancelFunc   func()
+	WG           sync.WaitGroup
 }

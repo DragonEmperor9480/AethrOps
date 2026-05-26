@@ -122,8 +122,8 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 			flusher.Flush()
 
 		case logEntry := <-logChan:
-			// Write to file asynchronously (non-blocking)
-			go service.WriteLogToFile(session, logEntry)
+			// Write to file asynchronously (non-blocking channel push)
+			service.WriteLogToFile(session, logEntry)
 
 			// First event received — start batching
 			if err := writeLogSSE(w, &eventID, logEntry); err != nil {
@@ -141,7 +141,7 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 					return
 				case entry := <-logChan:
 					// Write to file asynchronously
-					go service.WriteLogToFile(session, entry)
+					service.WriteLogToFile(session, entry)
 
 					if err := writeLogSSE(w, &eventID, entry); err != nil {
 						drainTimer.Stop()
