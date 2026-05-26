@@ -17,6 +17,46 @@ class S3Service {
     ),
   );
 
+  // Dedicated, persistent Dio instance for direct S3 transfers.
+  // This keeps TCP/TLS socket connections alive, completely bypassing TLS handshake overhead.
+  static final Dio _s3Dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(minutes: 10),
+      sendTimeout: const Duration(minutes: 10),
+    ),
+  );
+
+  /// Get secure presigned download URL for an S3 object
+  static Future<String> getPresignedDownloadUrl(
+    String bucketName,
+    String objectKey, {
+    bool download = false,
+  }) async {
+    try {
+      final urlResponse = await _dio.get(
+        '/s3/buckets/$bucketName/objects/$objectKey',
+        queryParameters: download ? {'download': 'true'} : null,
+      );
+
+      String? presignedUrl;
+      if (urlResponse.data is Map) {
+        presignedUrl = urlResponse.data['url'] as String?;
+      } else if (urlResponse.data is String) {
+        final data = json.decode(urlResponse.data as String);
+        presignedUrl = data['url'] as String?;
+      }
+
+      if (presignedUrl == null) {
+        throw Exception('Failed to get presigned download URL');
+      }
+
+      return presignedUrl;
+    } catch (e) {
+      throw Exception('Failed to fetch presigned URL: $e');
+    }
+  }
+
   /// Download S3 object with progress tracking
   static Future<List<int>> downloadWithProgress(
     String bucketName,
@@ -24,32 +64,60 @@ class S3Service {
     Function(int received, int total) onProgress,
   ) async {
     try {
-      debugPrint('Starting download: $bucketName/$objectKey');
+      // 1. Get presigned GET URL
+      final presignedUrl = await getPresignedDownloadUrl(bucketName, objectKey);
 
-      final response = await _dio.get<List<int>>(
-        '/s3/buckets/$bucketName/objects/$objectKey',
+      debugPrint('Downloading directly from S3 to temporary file: $presignedUrl');
+
+      // 2. Create a temporary file
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/s3_download_${DateTime.now().millisecondsSinceEpoch}.tmp');
+
+      int lastUpdate = 0;
+      double lastProgress = 0.0;
+
+      // 3. Download directly from S3 using the persistent _s3Dio client
+      await _s3Dio.download(
+        presignedUrl,
+        tempFile.path,
         options: Options(
-          responseType: ResponseType.bytes,
-          receiveTimeout: const Duration(minutes: 5),
           // Disable compression for binary data
           headers: {'Accept-Encoding': 'identity'},
         ),
         onReceiveProgress: (received, total) {
           if (total != -1) {
-            onProgress(received, total);
+            final progress = received / total;
+            final now = DateTime.now().millisecondsSinceEpoch;
+
+            // Throttle UI stream updates to prevent event loop saturation (at most once every 100ms or 2% progress)
+            if (received == total ||
+                (now - lastUpdate) > 100 ||
+                (progress - lastProgress).abs() > 0.02) {
+              lastUpdate = now;
+              lastProgress = progress;
+              onProgress(received, total);
+            }
           }
         },
       );
 
-      debugPrint('Download complete: ${response.data?.length ?? 0} bytes');
-      return response.data ?? [];
+      // 4. Read bytes from temporary file
+      final bytes = await tempFile.readAsBytes();
+
+      // 5. Clean up temporary file
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+
+      debugPrint('Download complete: ${bytes.length} bytes');
+      return bytes;
     } catch (e) {
       debugPrint('Download error: $e');
       throw Exception('Download failed: $e');
     }
   }
 
-  /// Upload S3 object with progress tracking (streaming from backend)
+  /// Upload S3 object with progress tracking (direct PUT to S3)
   static Future<void> uploadWithProgress(
     String bucketName,
     String objectKey,
@@ -61,61 +129,56 @@ class S3Service {
       final fileSize = await file.length();
       debugPrint('File size: $fileSize bytes');
 
-      final fileName = objectKey.split('/').last;
-      final formData = FormData.fromMap({
-        'key': objectKey,
-        'file': await MultipartFile.fromFile(file.path, filename: fileName),
-      });
-
-      // Use streaming response to get progress updates from backend
-      final response = await _dio.post<ResponseBody>(
+      // 1. Get presigned PUT URL from backend
+      final response = await _dio.post(
         '/s3/buckets/$bucketName/upload',
-        data: formData,
+        data: {'key': objectKey},
         options: Options(
-          responseType: ResponseType.stream,
-          sendTimeout: const Duration(minutes: 10),
-          receiveTimeout: const Duration(minutes: 10),
+          headers: {'Content-Type': 'application/json'},
         ),
       );
 
-      // Parse streaming JSON responses
-      final stream = response.data!.stream;
-      final buffer = StringBuffer();
-
-      await for (final chunk in stream) {
-        final text = String.fromCharCodes(chunk);
-        buffer.write(text);
-
-        // Split by newlines to get individual JSON objects
-        final lines = buffer.toString().split('\n');
-
-        // Process all complete lines
-        for (int i = 0; i < lines.length - 1; i++) {
-          final line = lines[i].trim();
-          if (line.isNotEmpty) {
-            try {
-              final data = json.decode(line);
-              if (data['progress'] != null && data['total'] != null) {
-                final progress = data['progress'] as int;
-                final total = data['total'] as int;
-                debugPrint('Upload progress: $progress / $total');
-                onProgress(progress, total);
-              }
-              if (data['error'] != null) {
-                throw Exception(data['error']);
-              }
-            } catch (e) {
-              debugPrint('Failed to parse progress: $e');
-            }
-          }
-        }
-
-        // Keep the last incomplete line in buffer
-        buffer.clear();
-        if (lines.isNotEmpty) {
-          buffer.write(lines.last);
-        }
+      String? presignedUrl;
+      if (response.data is Map) {
+        presignedUrl = response.data['url'] as String?;
+      } else if (response.data is String) {
+        final data = json.decode(response.data as String);
+        presignedUrl = data['url'] as String?;
       }
+
+      if (presignedUrl == null) {
+        throw Exception('Failed to get presigned upload URL');
+      }
+
+      debugPrint('Uploading directly to S3: $presignedUrl');
+
+      int lastUpdate = 0;
+      double lastProgress = 0.0;
+
+      // 2. Direct PUT upload to S3 using the persistent _s3Dio client
+      await _s3Dio.put(
+        presignedUrl,
+        data: file.openRead(),
+        options: Options(
+          headers: {
+            Headers.contentLengthHeader: fileSize,
+          },
+        ),
+        onSendProgress: (sent, total) {
+          final actualTotal = total > 0 ? total : fileSize;
+          final progress = sent / actualTotal;
+          final now = DateTime.now().millisecondsSinceEpoch;
+
+          // Throttle progress events to prevent event loop saturation
+          if (sent == actualTotal ||
+              (now - lastUpdate) > 100 ||
+              (progress - lastProgress).abs() > 0.02) {
+            lastUpdate = now;
+            lastProgress = progress;
+            onProgress(sent, actualTotal);
+          }
+        },
+      );
 
       debugPrint('Upload complete');
     } catch (e) {
