@@ -60,8 +60,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       route: '/ec2',
     ),
     ServiceInfo(
-      title: 'CloudWatch',
-      description: 'Monitor resources & logs',
+      title: 'Live Tail',
+      description: 'Real-time log streaming',
       svgAsset: 'assets/icons/amazon_cloudwatch_logo_icon_168662.svg',
       color: AppTheme.cloudwatchColor,
       route: '/cloudwatch',
