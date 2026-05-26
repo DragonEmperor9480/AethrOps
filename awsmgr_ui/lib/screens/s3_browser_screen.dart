@@ -421,7 +421,7 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
     int bytesSent = 0;
     int totalBytes = 0;
     try {
-      final result = await FilePicker.platform.pickFiles();
+      final result = await FilePicker.pickFiles();
       if (result == null) return;
 
       final file = File(result.files.single.path!);
