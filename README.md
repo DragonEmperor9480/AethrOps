@@ -205,9 +205,10 @@ Additional packaging helpers for AppImage, Debian, macOS, installers, and releas
 
 AethrOps is the evolution of the earlier CLI-based AWS manager, [`awsmgr`](https://github.com/DragonEmperor9480/awsmgr). The current project carries that idea forward into a full cross-platform application with a dedicated UI, local backend services, and mobile support.
 
-## License
+## License & Privacy
 
-This project is released under the [GNU GPL v3 License](LICENSE).
+*   Released under the [GNU GPL v3 License](LICENSE).
+*   Read our [Privacy Policy](PRIVACY.md).
 
 <p align="center">
   <strong>Made by developers, for developers.</strong>
