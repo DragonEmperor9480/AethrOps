@@ -199,70 +199,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showConfigurationPrompt(List<String> missingItems) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.build_circle_outlined, color: AppTheme.primaryPurple),
-            const SizedBox(width: 10),
-            const Text('Complete Setup'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('To get the most out of AethrOps, please configure:'),
-            const SizedBox(height: 16),
-            ...missingItems.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    Icon(Icons.circle, size: 8, color: AppTheme.warningAmber),
-                    const SizedBox(width: 10),
-                    Text(
-                      item,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ],
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.build_circle_outlined, color: AppTheme.primaryPurple),
+              const SizedBox(width: 10),
+              const Text('Complete Setup'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('To get the most out of AethrOps, please configure:'),
+              const SizedBox(height: 16),
+              ...missingItems.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, size: 8, color: AppTheme.warningAmber),
+                      const SizedBox(width: 10),
+                      Text(
+                        item,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('hide_setup_prompt', true);
+                navigator.pop();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+              ),
+              child: const Text("Don't ask again"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Remind Later'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryPurple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Configure Now'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('hide_setup_prompt', true);
-              navigator.pop();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.textSecondary,
-            ),
-            child: const Text("Don't ask again"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Remind Later'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryPurple,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Configure Now'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
