@@ -27,6 +27,12 @@ jobs:
     if: success()
     uses: ./.github/workflows/build-windows.yml
 
+  msix:
+    name: AethrOps MSIX Build
+    needs: build_init_notification
+    if: success()
+    uses: ./.github/workflows/build-msix.yml
+
   linux:
     name: Aethrops Linux AppImage Build
     needs: build_init_notification
@@ -36,12 +42,13 @@ jobs:
   build_summary_notification:
     name: Build Summary Notification
     if: always()
-    needs: [android, windows, linux]
+    needs: [android, windows, msix, linux]
     uses: ./.github/workflows/notify-build-summary.yml
     secrets: inherit
     with:
       android_status: ${{ needs.android.result }}
       windows_status: ${{ needs.windows.result }}
+      msix_status: ${{ needs.msix.result }}
       linux_status: ${{ needs.linux.result }}
 
   release:

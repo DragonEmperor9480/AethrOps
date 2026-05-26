@@ -1,0 +1,87 @@
+name: AethrOps MSIX Build
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.3'
+          channel: stable
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Get-Content 'version.json' | ConvertFrom-Json).windows.version
+          $tag = $v.ToLower().Replace(' ', '-')
+          echo "display=$v" >> $env:GITHUB_OUTPUT
+          echo "tag=$tag"   >> $env:GITHUB_OUTPUT
+
+      - name: Build Go backend (Windows amd64)
+        shell: cmd
+        run: |
+          cd backend
+          set GOOS=windows
+          set GOARCH=amd64
+          go build -o aethrops_core.exe main.go
+
+      - name: Build Flutter Windows app
+        shell: cmd
+        working-directory: awsmgr_ui
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build windows --release
+
+      - name: Copy Go backend into Flutter bundle
+        shell: cmd
+        run: |
+          copy backend\aethrops_core.exe awsmgr_ui\build\windows\x64\runner\Release\
+
+      - name: Create MSIX package
+        shell: cmd
+        working-directory: awsmgr_ui
+        run: dart run msix:create
+
+      - name: Prepare release artifact
+        shell: pwsh
+        run: |
+          $version  = "${{ steps.version.outputs.tag }}"
+          $releaseDir = "release\windows"
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          $msix = Get-ChildItem -Recurse -Filter "*.msix" awsmgr_ui\build\windows | Select-Object -First 1
+          if (-not $msix) { Write-Error "No .msix file found!"; exit 1 }
+
+          $dest = "$releaseDir\AethrOps-$version.msix"
+          Copy-Item $msix.FullName $dest
+          Write-Host "Artifact: $dest"
+
+          # Checksum
+          Get-FileHash $dest -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash)  AethrOps-$version.msix" } |
+            Out-File "$releaseDir\checksums-sha256.txt" -Encoding ascii
+
+      - name: Upload MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: AethrOps-msix-release
+          path: release/windows/

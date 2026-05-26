@@ -15,6 +15,10 @@ on:
           required: false
           type: string
           default: 'skipped'
+        msix_status:
+          required: false
+          type: string
+          default: 'skipped'
 
 jobs:
     build_summary_notification:
@@ -28,10 +32,12 @@ jobs:
             WINDOWS="${{ inputs.windows_status }}"
             ANDROID="${{ inputs.android_status }}"
             LINUX="${{ inputs.linux_status }}"
+            MSIX="${{ inputs.msix_status }}"
 
             MESSAGE="<b>CI Build Summary</b>
 
             Windows: ${WINDOWS}
+            Windows MSIX: ${MSIX}
             Android: ${ANDROID}
             Linux: ${LINUX}
 
