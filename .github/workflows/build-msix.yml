@@ -47,11 +47,11 @@ jobs:
         working-directory: awsmgr_ui
         shell: cmd
         run: |
-          flutter clean
-          flutter pub get
-          flutter build windows --release
+          call flutter clean
+          call flutter pub get
+          call flutter build windows --release
           copy ..\backend\aethrops_core.exe build\windows\x64\runner\Release\
-          dart run msix:create
+          call dart run msix:create
 
       - name: Prepare release artifact
         shell: pwsh
