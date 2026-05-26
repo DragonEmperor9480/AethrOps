@@ -43,27 +43,15 @@ jobs:
           set GOARCH=amd64
           go build -o aethrops_core.exe main.go
 
-      - name: Build Flutter Windows app
+      - name: Build Flutter Windows app and create MSIX
         working-directory: awsmgr_ui
         shell: cmd
         run: |
           flutter clean
           flutter pub get
           flutter build windows --release
-
-      - name: Copy Go backend into Flutter bundle
-        shell: pwsh
-        run: |
-          $src = "$env:GITHUB_WORKSPACE\backend\aethrops_core.exe"
-          $dst = "$env:GITHUB_WORKSPACE\awsmgr_ui\build\windows\x64\runner\Release"
-
-          Copy-Item $src $dst
-          Write-Host "Copied aethrops_core.exe -> $dst"
-
-      - name: Create MSIX package
-        working-directory: awsmgr_ui
-        shell: cmd
-        run: dart run msix:create
+          copy ..\backend\aethrops_core.exe build\windows\x64\runner\Release\
+          dart run msix:create
 
       - name: Prepare release artifact
         shell: pwsh
