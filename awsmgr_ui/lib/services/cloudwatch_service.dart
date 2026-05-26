@@ -7,17 +7,100 @@ import 'backend_service.dart';
 class LogEntry {
   final String message;
   final DateTime timestamp;
+  
+  // Cache for pre-parsed structures to optimize UI list scroll performance
+  final Map<String, dynamic>? parsedJson;
+  final String? jsonPrefix;
 
-  LogEntry({required this.message, DateTime? timestamp})
-    : timestamp = timestamp ?? DateTime.now();
+  LogEntry({
+    required this.message,
+    DateTime? timestamp,
+    this.parsedJson,
+    this.jsonPrefix,
+  }) : timestamp = timestamp ?? DateTime.now();
 
   factory LogEntry.fromJson(Map<String, dynamic> json) {
+    final rawMessage = json['message'] ?? '';
+    final parsed = _tryParseJson(rawMessage);
+    
     return LogEntry(
-      message: json['message'] ?? '',
+      message: rawMessage,
       timestamp: json['timestamp'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['timestamp'])
           : null,
+      parsedJson: parsed != null ? parsed['json'] as Map<String, dynamic>? : null,
+      jsonPrefix: parsed != null ? parsed['prefix'] as String? : null,
     );
+  }
+
+  static Map<String, dynamic>? _tryParseJson(String text) {
+    final jsonStartIndex = text.indexOf('{');
+    final arrayStartIndex = text.indexOf('[');
+
+    int startIndex = -1;
+    if (jsonStartIndex != -1 && arrayStartIndex != -1) {
+      startIndex = jsonStartIndex < arrayStartIndex ? jsonStartIndex : arrayStartIndex;
+    } else if (jsonStartIndex != -1) {
+      startIndex = jsonStartIndex;
+    } else if (arrayStartIndex != -1) {
+      startIndex = arrayStartIndex;
+    }
+
+    if (startIndex == -1) {
+      return null;
+    }
+
+    final jsonPart = text.substring(startIndex).trim();
+
+    try {
+      final decoded = json.decode(jsonPart);
+      return {'prefix': text.substring(0, startIndex), 'json': decoded};
+    } catch (e) {
+      // Not valid JSON, try to convert Go struct format like {Key:Value}
+      final goStructMatch = RegExp(r'\{([^}]+)\}').firstMatch(jsonPart);
+      if (goStructMatch != null) {
+        final structContent = goStructMatch.group(1)!;
+        final converted = _convertGoStructToJson(structContent);
+        if (converted != null) {
+          return {'prefix': text.substring(0, startIndex), 'json': converted};
+        }
+      }
+      return null;
+    }
+  }
+
+  static Map<String, dynamic>? _convertGoStructToJson(String goStruct) {
+    try {
+      final result = <String, dynamic>{};
+      final pairs = goStruct.split(RegExp(r'\s+(?=[A-Z])'));
+
+      for (final pair in pairs) {
+        final colonIndex = pair.indexOf(':');
+        if (colonIndex == -1) continue;
+
+        final key = pair.substring(0, colonIndex).trim();
+        final value = pair.substring(colonIndex + 1).trim();
+
+        if (key.isEmpty) continue;
+
+        final numValue = num.tryParse(value);
+        if (numValue != null) {
+          result[key] = numValue;
+        } else if (value.toLowerCase() == 'true') {
+          result[key] = true;
+        } else if (value.toLowerCase() == 'false') {
+          result[key] = false;
+        } else if (value.toLowerCase() == 'null') {
+          result[key] = null;
+        } else {
+          result[key] = value;
+        }
+      }
+
+      return result.isEmpty ? null : result;
+    } catch (e) {
+      return null;
+    }
   }
 }
 
