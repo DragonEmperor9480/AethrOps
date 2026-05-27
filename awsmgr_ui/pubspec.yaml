@@ -70,7 +70,6 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/how_to_get_access_credentials/
     - assets/ami-assets/
     - assets/icons/
     - assets/animations/
