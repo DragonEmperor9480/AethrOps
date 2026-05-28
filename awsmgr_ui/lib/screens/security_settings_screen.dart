@@ -50,7 +50,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PinLockScreen(isSetup: true),
+          builder: (context) => const PinLockScreen(
+            isSetup: true,
+            isCancelable: true,
+          ),
         ),
       );
 
@@ -77,7 +80,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => const PinLockScreen(isSetup: false),
+        builder: (context) => const PinLockScreen(
+          isSetup: false,
+          isCancelable: true,
+        ),
       ),
     );
     return result == true;
@@ -91,7 +97,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PinLockScreen(isSetup: true),
+          builder: (context) => const PinLockScreen(
+            isSetup: true,
+            isCancelable: true,
+          ),
         ),
       );
 

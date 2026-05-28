@@ -8,8 +8,13 @@ import '../utils/toast_utils.dart';
 
 class PinLockScreen extends StatefulWidget {
   final bool isSetup; // true for setting up new PIN, false for verification
+  final bool isCancelable; // true if the user can cancel/go back
 
-  const PinLockScreen({super.key, this.isSetup = false});
+  const PinLockScreen({
+    super.key,
+    this.isSetup = false,
+    this.isCancelable = false,
+  });
 
   @override
   State<PinLockScreen> createState() => _PinLockScreenState();
@@ -212,6 +217,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   @override
   Widget build(BuildContext context) {
     final currentPin = _isConfirming ? _confirmPin : _pin;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Focus(
       focusNode: _focusNode,
@@ -222,71 +228,89 @@ class _PinLockScreenState extends State<PinLockScreen> {
           child: GestureDetector(
             onTap: () => _focusNode.requestFocus(),
             behavior: HitTestBehavior.opaque,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom -
-                      48,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Security animation
-                    SizedBox(
-                      width: 200,
-                      height: 200,
-                      child: Lottie.asset(
-                        'assets/animations/Security.json',
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      ),
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight:
+                          MediaQuery.of(context).size.height -
+                          MediaQuery.of(context).padding.top -
+                          MediaQuery.of(context).padding.bottom -
+                          48,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.isSetup
-                          ? (_isConfirming ? 'Confirm PIN' : 'Set PIN')
-                          : 'Enter PIN',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.isSetup
-                          ? (_isConfirming
-                                ? 'Re-enter your 6-digit PIN'
-                                : 'Create a 6-digit PIN')
-                          : 'Enter your 6-digit PIN to unlock',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 32),
-                    _buildPinDots(currentPin),
-                    const SizedBox(height: 32),
-                    _buildNumberPad(),
-                    if (_showBiometric) ...[
-                      const SizedBox(height: 16),
-                      IconButton(
-                        onPressed: _authenticateWithBiometric,
-                        icon: Icon(
-                          Platform.isWindows
-                              ? Icons.lock_person
-                              : Icons.fingerprint,
-                          size: 40,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Security animation
+                        SizedBox(
+                          width: 200,
+                          height: 200,
+                          child: Lottie.asset(
+                            'assets/animations/Security.json',
+                            fit: BoxFit.contain,
+                            repeat: true,
+                          ),
                         ),
-                        color: AppTheme.primaryPurple,
-                        tooltip: Platform.isWindows
-                            ? 'Use Windows Hello'
-                            : 'Use biometric',
-                      ),
-                    ],
-                  ],
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.isSetup
+                              ? (_isConfirming ? 'Confirm PIN' : 'Set PIN')
+                              : 'Enter PIN',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.isSetup
+                              ? (_isConfirming
+                                    ? 'Re-enter your 6-digit PIN'
+                                    : 'Create a 6-digit PIN')
+                              : 'Enter your 6-digit PIN to unlock',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 32),
+                        _buildPinDots(currentPin),
+                        const SizedBox(height: 32),
+                        _buildNumberPad(),
+                        if (_showBiometric) ...[
+                          const SizedBox(height: 16),
+                          IconButton(
+                            onPressed: _authenticateWithBiometric,
+                            icon: Icon(
+                              Platform.isWindows
+                                  ? Icons.lock_person
+                                  : Icons.fingerprint,
+                              size: 40,
+                            ),
+                            color: AppTheme.primaryPurple,
+                            tooltip: Platform.isWindows
+                                ? 'Use Windows Hello'
+                                : 'Use biometric',
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                if (widget.isCancelable && Navigator.of(context).canPop())
+                  Positioned(
+                    top: 12,
+                    left: 16,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        size: 22,
+                      ),
+                      onPressed: () => Navigator.of(context).pop(false),
+                      tooltip: 'Back',
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
