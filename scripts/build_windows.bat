@@ -30,7 +30,8 @@ echo Step 1: Building Go backend executable...
 cd backend
 set GOOS=windows
 set GOARCH=amd64
-go build -o aethrops_core.exe main.go
+set AETHROPS_VERSION=%VERSION_DISPLAY%
+go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=%VERSION_DISPLAY%'" -o aethrops_core.exe main.go
 
 if %errorlevel% neq 0 (
     echo Failed to build Go backend
@@ -67,14 +68,8 @@ set RELEASE_DIR=%PROJECT_ROOT%\release\windows
 if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
 
 echo.
-echo Step 5: Updating version in Inno Setup script...
-REM Update display version (MyAppVersion) and tag version (MyAppVersionTag)
-powershell -Command "$content = Get-Content 'scripts\installer\windows_setup.iss' -Raw; $content = $content -replace '(?m)^#define MyAppVersion \"[^\"]*\"', '#define MyAppVersion \"%VERSION_DISPLAY%\"'; $content = $content -replace '(?m)^#define MyAppVersionTag \"[^\"]*\"', '#define MyAppVersionTag \"%VERSION%\"'; Set-Content 'scripts\installer\windows_setup.iss' -Value $content -NoNewline"
-
-if %errorlevel% neq 0 (
-    echo Failed to update version in Inno Setup script
-    exit /b 1
-)
+echo Step 5: Setting up environment for Inno Setup...
+set AETHROPS_VERSION=%VERSION_DISPLAY%
 
 echo.
 echo Step 6: Building installer with Inno Setup...

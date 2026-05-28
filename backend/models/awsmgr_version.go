@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const Version = "Preview Beta 1"
+var Version = "placeholder for version"
 
 // VersionInfo holds version and OS information
 type VersionInfo struct {
@@ -25,10 +25,7 @@ func GetVersion() VersionInfo {
 	osInfo := runtime.GOOS
 	osName := getOSDetail(osInfo)
 
-	// Fetch version from GitHub JSON
-	version := fetchVersionFromGitHub(osInfo)
-
-	// If fetch failed or empty, use hardcoded version as fallback
+	version := os.Getenv("AETHROPS_VERSION")
 	if version == "" {
 		version = Version
 	}

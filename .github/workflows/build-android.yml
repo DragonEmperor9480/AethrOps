@@ -42,6 +42,16 @@ jobs:
       - name: Restore key.properties
         run: echo "${{ secrets.KEY_PROPERTIES }}" > awsmgr_ui/android/key.properties
 
+      - name: Ensure jq is installed
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Read version from version.json
+        run: |
+          RAW_VERSION=$(jq -r '.android.version' "$GITHUB_WORKSPACE/version.json")
+          VERSION=$(echo "$RAW_VERSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RAW_VERSION=$RAW_VERSION" >> $GITHUB_ENV
+
       - name: Build Go Backend (FFI)
         run: |
           set -e
@@ -65,7 +75,7 @@ jobs:
             fi
 
             CGO_ENABLED=1 GOOS=android GOARCH=$GOARCH GOARM=${GOARM:-} CC=$CC \
-              go build -buildmode=c-shared -o libbackend_$arch.so main.go
+              go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=$RAW_VERSION'" -buildmode=c-shared -o libbackend_$arch.so main.go
           done
 
       - name: Copy native libraries
@@ -86,15 +96,9 @@ jobs:
           flutter pub get
           flutter build apk --split-per-abi --release
 
-      - name: Ensure jq is installed
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       - name: Prepare release artifacts
         run: |
           set -e
-
-          # Read version from version.json and normalize (lowercase + spaces to dashes)
-          VERSION=$(jq -r '.android.version' "$GITHUB_WORKSPACE/version.json" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
 
           RELEASE_DIR="$GITHUB_WORKSPACE/release/android"
           APK_DIR="$GITHUB_WORKSPACE/awsmgr_ui/build/app/outputs/flutter-apk"

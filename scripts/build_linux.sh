@@ -47,7 +47,8 @@ echo "Version: $VERSION"
 echo ""
 echo "Step 1: Building Go backend executable..."
 cd backend
-GOOS=linux GOARCH=amd64 go build -o aethrops_core main.go
+export AETHROPS_VERSION="$VERSION"
+GOOS=linux GOARCH=amd64 go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=$VERSION'" -o aethrops_core main.go
 cd ..
 
 if [ $? -ne 0 ]; then

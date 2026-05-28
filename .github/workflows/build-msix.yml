@@ -41,7 +41,7 @@ jobs:
           cd backend
           set GOOS=windows
           set GOARCH=amd64
-          go build -o aethrops_core.exe main.go
+          go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=${{ steps.version.outputs.display }}'" -o aethrops_core.exe main.go
 
       - name: Build Flutter Windows app and create MSIX
         working-directory: awsmgr_ui

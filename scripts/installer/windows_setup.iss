@@ -2,9 +2,15 @@
 ; This script creates a Windows installer for AethrOps
 
 #define MyAppName "AethrOps"
-#define MyAppVersion "Preview Beta 2"
-#define MyAppVersionTag "preview-beta-2"
-#define MyAppNumericVersion "0.1.0"
+
+#define MyAppVersion GetEnv("AETHROPS_VERSION")
+#if MyAppVersion == ""
+  #define MyAppVersion "1.0.0"
+#endif
+
+#define MyAppVersionTag MyAppVersion
+#define MyAppNumericVersion MyAppVersion
+
 #define MyAppPublisher "DragonEmperor9480"
 #define MyAppURL "https://github.com/DragonEmperor9480/AethrOps"
 #define MyAppExeName "AethrOps.exe"
