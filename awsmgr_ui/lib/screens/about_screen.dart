@@ -160,7 +160,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             onPressed: () {
               Navigator.pop(context);
-              _launchURL('https://github.com/DragonEmperor9480/AethrOps/releases');
+              _launchURL('https://aethrops.amrutlabs.in/#downloads');
             },
             child: const Text('Download'),
           ),
