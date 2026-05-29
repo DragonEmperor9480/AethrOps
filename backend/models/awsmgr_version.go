@@ -68,7 +68,7 @@ type UpdateCheckResponse struct {
 func CheckForUpdates() (UpdateCheckResponse, error) {
 	current := GetVersion()
 
-	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/AethrOps/master/version.json"
+	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/AethrOps/refs/heads/master/version.json"
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
