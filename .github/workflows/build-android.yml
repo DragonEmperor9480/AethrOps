@@ -48,9 +48,11 @@ jobs:
       - name: Read version from version.json
         run: |
           RAW_VERSION=$(jq -r '.android.version' "$GITHUB_WORKSPACE/version.json")
+          BUILD_NUMBER=$(jq -r '.android.build_number' "$GITHUB_WORKSPACE/version.json")
           VERSION=$(echo "$RAW_VERSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "RAW_VERSION=$RAW_VERSION" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
       - name: Build Go Backend (FFI)
         run: |
@@ -75,7 +77,7 @@ jobs:
             fi
 
             CGO_ENABLED=1 GOOS=android GOARCH=$GOARCH GOARM=${GOARM:-} CC=$CC \
-              go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=$RAW_VERSION'" -buildmode=c-shared -o libbackend_$arch.so main.go
+              go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=$RAW_VERSION' -X 'github.com/DragonEmperor9480/AethrOps/models.BuildNumberStr=$BUILD_NUMBER'" -buildmode=c-shared -o libbackend_$arch.so main.go
           done
 
       - name: Copy native libraries

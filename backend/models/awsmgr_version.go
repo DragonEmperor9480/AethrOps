@@ -7,17 +7,20 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var Version = "placeholder for version"
+var BuildNumberStr = "1"
 
 // VersionInfo holds version and OS information
 type VersionInfo struct {
-	Version string `json:"version"`
-	OS      string `json:"-"` // Hidden from JSON, used for backend logic
-	OSName  string `json:"os_name"`
+	Version     string `json:"version"`
+	OS          string `json:"-"` // Hidden from JSON, used for backend logic
+	OSName      string `json:"os_name"`
+	BuildNumber int    `json:"build_number"`
 }
 
 // GetVersion returns version and OS information
@@ -25,74 +28,94 @@ func GetVersion() VersionInfo {
 	osInfo := runtime.GOOS
 	osName := getOSDetail(osInfo)
 
-	version := os.Getenv("AETHROPS_VERSION")
-	if version == "" {
-		version = Version
+	buildNumber := 1
+	if parsed, err := strconv.Atoi(BuildNumberStr); err == nil {
+		buildNumber = parsed
 	}
 
 	return VersionInfo{
-		Version: version,
-		OS:      osInfo,
-		OSName:  osName,
+		Version:     Version,
+		OS:          osInfo,
+		OSName:      osName,
+		BuildNumber: buildNumber,
 	}
 }
 
-// GitHubVersionData represents the version.json structure from GitHub
-type GitHubVersionData struct {
-	TUI struct {
-		Version string `json:"version"`
-	} `json:"tui"`
-	Linux struct {
-		Version string `json:"version"`
-	} `json:"linux"`
-	Windows struct {
-		Version string `json:"version"`
-	} `json:"windows"`
-	Android struct {
-		Version string `json:"version"`
-	} `json:"android"`
+// PlatformData represents the version and build number of a platform
+type PlatformData struct {
+	Version     string `json:"version"`
+	BuildNumber int    `json:"build_number"`
 }
 
-// fetchVersionFromGitHub fetches the version from GitHub JSON based on OS
-func fetchVersionFromGitHub(osInfo string) string {
-	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/AethrOps/refs/heads/master/version.json"
+// GitHubVersionData represents the version.json structure from GitHub
+// GitHubVersionData represents the version.json structure from GitHub
+type GitHubVersionData struct {
+	Linux   PlatformData `json:"linux"`
+	Windows PlatformData `json:"windows"`
+	Android PlatformData `json:"android"`
+}
 
-	// Create HTTP client with timeout
+// UpdateCheckResponse represents the JSON payload returned to the frontend
+type UpdateCheckResponse struct {
+	UpdateAvailable    bool   `json:"update_available"`
+	LatestVersion      string `json:"latest_version"`
+	LatestBuildNumber  int    `json:"latest_build_number"`
+	CurrentVersion     string `json:"current_version"`
+	CurrentBuildNumber int    `json:"current_build_number"`
+}
+
+// CheckForUpdates queries GitHub's version.json and performs the build number comparison
+func CheckForUpdates() (UpdateCheckResponse, error) {
+	current := GetVersion()
+
+	const githubURL = "https://raw.githubusercontent.com/DragonEmperor9480/AethrOps/master/version.json"
+
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
 	resp, err := client.Get(githubURL)
 	if err != nil {
-		return ""
+		return UpdateCheckResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return ""
+		return UpdateCheckResponse{}, err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return ""
+		return UpdateCheckResponse{}, err
 	}
 
 	var versionData GitHubVersionData
 	if err := json.Unmarshal(body, &versionData); err != nil {
-		return ""
+		return UpdateCheckResponse{}, err
 	}
 
-	// Return version based on OS
-	switch osInfo {
+	var remote PlatformData
+	switch current.OS {
 	case "linux":
-		return versionData.Linux.Version
+		remote = versionData.Linux
 	case "windows":
-		return versionData.Windows.Version
+		remote = versionData.Windows
 	case "android":
-		return versionData.Android.Version
+		remote = versionData.Android
 	default:
-		return versionData.TUI.Version
+		// Fallback default to Linux metadata
+		remote = versionData.Linux
 	}
+
+	updateAvailable := remote.BuildNumber > current.BuildNumber
+
+	return UpdateCheckResponse{
+		UpdateAvailable:    updateAvailable,
+		LatestVersion:      remote.Version,
+		LatestBuildNumber:  remote.BuildNumber,
+		CurrentVersion:     current.Version,
+		CurrentBuildNumber: current.BuildNumber,
+	}, nil
 }
 
 func getOSDetail(osInfo string) string {

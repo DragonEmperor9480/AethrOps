@@ -18,12 +18,17 @@ for /f "tokens=*" %%i in ('powershell -Command "try { (Get-Content 'version.json
 REM Get normalized version for filenames (e.g., "preview-beta-2")
 for /f "tokens=*" %%i in ('powershell -Command "try { $v = (Get-Content 'version.json' | ConvertFrom-Json).windows.version; $v.ToLower().Replace(' ', '-') } catch { '' }"') do set VERSION=%%i
 
+REM Get build number (e.g., 1)
+for /f "tokens=*" %%i in ('powershell -Command "try { (Get-Content 'version.json' | ConvertFrom-Json).windows.build_number } catch { '1' }"') do set AETHROPS_BUILD_NUMBER=%%i
+
 REM Fallback if version.json read fails
 if "%VERSION_DISPLAY%"=="" set VERSION_DISPLAY=Preview Beta 1
 if "%VERSION%"=="" set VERSION=preview-beta-1
+if "%AETHROPS_BUILD_NUMBER%"=="" set AETHROPS_BUILD_NUMBER=1
 
 echo Display Version: %VERSION_DISPLAY%
 echo Tag Version: %VERSION%
+echo Build Number: %AETHROPS_BUILD_NUMBER%
 echo.
 
 echo Step 1: Building Go backend executable...
@@ -31,7 +36,7 @@ cd backend
 set GOOS=windows
 set GOARCH=amd64
 set AETHROPS_VERSION=%VERSION_DISPLAY%
-go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=%VERSION_DISPLAY%'" -o aethrops_core.exe main.go
+go build -ldflags "-X 'github.com/DragonEmperor9480/AethrOps/models.Version=%VERSION_DISPLAY%' -X 'github.com/DragonEmperor9480/AethrOps/models.BuildNumberStr=%AETHROPS_BUILD_NUMBER%'" -o aethrops_core.exe main.go
 
 if %errorlevel% neq 0 (
     echo Failed to build Go backend

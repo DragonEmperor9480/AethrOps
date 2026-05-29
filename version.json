@@ -4,13 +4,16 @@
         "version": ""
     },
     "linux": {
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "build_number": 1
     },
     "windows": {
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "build_number": 1
     },
     "android": {
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "build_number": 1
     },
     "macos": {
         "version": ""

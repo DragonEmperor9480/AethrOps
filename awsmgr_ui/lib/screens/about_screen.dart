@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import 'contributors_screen.dart';
 import 'features_screen.dart';
+
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -18,6 +21,7 @@ class AboutScreen extends StatefulWidget {
 class _AboutScreenState extends State<AboutScreen> {
   String _version = 'Loading...';
   String _osName = 'Loading...';
+  int _buildNumber = 1;
 
   @override
   void initState() {
@@ -36,12 +40,14 @@ class _AboutScreenState extends State<AboutScreen> {
         setState(() {
           _version = data['version'] ?? '1.0.0';
           _osName = data['os_name'] ?? 'Unknown';
+          _buildNumber = data['build_number'] ?? 1;
         });
       }
     } catch (e) {
       setState(() {
         _version = '1.0.0';
         _osName = 'Unknown';
+        _buildNumber = 1;
       });
     }
   }
@@ -57,6 +63,146 @@ class _AboutScreenState extends State<AboutScreen> {
         ToastUtils.show(context, 'Could not open URL: $url', isError: true);
       }
     }
+  }
+
+  Future<void> _checkForUpdates() async {
+    // Show a loading overlay dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    try {
+      // Query the local Go backend update endpoint
+      final response = await http.get(
+        Uri.parse('${BackendService.baseUrl}/api/version/check'),
+      ).timeout(const Duration(seconds: 10));
+
+      // Dismiss loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final updateAvailable = data['update_available'] as bool? ?? false;
+        final latestVersion = data['latest_version'] as String? ?? '1.0.0';
+        final latestBuildNumber = data['latest_build_number'] as int? ?? 1;
+
+        if (updateAvailable) {
+          if (mounted) {
+            _showUpdateDialog(latestVersion, latestBuildNumber);
+          }
+        } else {
+          if (mounted) {
+            _showNoUpdateDialog();
+          }
+        }
+      } else {
+        throw Exception('Server returned status ${response.statusCode}');
+      }
+    } catch (e) {
+      // Dismiss loading dialog if still open
+      if (mounted) {
+        try {
+          Navigator.of(context).pop();
+        } catch (_) {}
+      }
+      debugPrint('Update check failed: $e');
+      if (mounted) {
+        ToastUtils.show(context, 'Unable to check for updates right now.', isError: true);
+      }
+    }
+  }
+
+  void _showUpdateDialog(String newVersion, int newBuildNumber) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Row(
+          children: [
+            Icon(Icons.system_update_alt, color: AppTheme.primaryPurple),
+            const SizedBox(width: 10),
+            const Text(
+              'Update Available! 🚀',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          'A newer version ($newVersion, Build #$newBuildNumber) of AethrOps is available. You are currently on $_version (Build #$_buildNumber). Would you like to download it now?',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Later',
+              style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              _launchURL('https://github.com/DragonEmperor9480/AethrOps/releases');
+            },
+            child: const Text('Download'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNoUpdateDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.green.shade400),
+            const SizedBox(width: 10),
+            const Text(
+              'Up to Date! ✅',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Text(
+          'You are running the latest version of AethrOps ($_version, Build #$_buildNumber). Thank you for keeping it updated!',
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Awesome'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -500,6 +646,44 @@ class _AboutScreenState extends State<AboutScreen> {
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 1,
+              height: 16,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.2),
+            ),
+            const SizedBox(width: 12),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: _checkForUpdates,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.system_update_alt,
+                        size: 16,
+                        color: AppTheme.primaryPurple,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Check Updates',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryPurple,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
