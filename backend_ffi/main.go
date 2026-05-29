@@ -105,6 +105,13 @@ func StartBackend() int {
 		log.Printf("Warning: Database initialization failed: %v", err)
 	}
 
+	// Try to initialize AWS SDK clients (don't fail if credentials not available)
+	if err := utils.InitAWSClients(); err != nil {
+		log.Printf("Warning: AWS clients not initialized from DB: %v", err)
+	} else {
+		log.Println("AWS clients initialized successfully from active DB account on startup")
+	}
+
 	r := mux.NewRouter()
 
 	// Register all API routes

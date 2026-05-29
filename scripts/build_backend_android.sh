@@ -55,20 +55,28 @@ ARCHS=("arm64-v8a" "armeabi-v7a" "x86_64")
 
 # Read version from version.json (android key)
 VERSION=""
+BUILD_NUMBER=""
 if [ -f "$PROJECT_ROOT/version.json" ]; then
     if command -v jq &> /dev/null; then
         VERSION=$(jq -r '.android.version' "$PROJECT_ROOT/version.json" 2>/dev/null)
+        BUILD_NUMBER=$(jq -r '.android.build_number' "$PROJECT_ROOT/version.json" 2>/dev/null)
     elif command -v python3 &> /dev/null; then
         VERSION=$(python3 -c "import json; print(json.load(open('$PROJECT_ROOT/version.json')).get('android',{}).get('version',''))" 2>/dev/null)
+        BUILD_NUMBER=$(python3 -c "import json; print(json.load(open('$PROJECT_ROOT/version.json')).get('android',{}).get('build_number',1))" 2>/dev/null)
     fi
 fi
 
 if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-    VERSION="Preview Beta 1"
+    VERSION="1.0.0"
+fi
+if [ -z "$BUILD_NUMBER" ] || [ "$BUILD_NUMBER" = "null" ]; then
+    BUILD_NUMBER="1"
 fi
 
 export AETHROPS_VERSION="$VERSION"
+export AETHROPS_BUILD_NUMBER="$BUILD_NUMBER"
 echo "✓ Set backend version: $AETHROPS_VERSION"
+echo "✓ Set build number: $AETHROPS_BUILD_NUMBER"
 
 echo ""
 echo "🔨 Building Go backend library for Android..."
@@ -96,7 +104,7 @@ for arch in "${ARCHS[@]}"; do
     GOARCH=$GO_ARCH \
     GOARM=$GO_ARM \
     CC=$CC_COMPILER \
-    go build -buildmode=c-shared -ldflags="-s -w -X 'github.com/DragonEmperor9480/AethrOps/models.Version=$VERSION'" -o libbackend_$arch.so .
+    go build -buildmode=c-shared -ldflags="-s -w -X 'github.com/DragonEmperor9480/AethrOps/models.Version=$VERSION' -X 'github.com/DragonEmperor9480/AethrOps/models.BuildNumberStr=$BUILD_NUMBER'" -o libbackend_$arch.so .
 
     if [ $? -ne 0 ]; then
         echo "❌ Failed to build Go backend for $arch"

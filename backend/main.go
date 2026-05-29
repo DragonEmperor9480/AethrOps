@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/DragonEmperor9480/AethrOps/db_service"
 	"github.com/DragonEmperor9480/AethrOps/routes"
@@ -30,6 +31,16 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	// Fail-safe: Detect if the parent Flutter process terminates abruptly (stdin closed)
+	go func() {
+		buf := make([]byte, 1)
+		_, err := os.Stdin.Read(buf)
+		if err != nil {
+			log.Println("Parent process disconnected (stdin closed). Exiting backend gracefully...")
+			os.Exit(0)
+		}
+	}()
+
 	// Initialize database
 	if err := db_service.InitDB(); err != nil {
 		log.Fatal("Error initializing database:", err)
