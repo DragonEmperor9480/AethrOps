@@ -578,9 +578,9 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       );
 
       final uri = Uri.parse(presignedUrl);
-      if (await canLaunchUrl(uri)) {
-        // 2. Open presigned URL directly in the default system web browser/handler for instant streaming
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // 2. Open presigned URL directly in the default system web browser/handler for instant streaming
+      final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (success) {
         _showSuccess('Opening ${item.displayName}...');
       } else {
         throw Exception('Could not launch default handler.');
@@ -600,9 +600,9 @@ class _S3BrowserScreenState extends State<S3BrowserScreen> {
       );
 
       final uri = Uri.parse(presignedUrl);
-      if (await canLaunchUrl(uri)) {
-        // 2. Open presigned URL in the default system web browser to download natively
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // 2. Open presigned URL in the default system web browser to download natively
+      final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (success) {
         _showSuccess('Starting download in browser...');
       } else {
         throw Exception('Could not launch default browser.');
