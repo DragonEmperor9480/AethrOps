@@ -50,6 +50,9 @@ echo.
 echo Step 2: Building Flutter Windows app...
 cd awsmgr_ui
 
+REM Silence experimental C++ coroutine header deprecation errors in MSVC
+set CL=/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
+
 call flutter clean
 call flutter pub get
 call flutter build windows --release
