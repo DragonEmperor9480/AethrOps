@@ -16,7 +16,8 @@
         "build_number": 1
     },
     "macos": {
-        "version": ""
+        "version": "1.0.0",
+        "build_number": 1
     },
     "website": {
         "version": "1.0.0"
