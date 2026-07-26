@@ -24,7 +24,7 @@ if [ -z "$ANDROID_NDK_HOME" ]; then
     # Try common NDK locations
     POSSIBLE_PATHS=(
         "$HOME/Android/Sdk/ndk"
-        "$ANDROID_HOME/ndk"
+        "$HOME/Android/ndk"
         "$ANDROID_SDK_ROOT/ndk"
     )
     
