@@ -640,10 +640,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ? 3
                             : 2;
 
-                        // Adjust aspect ratio based on screen size
-                        final aspectRatio = constraints.maxWidth > 600
+                        // Adjust aspect ratio based on screen size (width / height)
+                        // On small screens, we need more vertical space to prevent description truncation.
+                        final aspectRatio = constraints.maxWidth > 900
+                            ? 1.2
+                            : constraints.maxWidth > 600
                             ? 1.15
-                            : 1.0;
+                            : 0.85;
 
                         return GridView.builder(
                           shrinkWrap: true,

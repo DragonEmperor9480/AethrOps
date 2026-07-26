@@ -158,6 +158,7 @@ class OneUIPillDropdown<T> extends StatelessWidget {
       initialValue: value,
       items: items,
       onChanged: onChanged,
+      isExpanded: true,
       style: TextStyle(
         fontSize: 15,
         color: isDark ? Colors.white : const Color(0xFF1A1A1A),

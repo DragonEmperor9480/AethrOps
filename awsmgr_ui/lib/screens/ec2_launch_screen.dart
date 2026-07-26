@@ -489,6 +489,8 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                     child: Text(
                                       'None',
                                       style: TextStyle(fontSize: 13),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   ..._keyPairs.map((kp) {
@@ -497,6 +499,8 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                       child: Text(
                                         kp['key_name'],
                                         style: const TextStyle(fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     );
                                   }),
@@ -681,6 +685,8 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                         child: Text(
                                           '${vpc['vpc_id']}$name${isDefault ? ' (Default)' : ''}',
                                           style: const TextStyle(fontSize: 13),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       );
                                     }).toList(),
@@ -700,27 +706,31 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                               hint: 'No preference',
                               icon: Icons.lan_outlined,
                               items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text(
-                                    'No Preference',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                ..._subnets
-                                    .where((s) => s['vpc_id'] == _selectedVpc)
-                                    .map((sn) {
-                                      final name = sn['name'] != ''
-                                          ? ' (${sn['name']})'
-                                          : '';
-                                      return DropdownMenuItem<String?>(
-                                        value: sn['subnet_id'],
-                                        child: Text(
-                                          '${sn['subnet_id']} - ${sn['availability_zone']}$name',
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      );
-                                    }),
+                                 const DropdownMenuItem<String?>(
+                                   value: null,
+                                   child: Text(
+                                     'No Preference',
+                                     style: TextStyle(fontSize: 13),
+                                     maxLines: 1,
+                                     overflow: TextOverflow.ellipsis,
+                                   ),
+                                 ),
+                                 ..._subnets
+                                     .where((s) => s['vpc_id'] == _selectedVpc)
+                                     .map((sn) {
+                                       final name = sn['name'] != ''
+                                           ? ' (${sn['name']})'
+                                           : '';
+                                       return DropdownMenuItem<String?>(
+                                         value: sn['subnet_id'],
+                                         child: Text(
+                                           '${sn['subnet_id']} - ${sn['availability_zone']}$name',
+                                           style: const TextStyle(fontSize: 13),
+                                           maxLines: 1,
+                                           overflow: TextOverflow.ellipsis,
+                                         ),
+                                       );
+                                     }),
                               ],
                               onChanged: (val) =>
                                   setState(() => _selectedSubnet = val),

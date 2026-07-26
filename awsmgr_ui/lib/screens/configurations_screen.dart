@@ -376,6 +376,60 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
 
   Widget _buildEmailConfigCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    Widget mainContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _hasEmailConfig
+                ? AppTheme.successGreen.withValues(alpha: 0.1)
+                : AppTheme.warningAmber.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            _hasEmailConfig
+                ? Icons.mark_email_read
+                : Icons.email_outlined,
+            color: _hasEmailConfig
+                ? AppTheme.successGreen
+                : AppTheme.warningAmber,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _hasEmailConfig ? 'Email Configured' : 'No Email Config',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _hasEmailConfig
+                    ? 'Sender: ${_senderEmail ?? 'Unknown'}'
+                    : 'Configure SMTP to send credentials',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    Widget actionButton = OneUIPillButton(
+      text: _hasEmailConfig ? 'Update' : 'Configure',
+      icon: _hasEmailConfig ? Icons.edit : Icons.add,
+      backgroundColor: AppTheme.primaryPurple,
+      width: isMobile ? double.infinity : null,
+      onPressed: _configureEmail,
+    );
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -398,54 +452,19 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _hasEmailConfig
-                      ? AppTheme.successGreen.withValues(alpha: 0.1)
-                      : AppTheme.warningAmber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  _hasEmailConfig
-                      ? Icons.mark_email_read
-                      : Icons.email_outlined,
-                  color: _hasEmailConfig
-                      ? AppTheme.successGreen
-                      : AppTheme.warningAmber,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _hasEmailConfig ? 'Email Configured' : 'No Email Config',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _hasEmailConfig
-                          ? 'Sender: ${_senderEmail ?? 'Unknown'}'
-                          : 'Configure SMTP to send credentials',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              OneUIPillButton(
-                text: _hasEmailConfig ? 'Update' : 'Configure',
-                icon: _hasEmailConfig ? Icons.edit : Icons.add,
-                backgroundColor: AppTheme.primaryPurple,
-                width: null,
-                onPressed: _configureEmail,
-              ),
-            ],
-          ),
+          if (isMobile) ...[
+            mainContent,
+            const SizedBox(height: 16),
+            actionButton,
+          ] else ...[
+            Row(
+              children: [
+                Expanded(child: mainContent),
+                const SizedBox(width: 16),
+                actionButton,
+              ],
+            ),
+          ],
           if (_hasEmailConfig) ...[
             const SizedBox(height: 20),
             const Divider(),
@@ -471,6 +490,58 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
 
   Widget _buildMFADeviceCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    Widget mainContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _hasMFADevice
+                ? AppTheme.successGreen.withValues(alpha: 0.1)
+                : AppTheme.warningAmber.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            _hasMFADevice ? Icons.security : Icons.security_outlined,
+            color: _hasMFADevice
+                ? AppTheme.successGreen
+                : AppTheme.warningAmber,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _hasMFADevice ? 'MFA Device Configured' : 'No MFA Device',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _hasMFADevice
+                    ? 'Device: ${_mfaDeviceName ?? 'Unknown'}'
+                    : 'Configure MFA for S3 operations',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    Widget actionButton = OneUIPillButton(
+      text: _hasMFADevice ? 'Update' : 'Configure',
+      icon: _hasMFADevice ? Icons.edit : Icons.add,
+      backgroundColor: AppTheme.primaryBlue,
+      width: isMobile ? double.infinity : null,
+      onPressed: _configureMFADevice,
+    );
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -492,52 +563,19 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: _hasMFADevice
-                      ? AppTheme.successGreen.withValues(alpha: 0.1)
-                      : AppTheme.warningAmber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  _hasMFADevice ? Icons.security : Icons.security_outlined,
-                  color: _hasMFADevice
-                      ? AppTheme.successGreen
-                      : AppTheme.warningAmber,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _hasMFADevice ? 'MFA Device Configured' : 'No MFA Device',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _hasMFADevice
-                          ? 'Device: ${_mfaDeviceName ?? 'Unknown'}'
-                          : 'Configure MFA for S3 operations',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              OneUIPillButton(
-                text: _hasMFADevice ? 'Update' : 'Configure',
-                icon: _hasMFADevice ? Icons.edit : Icons.add,
-                backgroundColor: AppTheme.primaryBlue,
-                width: null,
-                onPressed: _configureMFADevice,
-              ),
-            ],
-          ),
+          if (isMobile) ...[
+            mainContent,
+            const SizedBox(height: 16),
+            actionButton,
+          ] else ...[
+            Row(
+              children: [
+                Expanded(child: mainContent),
+                const SizedBox(width: 16),
+                actionButton,
+              ],
+            ),
+          ],
           if (_hasMFADevice) ...[
             const SizedBox(height: 20),
             const Divider(),
