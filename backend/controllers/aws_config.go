@@ -29,35 +29,47 @@ func ConfigureAWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get config directory (works for both mobile and desktop)
-	configDir, err := db_service.GetConfigDirectory()
+	if db_service.DB == nil {
+		respondError(w, http.StatusInternalServerError, "Database not initialized")
+		return
+	}
+
+	// Encrypt secret key
+	encSecret, err := db_service.Encrypt(req.SecretAccessKey)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to get config directory")
+		respondError(w, http.StatusInternalServerError, "Failed to encrypt credentials: "+err.Error())
 		return
 	}
 
-	// Write credentials file
-	credentialsFile := filepath.Join(configDir, "credentials")
-	credentialsContent := `[default]
-aws_access_key_id = ` + req.AccessKeyID + `
-aws_secret_access_key = ` + req.SecretAccessKey + `
-`
+	var existing db_service.AWSAccount
+	errExist := db_service.DB.Unscoped().Where("profile_name = ?", "default").First(&existing).Error
 
-	if err := os.WriteFile(credentialsFile, []byte(credentialsContent), 0600); err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to write credentials file")
-		return
-	}
+	// Deactivate all other accounts first if we are activating "default"
+	db_service.DB.Model(&db_service.AWSAccount{}).Where("is_active = ?", true).Update("is_active", false)
 
-	// Write config file
-	configFile := filepath.Join(configDir, "config")
-	configContent := `[default]
-region = ` + req.Region + `
-output = json
-`
-
-	if err := os.WriteFile(configFile, []byte(configContent), 0600); err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to write config file")
-		return
+	if errExist == nil {
+		// Update existing default account
+		existing.AccessKeyID = req.AccessKeyID
+		existing.SecretAccessKey = encSecret
+		existing.Region = req.Region
+		existing.IsActive = true
+		if err := db_service.DB.Save(&existing).Error; err != nil {
+			respondError(w, http.StatusInternalServerError, "Failed to update database profile: "+err.Error())
+			return
+		}
+	} else {
+		// Create new default account
+		newAcc := db_service.AWSAccount{
+			ProfileName:     "default",
+			AccessKeyID:     req.AccessKeyID,
+			SecretAccessKey: encSecret,
+			Region:          req.Region,
+			IsActive:        true,
+		}
+		if err := db_service.DB.Create(&newAcc).Error; err != nil {
+			respondError(w, http.StatusInternalServerError, "Failed to create database profile: "+err.Error())
+			return
+		}
 	}
 
 	// IMPORTANT: Reload AWS clients with new credentials
@@ -69,30 +81,48 @@ output = json
 	respondJSON(w, http.StatusOK, map[string]string{"message": "AWS credentials configured successfully"})
 }
 
-// DeleteAWSConfig deletes AWS credentials and config files
+// DeleteAWSConfig deletes AWS credentials from database and clean up legacy files
 func DeleteAWSConfig(w http.ResponseWriter, r *http.Request) {
-	// Get config directory
-	configDir, err := db_service.GetConfigDirectory()
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to get config directory")
-		return
+	// If database is available, deactivate all active profiles and delete the "default" profile
+	if db_service.DB != nil {
+		db_service.DB.Unscoped().Where("profile_name = ?", "default").Delete(&db_service.AWSAccount{})
+		db_service.DB.Model(&db_service.AWSAccount{}).Where("is_active = ?", true).Update("is_active", false)
 	}
 
-	credentialsFile := filepath.Join(configDir, "credentials")
-	configFile := filepath.Join(configDir, "config")
+	// Clean up legacy files if they exist (just in case)
+	if configDir, err := db_service.GetConfigDirectory(); err == nil {
+		_ = os.Remove(filepath.Join(configDir, "credentials"))
+		_ = os.Remove(filepath.Join(configDir, "config"))
+	}
 
-	// Delete credentials file (ignore error if not exists)
-	_ = os.Remove(credentialsFile)
-
-	// Delete config file (ignore error if not exists)
-	_ = os.Remove(configFile)
+	// Reset standard AWS clients
+	utils.EC2Client = nil
+	utils.IAMClient = nil
+	utils.LogsClient = nil
+	utils.LambdaClient = nil
+	utils.S3Client = nil
+	utils.STSClient = nil
 
 	respondJSON(w, http.StatusOK, map[string]string{"message": "AWS credentials deleted successfully"})
 }
 
 // GetAWSConfig gets current AWS configuration
 func GetAWSConfig(w http.ResponseWriter, r *http.Request) {
-	// Get config directory (works for both mobile and desktop)
+	// 1. Check database first if DB is initialized
+	if db_service.DB != nil {
+		var activeAccount db_service.AWSAccount
+		err := db_service.DB.Where("is_active = ?", true).First(&activeAccount).Error
+		if err == nil {
+			respondJSON(w, http.StatusOK, map[string]interface{}{
+				"configured": true,
+				"message":    "AWS credentials configured",
+				"region":     activeAccount.Region,
+			})
+			return
+		}
+	}
+
+	// 2. Legacy fallback: Get config directory (works for both mobile and desktop)
 	configDir, err := db_service.GetConfigDirectory()
 	if err != nil {
 		respondJSON(w, http.StatusOK, map[string]interface{}{

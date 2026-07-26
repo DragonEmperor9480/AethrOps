@@ -85,6 +85,11 @@ func InitDB() error {
 		return err
 	}
 
+	// Hard delete any existing soft-deleted accounts to clear UNIQUE constraint conflicts
+	if err := DB.Unscoped().Where("deleted_at IS NOT NULL").Delete(&AWSAccount{}).Error; err != nil {
+		log.Printf("Warning: Failed to clean up soft-deleted accounts: %v", err)
+	}
+
 	// Set file permissions to owner only
 	_ = os.Chmod(dbPath, 0600)
 

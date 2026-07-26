@@ -254,8 +254,8 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	wasActive := target.IsActive
 
-	// Delete
-	if err := db_service.DB.Delete(&target).Error; err != nil {
+	// Delete (Hard delete to avoid unique constraint violations on re-creation)
+	if err := db_service.DB.Unscoped().Delete(&target).Error; err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to delete account")
 		return
 	}
