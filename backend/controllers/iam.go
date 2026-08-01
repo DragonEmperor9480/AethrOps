@@ -8,9 +8,6 @@ import (
 
 	"github.com/DragonEmperor9480/AethrOps/constants"
 	"github.com/DragonEmperor9480/AethrOps/models"
-	"github.com/DragonEmperor9480/AethrOps/models/iam/group"
-	"github.com/DragonEmperor9480/AethrOps/models/iam/policy"
-	"github.com/DragonEmperor9480/AethrOps/models/iam/user"
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -122,7 +119,7 @@ func CheckUserDependencies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	deps, err := user.CheckUserDependencies(username)
+	deps, err := service.CheckUserDependencies(username)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -148,7 +145,7 @@ func CheckMultipleUserDependencies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check dependencies in parallel
-	dependencies := user.CheckMultipleUserDependencies(req.Usernames)
+	dependencies := service.CheckMultipleUserDependencies(req.Usernames)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"dependencies": dependencies,
@@ -175,16 +172,16 @@ func DeleteMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert to model request format
-	requests := make([]user.UserDeletionRequest, len(req.Users))
+	requests := make([]models.UserDeletionRequest, len(req.Users))
 	for i, u := range req.Users {
-		requests[i] = user.UserDeletionRequest{
+		requests[i] = models.UserDeletionRequest{
 			Username: u.Username,
 			Force:    u.Force,
 		}
 	}
 
 	// Delete users in parallel
-	results := user.DeleteMultipleIAMUsers(requests)
+	results := service.DeleteMultipleIAMUsers(requests)
 
 	// Count successes and failures
 	successCount := 0
@@ -264,7 +261,7 @@ func UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := user.UpdateUserPasswordModel(username, req.Password)
+	err := service.UpdateUserPasswordModel(username, req.Password)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -278,7 +275,7 @@ func ListAccessKeys(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	keys, err := user.ListAccessKeysForUserModel(username)
+	keys, err := service.ListAccessKeysForUserModel(username)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -349,20 +346,20 @@ func DeleteIAMGroup(w http.ResponseWriter, r *http.Request) {
 	force := r.URL.Query().Get("force") == "true"
 
 	if force {
-		err := group.ForceDeleteGroup(groupname)
+		err := service.ForceDeleteGroup(groupname)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			utils.Error(w, http.StatusInternalServerError, constants.FailedToDeleteGroup)
 			return
 		}
 	} else {
-		err := group.DeleteGroupModel(groupname)
+		err := service.DeleteGroupModel(groupname)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			utils.Error(w, http.StatusInternalServerError, constants.FailedToDeleteGroup)
 			return
 		}
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Group deleted", "groupname": groupname})
+	utils.Success(w, http.StatusOK, "Group deleted successfully", map[string]string{"groupname": groupname})
 }
 
 // CheckGroupDependencies checks if a group has dependencies
@@ -370,13 +367,13 @@ func CheckGroupDependencies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	deps, err := group.CheckGroupDependencies(groupname)
+	deps, err := service.CheckGroupDependencies(groupname)
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.Success(w, http.StatusOK, "Group dependencies checked successfully", deps)
+	utils.Success(w, http.StatusOK, "", deps)
 }
 
 // AddUserToGroup adds a user to a group
@@ -384,22 +381,20 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	var req struct {
-		Username string `json:"username"`
-	}
+	var req models.Username
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
-	err := group.AddUserToGroupModel(req.Username, groupname)
+	err := service.AddUserToGroupModel(req.Username, groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToAddUserToGroup)
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "User added to group", "username": req.Username, "groupname": groupname})
+	utils.Success(w, http.StatusOK, "User added to group", map[string]string{"username": req.Username, "groupname": groupname})
 }
 
 // RemoveUserFromGroup removes a user from a group
@@ -408,13 +403,13 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 	groupname := vars["groupname"]
 	username := vars["username"]
 
-	err := group.RemoveUserFromGroupModel(username, groupname)
+	err := service.RemoveUserFromGroupModel(username, groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, "Failed to remove user from group")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "User removed from group", "username": username, "groupname": groupname})
+	utils.Success(w, http.StatusOK, "User removed from group", map[string]string{"username": username, "groupname": groupname})
 }
 
 // ListUsersInGroup lists all users in a group
@@ -422,13 +417,13 @@ func ListUsersInGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	users, err := group.ListUsersInGroupModel(groupname)
+	users, err := service.ListUsersInGroupModel(groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "", map[string]interface{}{
 		"groupname": groupname,
 		"users":     users,
 	})
@@ -439,8 +434,8 @@ func ListUserGroups(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	groups := group.ListUserGroupsModel(username)
-	respondJSON(w, http.StatusOK, map[string]interface{}{"username": username, "groups": groups})
+	groups := service.ListUserGroupsModel(username)
+	utils.Success(w, http.StatusOK, "", map[string]interface{}{"username": username, "groups": groups})
 }
 
 // AttachGroupPolicy attaches a policy to a group
@@ -462,7 +457,7 @@ func AttachGroupPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := group.AttachGroupPolicy(groupname, req.PolicyArn)
+	err := service.AttachGroupPolicy(groupname, req.PolicyArn)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -477,7 +472,7 @@ func DetachGroupPolicy(w http.ResponseWriter, r *http.Request) {
 	groupname := vars["groupname"]
 	policyArn := vars["policy_arn"]
 
-	err := group.DetachGroupPolicy(groupname, policyArn)
+	err := service.DetachGroupPolicy(groupname, policyArn)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -491,7 +486,7 @@ func ListGroupPolicies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	policies, err := group.ListGroupPolicies(groupname)
+	policies, err := service.ListGroupPolicies(groupname)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -508,7 +503,7 @@ func ListIAMPolicies(w http.ResponseWriter, r *http.Request) {
 		scope = "All"
 	}
 
-	policies, err := policy.ListPoliciesModel(scope)
+	policies, err := service.ListPoliciesModel(scope)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -539,7 +534,7 @@ func AttachUserPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := policy.AttachUserPolicy(username, req.PolicyArn); err != nil {
+	if err := service.AttachUserPolicy(username, req.PolicyArn); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -554,32 +549,30 @@ func AttachUserPolicy(w http.ResponseWriter, r *http.Request) {
 // AttachMultipleUserPolicies attaches multiple policies to users in parallel
 func AttachMultipleUserPolicies(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Attachments []policy.AttachPolicyRequest `json:"attachments"`
+		Attachments []models.AttachPolicyRequest `json:"attachments"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
 	if len(req.Attachments) == 0 {
-		respondError(w, http.StatusBadRequest, "at least one attachment is required")
+		utils.Error(w, http.StatusBadRequest, "at least one attachment is required")
 		return
 	}
 
-	results := policy.AttachMultiplePolicies(req.Attachments)
+	results := service.AttachMultiplePolicies(req.Attachments)
 
 	successCount := 0
-	failureCount := 0
 	for _, result := range results {
 		if result.Success {
 			successCount++
-		} else {
-			failureCount++
 		}
 	}
+	failureCount := len(results) - successCount
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "", map[string]interface{}{
 		"message":       "Batch policy attachment completed",
 		"total":         len(results),
 		"success_count": successCount,
@@ -599,26 +592,22 @@ func SyncUserPolicies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		respondError(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
-	result := policy.SyncUserPolicies(username, req.DesiredArns, req.CurrentArns)
+	result := service.SyncUserPolicies(username, req.DesiredArns, req.CurrentArns)
 
 	respondJSON(w, http.StatusOK, result)
 }
 
 // SendUserCredentialsEmail sends IAM credentials to user via email
+// TODO: TO USE DB HERE LATER
 func SendUserCredentialsEmail(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Username   string `json:"username"`
-		Password   string `json:"password"`
-		Email      string `json:"email"`
-		ConsoleURL string `json:"console_url"`
-	}
+	var req models.ShareUserCredentials
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
@@ -648,38 +637,17 @@ func SendUserCredentialsEmail(w http.ResponseWriter, r *http.Request) {
 
 	err = service.SendIAMCredentialsEmail(emailConfig, req.Username, req.Password, req.Email, consoleURL)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "Credentials sent successfully", map[string]interface{}{
 		"message": "Credentials sent successfully",
 		"email":   req.Email,
 	})
 }
 
 // ============ HELPER FUNCTIONS ============
-
-func parseTabSeparated(output string, fields []string) []map[string]string {
-	result := []map[string]string{}
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		parts := strings.Split(line, "\t")
-		if len(parts) >= len(fields) {
-			item := make(map[string]string)
-			for i, field := range fields {
-				item[field] = parts[i]
-			}
-			result = append(result, item)
-		}
-	}
-
-	return result
-}
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
