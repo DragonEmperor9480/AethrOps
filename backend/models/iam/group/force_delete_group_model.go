@@ -15,7 +15,7 @@ func ForceDeleteGroup(groupname string) error {
 	// Get group dependencies
 	deps, err := CheckGroupDependencies(groupname)
 	if err != nil {
-		return fmt.Errorf("failed to check dependencies: %w", err)
+		return err
 	}
 
 	// Detach all policies

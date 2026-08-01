@@ -13,15 +13,15 @@ func RegisterRoutes(r *mux.Router) {
 	// IAM Users
 	r.HandleFunc("/api/iam/caller-identity", api.GetCallerIdentity).Methods("GET")
 	r.HandleFunc("/api/iam/users", api.ListIAMUsers).Methods("GET")
-	r.HandleFunc("/api/iam/users", api.CreateIAMUser).Methods("POST")
+	//r.HandleFunc("/api/iam/users", api.CreateIAMUser).Methods("POST")
 	r.HandleFunc("/api/iam/users/batch", api.CreateMultipleIAMUsers).Methods("POST")
 	r.HandleFunc("/api/iam/users/batch/dependencies", api.CheckMultipleUserDependencies).Methods("POST")
 	r.HandleFunc("/api/iam/users/batch/delete", api.DeleteMultipleIAMUsers).Methods("POST")
 	r.HandleFunc("/api/iam/users/{username}/dependencies", api.CheckUserDependencies).Methods("GET")
-	r.HandleFunc("/api/iam/users/{username}", api.DeleteIAMUser).Methods("DELETE")
-	r.HandleFunc("/api/iam/users/{username}/password", api.SetUserPassword).Methods("POST")
-	r.HandleFunc("/api/iam/users/{username}/password", api.UpdateUserPassword).Methods("PUT")
-	r.HandleFunc("/api/iam/users/{username}/access-keys", api.ListAccessKeys).Methods("GET")
+	//r.HandleFunc("/api/iam/users/{username}", api.DeleteIAMUser).Methods("DELETE")
+	r.HandleFunc("/api/iam/users/{username}/password", api.SetUserPassword).Methods("POST")   //NEED TO IMPLEMENT IT LATER
+	r.HandleFunc("/api/iam/users/{username}/password", api.UpdateUserPassword).Methods("PUT") // NEED TO IMPLEMENT IT LATER
+	r.HandleFunc("/api/iam/users/{username}/access-keys", api.ListAccessKeys).Methods("GET")  //NEED TO IMPLEMENT IT LATER
 	r.HandleFunc("/api/iam/users/{username}/groups", api.ListUserGroups).Methods("GET")
 	r.HandleFunc("/api/iam/users/{username}/policies", api.AttachUserPolicy).Methods("POST")
 	r.HandleFunc("/api/iam/users/{username}/policies/sync", api.SyncUserPolicies).Methods("POST")
@@ -33,7 +33,7 @@ func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/iam/groups", api.CreateIAMGroup).Methods("POST")
 	r.HandleFunc("/api/iam/groups/{groupname}", api.DeleteIAMGroup).Methods("DELETE")
 	r.HandleFunc("/api/iam/groups/{groupname}/dependencies", api.CheckGroupDependencies).Methods("GET")
-	r.HandleFunc("/api/iam/groups/{groupname}/users", api.ListUsersInGroup).Methods("GET")
+	r.HandleFunc("/api/iam/groups/{groupname}/users", api.ListUsersInGroup).Methods("GET") // NEED TO IMPLEMENT IT LATER
 	r.HandleFunc("/api/iam/groups/{groupname}/users", api.AddUserToGroup).Methods("POST")
 	r.HandleFunc("/api/iam/groups/{groupname}/users/{username}", api.RemoveUserFromGroup).Methods("DELETE")
 	r.HandleFunc("/api/iam/groups/{groupname}/policies", api.ListGroupPolicies).Methods("GET")

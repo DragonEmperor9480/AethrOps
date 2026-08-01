@@ -6,11 +6,15 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/DragonEmperor9480/AethrOps/constants"
+	"github.com/DragonEmperor9480/AethrOps/models"
 	"github.com/DragonEmperor9480/AethrOps/models/iam/group"
 	"github.com/DragonEmperor9480/AethrOps/models/iam/policy"
 	"github.com/DragonEmperor9480/AethrOps/models/iam/user"
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/gorilla/mux"
 )
@@ -22,7 +26,7 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 
 	result, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToCreateIamUSer)
 		return
 	}
 
@@ -51,8 +55,7 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 		}
 		userType = "AssumedRole"
 	}
-
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "Caller identity retrieved successfully", map[string]interface{}{
 		"username":   username,
 		"user_type":  userType,
 		"account_id": *result.Account,
@@ -63,143 +66,55 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 
 // ListIAMUsers returns all IAM users
 func ListIAMUsers(w http.ResponseWriter, r *http.Request) {
-	output, err := user.FetchIAMUsers()
+	ctx := context.TODO()
+	result, err := utils.IAMClient.ListUsers(ctx, &iam.ListUsersInput{})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToListIamUser)
 		return
 	}
 
-	users := parseTabSeparated(output, []string{"username", "user_id", "create_date"})
-	respondJSON(w, http.StatusOK, map[string]interface{}{"users": users})
+	users := make([]map[string]string, 0, len(result.Users))
+	for _, u := range result.Users {
+		users = append(users, map[string]string{
+			"username":    aws.ToString(u.UserName),
+			"user_id":     aws.ToString(u.UserId),
+			"create_date": u.CreateDate.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
+	utils.Success(w, http.StatusOK, constants.IamUsersFetchedSuccessfully, map[string]interface{}{"users": users})
 }
 
 // CreateMultipleIAMUsers creates multiple IAM users in parallel
 func CreateMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Users []struct {
-			Username     string `json:"username"`
-			Password     string `json:"password"`
-			RequireReset bool   `json:"require_reset"`
-		} `json:"users"`
-	}
+	var req models.BatchCreateIAMUsersRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.FailedToDecodeRequestBody)
 		return
 	}
 
 	if len(req.Users) == 0 {
-		respondError(w, http.StatusBadRequest, "at least one user is required")
+		utils.Error(w, http.StatusBadRequest, constants.NoUsersFound)
 		return
-	}
-
-	// Convert to model request format
-	requests := make([]user.UserCreationRequest, len(req.Users))
-	for i, u := range req.Users {
-		requests[i] = user.UserCreationRequest{
-			Username:     u.Username,
-			Password:     u.Password,
-			RequireReset: u.RequireReset,
-		}
 	}
 
 	// Create users in parallel
-	results := user.CreateMultipleIAMUsers(requests)
+	results := service.CreateMultipleIAMUsers(req.Users)
 
-	// Count successes and failures
 	successCount := 0
-	failureCount := 0
 	for _, result := range results {
 		if result.Success {
 			successCount++
-		} else {
-			failureCount++
 		}
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"message":       "Batch user creation completed",
+	utils.Success(w, http.StatusOK, constants.BatchUserCreationCompleted, map[string]interface{}{
 		"total":         len(results),
 		"success_count": successCount,
-		"failure_count": failureCount,
+		"failure_count": len(results) - successCount,
 		"results":       results,
 	})
-}
-
-// CreateIAMUser creates a new IAM user with optional password
-func CreateIAMUser(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Username     string `json:"username"`
-		Password     string `json:"password"`      // Optional
-		RequireReset bool   `json:"require_reset"` // Only used if password is provided
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if req.Username == "" {
-		respondError(w, http.StatusBadRequest, "username is required")
-		return
-	}
-
-	// If password is provided, use combined function
-	if req.Password != "" {
-		userStatus, passwordStatus, err := user.CreateIAMUserWithPassword(req.Username, req.Password, req.RequireReset)
-
-		// Check user creation status first
-		switch userStatus {
-		case user.UserAlreadyExists:
-			respondError(w, http.StatusConflict, "User '"+req.Username+"' already exists")
-			return
-		case user.UserCreationError:
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// User created, check password status
-		switch passwordStatus {
-		case user.PasswordUserNotFound:
-			respondError(w, http.StatusNotFound, "User not found after creation")
-			return
-		case user.PasswordPolicyViolation:
-			respondError(w, http.StatusBadRequest, "Password does not meet AWS policy requirements")
-			return
-		case user.PasswordAlreadyExists:
-			respondError(w, http.StatusConflict, "Password already exists for user")
-			return
-		case user.PasswordCreationError:
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		case user.PasswordCreatedSuccess:
-			respondJSON(w, http.StatusOK, map[string]interface{}{
-				"message":       "User created with password",
-				"username":      req.Username,
-				"password_set":  true,
-				"require_reset": req.RequireReset,
-			})
-			return
-		}
-	}
-
-	// No password provided, just create user
-	status, err := user.CreateIAMUser(req.Username)
-
-	switch status {
-	case user.UserAlreadyExists:
-		respondError(w, http.StatusConflict, "User '"+req.Username+"' already exists")
-		return
-	case user.UserCreationError:
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	case user.UserCreatedSuccess:
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message":      "User created",
-			"username":     req.Username,
-			"password_set": false,
-		})
-	}
 }
 
 // CheckUserDependencies checks what dependencies a user has before deletion
@@ -291,36 +206,6 @@ func DeleteMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DeleteIAMUser deletes an IAM user (with force flag to remove dependencies)
-func DeleteIAMUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	username := vars["username"]
-
-	// Check for force parameter
-	force := r.URL.Query().Get("force") == "true"
-
-	if !force {
-		// Check if user has dependencies
-		deps, err := user.CheckUserDependencies(username)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if deps.HasDependencies() {
-			respondError(w, http.StatusBadRequest, "User has dependencies. Use force=true to delete with dependencies.")
-			return
-		}
-	}
-
-	err := user.DeleteIAMUserAPI(username)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondJSON(w, http.StatusOK, map[string]string{"message": "User deleted", "username": username})
-}
-
 // SetUserPassword sets initial password for a user
 func SetUserPassword(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -341,22 +226,22 @@ func SetUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := user.SetInitialUserPasswordModel(username, req.Password, req.RequireReset)
+	status, err := service.SetInitialUserPasswordModel(username, req.Password, req.RequireReset)
 
 	switch status {
-	case user.PasswordUserNotFound:
+	case constants.PasswordUserNotFound:
 		respondError(w, http.StatusNotFound, "User '"+username+"' does not exist")
 		return
-	case user.PasswordPolicyViolation:
+	case constants.PasswordPolicyViolation:
 		respondError(w, http.StatusBadRequest, "Password does not meet AWS policy requirements")
 		return
-	case user.PasswordAlreadyExists:
+	case constants.PasswordAlreadyExists:
 		respondError(w, http.StatusConflict, "Password already exists for user '"+username+"'")
 		return
-	case user.PasswordCreationError:
+	case constants.PasswordCreationError:
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
-	case user.PasswordCreatedSuccess:
+	case constants.PasswordCreatedSuccess:
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"message":       "Password set successfully",
 			"username":      username,
@@ -409,39 +294,50 @@ func ListAccessKeys(w http.ResponseWriter, r *http.Request) {
 
 // ListIAMGroups returns all IAM groups
 func ListIAMGroups(w http.ResponseWriter, r *http.Request) {
-	output, err := group.FetchIAMGroups()
+	ctx := context.TODO()
+	result, err := utils.IAMClient.ListGroups(ctx, &iam.ListGroupsInput{})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, "Failed to list IAM groups")
 		return
 	}
 
-	groups := parseTabSeparated(output, []string{"groupname", "group_id", "create_date"})
-	respondJSON(w, http.StatusOK, map[string]interface{}{"groups": groups})
+	groups := make([]map[string]string, 0, len(result.Groups))
+	for _, g := range result.Groups {
+		groups = append(groups, map[string]string{
+			"groupname":   aws.ToString(g.GroupName),
+			"group_id":    aws.ToString(g.GroupId),
+			"create_date": g.CreateDate.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
+	utils.Success(w, http.StatusOK, constants.IAMGroupsFetchedSuccessfully, map[string]interface{}{"groups": groups})
 }
 
 // CreateIAMGroup creates a new IAM group
 func CreateIAMGroup(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		GroupName string `json:"groupname"`
-	}
+	var req models.CreateGroup
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
 	if req.GroupName == "" {
-		respondError(w, http.StatusBadRequest, "groupname is required")
+		utils.Error(w, http.StatusBadRequest, "groupname is required")
 		return
 	}
 
-	err := group.CreateIAMGroup(req.GroupName)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	status, err := service.CreateIAMGroup(req.GroupName)
+	switch status {
+	case constants.GroupAlreadyExists:
+		utils.Error(w, http.StatusConflict, "Group '"+req.GroupName+"' already exists")
+		return
+	case constants.GroupCreationError:
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Group created", "groupname": req.GroupName})
+	utils.Success(w, http.StatusOK, constants.IAMGroupCreatedSuccessfully, nil)
 }
 
 // DeleteIAMGroup deletes an IAM group
@@ -476,11 +372,11 @@ func CheckGroupDependencies(w http.ResponseWriter, r *http.Request) {
 
 	deps, err := group.CheckGroupDependencies(groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, deps)
+	utils.Success(w, http.StatusOK, "Group dependencies checked successfully", deps)
 }
 
 // AddUserToGroup adds a user to a group
