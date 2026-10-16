@@ -77,7 +77,6 @@ func ForceDeleteGroup(groupname string) error {
 }
 
 func CheckGroupDependencies(groupname string) (*models.GroupDependencies, error) {
-	client := utils.GetIAMClient()
 	ctx := context.TODO()
 
 	deps := &models.GroupDependencies{
@@ -86,31 +85,25 @@ func CheckGroupDependencies(groupname string) (*models.GroupDependencies, error)
 	}
 
 	// Get group and its users
-	getGroupInput := &iam.GetGroupInput{
-		GroupName: &groupname,
-	}
-	getGroupOutput, err := client.GetGroup(ctx, getGroupInput)
+	groupUsers, err := listGroupUsers(ctx, groupname)
 	if err != nil {
 		return nil, err
 	}
 
 	// Collect users
-	for _, user := range getGroupOutput.Users {
+	for _, user := range groupUsers {
 		if user.UserName != nil {
 			deps.Users = append(deps.Users, *user.UserName)
 		}
 	}
 
 	// Get attached policies
-	listPoliciesInput := &iam.ListAttachedGroupPoliciesInput{
-		GroupName: &groupname,
-	}
-	policiesOutput, err := client.ListAttachedGroupPolicies(ctx, listPoliciesInput)
+	attachedPolicies, err := listAttachedGroupPolicies(ctx, groupname)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, policy := range policiesOutput.AttachedPolicies {
+	for _, policy := range attachedPolicies {
 		if policy.PolicyArn != nil {
 			deps.AttachedPolicies = append(deps.AttachedPolicies, *policy.PolicyArn)
 		}
@@ -153,20 +146,13 @@ func AddUserToGroupModel(username, groupname string) error {
 
 // ListUsersInGroupModel lists all users in a group
 func ListUsersInGroupModel(groupname string) ([]models.UserInGroup, error) {
-	client := utils.GetIAMClient()
-	ctx := context.TODO()
-
-	input := &iam.GetGroupInput{
-		GroupName: &groupname,
-	}
-
-	result, err := client.GetGroup(ctx, input)
+	groupUsers, err := listGroupUsers(context.TODO(), groupname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group: %w", err)
 	}
 
-	users := make([]models.UserInGroup, 0, len(result.Users))
-	for _, user := range result.Users {
+	users := make([]models.UserInGroup, 0, len(groupUsers))
+	for _, user := range groupUsers {
 		users = append(users, models.UserInGroup{
 			UserName:   aws.ToString(user.UserName),
 			UserID:     aws.ToString(user.UserId),
@@ -178,20 +164,13 @@ func ListUsersInGroupModel(groupname string) ([]models.UserInGroup, error) {
 }
 
 func ListUserGroupsModel(username string) []string {
-	client := utils.GetIAMClient()
-	ctx := context.TODO()
-
-	input := &iam.ListGroupsForUserInput{
-		UserName: &username,
-	}
-
-	result, err := client.ListGroupsForUser(ctx, input)
+	groups, err := listGroupsForUser(context.TODO(), username)
 	if err != nil {
 		return []string{}
 	}
 
 	var groupNames []string
-	for _, group := range result.Groups {
+	for _, group := range groups {
 		if group.GroupName != nil {
 			groupNames = append(groupNames, *group.GroupName)
 		}

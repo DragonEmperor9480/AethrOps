@@ -247,14 +247,11 @@ func CheckMultipleUserDependencies(usernames []string) []models.UserDependencies
 				}
 			} else {
 				// Get policy ARNs for managed policies
-				ctx := context.TODO()
-				policiesResult, err := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
-					UserName: aws.String(user),
-				})
+				policies, err := listAttachedUserPolicies(context.TODO(), user)
 				if err != nil {
 					result.Error = "failed to list attached policies: " + err.Error()
 				} else {
-					for _, p := range policiesResult.AttachedPolicies {
+					for _, p := range policies {
 						result.PolicyArns = append(result.PolicyArns, aws.ToString(p.PolicyArn))
 					}
 				}
@@ -303,16 +300,14 @@ func DeleteMultipleIAMUsers(requests []models.UserDeletionRequest) []models.User
 					}
 
 					// Get policy ARNs and detach
-					policiesResult, err := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
-						UserName: aws.String(request.Username),
-					})
+					policies, err := listAttachedUserPolicies(ctx, request.Username)
 					if err != nil {
 						// Deleting would fail with DeleteConflict anyway; report the real cause
 						result.Error = "failed to list attached policies: " + err.Error()
 						results[index] = result
 						return
 					}
-					for _, p := range policiesResult.AttachedPolicies {
+					for _, p := range policies {
 						_, _ = utils.IAMClient.DetachUserPolicy(ctx, &iam.DetachUserPolicyInput{
 							UserName:  aws.String(request.Username),
 							PolicyArn: p.PolicyArn,
@@ -384,35 +379,29 @@ func CheckUserDependencies(username string) (*models.UserDependencies, error) {
 	}
 
 	// Get groups
-	groupsResult, err := utils.IAMClient.ListGroupsForUser(ctx, &iam.ListGroupsForUserInput{
-		UserName: aws.String(username),
-	})
+	groups, err := listGroupsForUser(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list groups: %w", err)
 	}
-	for _, g := range groupsResult.Groups {
+	for _, g := range groups {
 		deps.Groups = append(deps.Groups, aws.ToString(g.GroupName))
 	}
 
 	// Get attached managed policies
-	policiesResult, err := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
-		UserName: aws.String(username),
-	})
+	policies, err := listAttachedUserPolicies(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list attached policies: %w", err)
 	}
-	for _, p := range policiesResult.AttachedPolicies {
+	for _, p := range policies {
 		deps.ManagedPolicies = append(deps.ManagedPolicies, aws.ToString(p.PolicyName))
 	}
 
 	// Get inline policies
-	inlineResult, err := utils.IAMClient.ListUserPolicies(ctx, &iam.ListUserPoliciesInput{
-		UserName: aws.String(username),
-	})
+	inlinePolicies, err := listUserPolicyNames(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list inline policies: %w", err)
 	}
-	deps.InlinePolicies = append(deps.InlinePolicies, inlineResult.PolicyNames...)
+	deps.InlinePolicies = append(deps.InlinePolicies, inlinePolicies...)
 
 	// Get access keys
 	keysResult, err := utils.IAMClient.ListAccessKeys(ctx, &iam.ListAccessKeysInput{

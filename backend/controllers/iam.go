@@ -11,7 +11,6 @@ import (
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/gorilla/mux"
 )
@@ -63,15 +62,14 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 
 // ListIAMUsers returns all IAM users
 func ListIAMUsers(w http.ResponseWriter, r *http.Request) {
-	ctx := context.TODO()
-	result, err := utils.IAMClient.ListUsers(ctx, &iam.ListUsersInput{})
+	iamUsers, err := service.ListAllIAMUsers(context.TODO())
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, constants.FailedToListIamUser)
 		return
 	}
 
-	users := make([]map[string]string, 0, len(result.Users))
-	for _, u := range result.Users {
+	users := make([]map[string]string, 0, len(iamUsers))
+	for _, u := range iamUsers {
 		users = append(users, map[string]string{
 			"username":    aws.ToString(u.UserName),
 			"user_id":     aws.ToString(u.UserId),
@@ -370,15 +368,14 @@ func ListAccessKeys(w http.ResponseWriter, r *http.Request) {
 
 // ListIAMGroups returns all IAM groups
 func ListIAMGroups(w http.ResponseWriter, r *http.Request) {
-	ctx := context.TODO()
-	result, err := utils.IAMClient.ListGroups(ctx, &iam.ListGroupsInput{})
+	iamGroups, err := service.ListAllIAMGroups(context.TODO())
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, "Failed to list IAM groups")
 		return
 	}
 
-	groups := make([]map[string]string, 0, len(result.Groups))
-	for _, g := range result.Groups {
+	groups := make([]map[string]string, 0, len(iamGroups))
+	for _, g := range iamGroups {
 		groups = append(groups, map[string]string{
 			"groupname":   aws.ToString(g.GroupName),
 			"group_id":    aws.ToString(g.GroupId),

@@ -38,16 +38,21 @@ const (
 // FetchLambdaFunctions retrieves all Lambda function names using AWS SDK
 func FetchLambdaFunctions() ([]byte, error) {
 	ctx := context.TODO()
-	result, err := utils.LambdaClient.ListFunctions(ctx, &lambda.ListFunctionsInput{})
-	if err != nil {
-		return nil, err
-	}
 
 	// Format output to match old text format
 	var output strings.Builder
-	for _, fn := range result.Functions {
-		output.WriteString(aws.ToString(fn.FunctionName))
-		output.WriteString("\n")
+
+	// ListFunctions returns at most 50 functions per page; collect every page
+	paginator := lambda.NewListFunctionsPaginator(utils.LambdaClient, &lambda.ListFunctionsInput{})
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, fn := range page.Functions {
+			output.WriteString(aws.ToString(fn.FunctionName))
+			output.WriteString("\n")
+		}
 	}
 
 	return []byte(output.String()), nil

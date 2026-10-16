@@ -264,20 +264,13 @@ func DetachGroupPolicy(groupname, policyArn string) error {
 }
 
 func ListGroupPolicies(groupname string) ([]map[string]string, error) {
-	client := utils.GetIAMClient()
-	ctx := context.TODO()
-
-	input := &iam.ListAttachedGroupPoliciesInput{
-		GroupName: &groupname,
-	}
-
-	result, err := client.ListAttachedGroupPolicies(ctx, input)
+	attachedPolicies, err := listAttachedGroupPolicies(context.TODO(), groupname)
 	if err != nil {
 		return nil, err
 	}
 
 	policies := []map[string]string{}
-	for _, policy := range result.AttachedPolicies {
+	for _, policy := range attachedPolicies {
 		if policy.PolicyArn != nil && policy.PolicyName != nil {
 			policies = append(policies, map[string]string{
 				"policy_arn":  *policy.PolicyArn,
