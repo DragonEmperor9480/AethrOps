@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"gopkg.in/gomail.v2"
 )
@@ -19,12 +18,10 @@ type EmailConfig struct {
 
 // LoadEmailConfig loads email configuration from file
 func LoadEmailConfig() (*EmailConfig, error) {
-	configDir, err := getConfigDirectory()
+	emailConfigFile, err := configFilePath("email_config.json")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config directory: %v", err)
+		return nil, err
 	}
-
-	emailConfigFile := filepath.Join(configDir, "email_config.json")
 
 	// Check if file exists
 	if _, err := os.Stat(emailConfigFile); os.IsNotExist(err) {
@@ -44,34 +41,6 @@ func LoadEmailConfig() (*EmailConfig, error) {
 	}
 
 	return &config, nil
-}
-
-// getConfigDirectory returns the directory for storing config files
-// Uses AETHROPS_DATA_DIR env var if set (mobile), otherwise uses ~/.aws (desktop)
-func getConfigDirectory() (string, error) {
-	// Check if we're in a mobile environment
-	dataDir := os.Getenv("AETHROPS_DATA_DIR")
-	if dataDir != "" {
-		// Clean the path to prevent directory traversal
-		dataDir = filepath.Clean(dataDir)
-		configDir := filepath.Join(dataDir, "config")
-		if err := os.MkdirAll(configDir, 0700); err != nil {
-			return "", err
-		}
-		return configDir, nil
-	}
-
-	// Use home directory (for desktop)
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	awsDir := filepath.Join(homeDir, ".aws")
-	if err := os.MkdirAll(awsDir, 0700); err != nil {
-		return "", err
-	}
-	return awsDir, nil
 }
 
 // SendIAMCredentialsEmail sends IAM username and password to user

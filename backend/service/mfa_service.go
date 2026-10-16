@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 )
 
 type MFADevice struct {
@@ -14,12 +13,10 @@ type MFADevice struct {
 
 // LoadMFADevice loads MFA device configuration from file
 func LoadMFADevice() (*MFADevice, error) {
-	configDir, err := getConfigDirectory()
+	mfaConfigFile, err := configFilePath("mfa_device.json")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config directory: %v", err)
+		return nil, err
 	}
-
-	mfaConfigFile := filepath.Join(configDir, "mfa_device.json")
 
 	// Check if file exists
 	if _, err := os.Stat(mfaConfigFile); os.IsNotExist(err) {
@@ -43,12 +40,10 @@ func LoadMFADevice() (*MFADevice, error) {
 
 // SaveMFADevice saves MFA device configuration to file
 func SaveMFADevice(deviceName, deviceARN string) error {
-	configDir, err := getConfigDirectory()
+	mfaConfigFile, err := configFilePath("mfa_device.json")
 	if err != nil {
-		return fmt.Errorf("failed to get config directory: %v", err)
+		return err
 	}
-
-	mfaConfigFile := filepath.Join(configDir, "mfa_device.json")
 
 	device := MFADevice{
 		DeviceName: deviceName,
@@ -71,12 +66,10 @@ func SaveMFADevice(deviceName, deviceARN string) error {
 
 // DeleteMFADevice deletes the MFA device configuration file
 func DeleteMFADevice() error {
-	configDir, err := getConfigDirectory()
+	mfaConfigFile, err := configFilePath("mfa_device.json")
 	if err != nil {
-		return fmt.Errorf("failed to get config directory: %v", err)
+		return err
 	}
-
-	mfaConfigFile := filepath.Join(configDir, "mfa_device.json")
 
 	// Check if file exists
 	if _, err := os.Stat(mfaConfigFile); os.IsNotExist(err) {
