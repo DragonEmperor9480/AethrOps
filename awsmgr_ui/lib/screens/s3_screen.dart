@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/bucket_info.dart';
-import '../models/s3_object.dart';
 import '../services/api_service.dart';
-import '../services/download_service.dart';
 import '../widgets/loading_animation.dart';
 import '../widgets/list_header_with_search.dart';
 import '../widgets/speed_dial_menu.dart';
@@ -165,12 +163,19 @@ class _S3ScreenState extends State<S3Screen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Must be globally unique and DNS-compliant',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ),
                       ],
@@ -186,7 +191,9 @@ class _S3ScreenState extends State<S3Screen> {
                     Expanded(
                       child: TextButton(
                         onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                        ),
                         child: const Text('Cancel'),
                       ),
                     ),
@@ -195,7 +202,8 @@ class _S3ScreenState extends State<S3Screen> {
                       child: OneUIPillButton(
                         text: 'Create',
                         icon: Icons.add,
-                        onPressed: () => Navigator.pop(context, controller.text),
+                        onPressed: () =>
+                            Navigator.pop(context, controller.text),
                       ),
                     ),
                   ],
@@ -268,7 +276,10 @@ class _S3ScreenState extends State<S3Screen> {
                           const SizedBox(height: 4),
                           Text(
                             'Are you sure you want to delete "$bucketName"?',
-                            style: const TextStyle(fontSize: 13, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -291,10 +302,7 @@ class _S3ScreenState extends State<S3Screen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: AppTheme.errorRed,
-                      ),
+                      const Icon(Icons.info_outline, color: AppTheme.errorRed),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
@@ -548,349 +556,6 @@ class _S3ScreenState extends State<S3Screen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class BucketObjectsScreen extends StatefulWidget {
-  final String bucketName;
-
-  const BucketObjectsScreen({super.key, required this.bucketName});
-
-  @override
-  State<BucketObjectsScreen> createState() => _BucketObjectsScreenState();
-}
-
-class _BucketObjectsScreenState extends State<BucketObjectsScreen> {
-  List<S3Object> _objects = [];
-  String _versioningStatus = 'Loading...';
-  bool _loading = false;
-  String? _downloadingKey;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadObjects();
-    _loadVersioningStatus();
-  }
-
-  @override
-  void dispose() {
-    // Ensure no setState calls happen after widget is unmounted
-    super.dispose();
-  }
-
-  Future<void> _loadObjects() async {
-    setState(() => _loading = true);
-    try {
-      final objectsStr = await ApiService.listS3Objects(widget.bucketName);
-      // Parse objects from string
-      // Format: "2024-11-14 10:30:00       1234 file.txt"
-      final objectList = objectsStr
-          .split('\n')
-          .where((line) => line.trim().isNotEmpty)
-          .map((line) {
-            final parts = line.trim().split(RegExp(r'\s+'));
-            if (parts.length >= 4) {
-              final date = parts[0];
-              final time = parts[1];
-              final size = int.tryParse(parts[2]) ?? 0;
-              final key = parts.sublist(3).join(' ');
-              return S3Object(
-                key: key,
-                lastModified: '$date $time',
-                size: size,
-              );
-            }
-            return null;
-          })
-          .whereType<S3Object>()
-          .toList();
-
-      setState(() => _objects = objectList);
-    } catch (e) {
-      _showError('Failed to load objects: $e');
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _loadVersioningStatus() async {
-    try {
-      final result = await ApiService.getBucketVersioning(widget.bucketName);
-      final status = result['status'] as String? ?? '';
-      setState(() {
-        _versioningStatus = status.isEmpty ? 'Disabled' : status;
-      });
-    } catch (e) {
-      setState(() => _versioningStatus = 'Unknown');
-    }
-  }
-
-  void _showError(String message) {
-    ToastUtils.show(context, message, isError: true);
-  }
-
-  void _showSuccess(String message) {
-    ToastUtils.show(context, message, isError: false);
-  }
-
-  Future<void> _downloadObject(S3Object object) async {
-    debugPrint('===== _downloadObject called for: ${object.key} =====');
-    setState(() => _downloadingKey = object.key);
-
-    try {
-      // Request storage permission first
-      final hasPermission = await DownloadService.requestStoragePermission();
-
-      if (!hasPermission) {
-        _showError(DownloadService.getPermissionDeniedMessage());
-        setState(() => _downloadingKey = null);
-        return;
-      }
-
-      final bytes = await ApiService.downloadS3Object(
-        widget.bucketName,
-        object.key,
-      );
-
-      final fileName = object.key.split('/').last;
-
-      // Save file using DownloadService
-      final result = await DownloadService.saveToDownloads(
-        bytes: bytes,
-        fileName: fileName,
-      );
-
-      if (result['success']) {
-        _showSuccess('Downloaded to ${result['displayPath']}');
-      } else {
-        _showError('Failed to save file: ${result['error']}');
-      }
-    } catch (e) {
-      _showError('Failed to download: $e');
-    } finally {
-      setState(() => _downloadingKey = null);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: Text(widget.bucketName),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadObjects,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryPurple.withValues(alpha: 0.1),
-              border: Border(
-                bottom: BorderSide(
-                  color: AppTheme.primaryPurple.withValues(alpha: 0.2),
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryPurple.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.folder_open,
-                    color: AppTheme.primaryPurple,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Objects',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Text(
-                        'Files and folders in this bucket',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            _versioningStatus == 'Enabled'
-                                ? Icons.check_circle
-                                : Icons.cancel,
-                            size: 14,
-                            color: _versioningStatus == 'Enabled'
-                                ? AppTheme.successGreen
-                                : Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Versioning: $_versioningStatus',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _loading
-                ? const LoadingAnimation(message: 'Loading objects')
-                : _objects.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.folder_open_outlined,
-                          size: 80,
-                          color: Colors.grey[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No objects found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'This bucket is empty',
-                          style: TextStyle(color: Colors.grey[500]),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _objects.length,
-                    itemBuilder: (context, index) {
-                      final object = _objects[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: object.iconColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              object.icon,
-                              color: object.iconColor,
-                              size: 28,
-                            ),
-                          ),
-                          title: Text(
-                            object.key,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.storage,
-                                    size: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    object.formattedSize,
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Icon(
-                                    Icons.access_time,
-                                    size: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      object.lastModified,
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          trailing: _downloadingKey == object.key
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : IconButton(
-                                  icon: const Icon(Icons.download),
-                                  color: AppTheme.primaryPurple,
-                                  tooltip: 'Download',
-                                  onPressed: () => _downloadObject(object),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: AppTheme.primaryPurple
-                                        .withValues(alpha: 0.1),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
       ),
     );
   }

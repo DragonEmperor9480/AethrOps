@@ -56,7 +56,7 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
   - Moving an endpoint to the new envelope changes its JSON shape, so the matching Dart method in `awsmgr_ui/lib/services/` must be updated in the same change. It needs to read `body['data'][...]` instead of `body[...]`, and `message` instead of `error`.
 - **Where AWS calls live:**
   - **IAM (refactored):** the logic is in `service/iam_user_service.go`, `iam_group_service.go` and `iam_policy_service.go`. Request/result types are flat files in `models/` (`iamUser.go`, `iamGroup.go`, `iamPolicy.go`). Simple list calls may call `utils.IAMClient` directly from the controller. The old `models/iam/{user,group,policy}/` packages are gone.
-  - **S3, EC2 and CloudWatch:** still use the older layout of one file per operation under `models/<service>/` (e.g. `models/s3/UploadS3ObjectModel.go`), with mixed snake_case/PascalCase file names.
+  - **S3, EC2 and CloudWatch:** still use the older layout of one file per operation under `models/<service>/` (e.g. `models/s3/CreateS3FolderModel.go`), with mixed snake_case/PascalCase file names.
   - Several IAM routes in `routes.go` are commented out or marked `NEED TO IMPLEMENT IT LATER` while the refactor is in progress.
 - `utils/aws_client.go`: global SDK clients (`utils.EC2Client`, `IAMClient`, `S3Client`, …) plus a per-region EC2 client cache. `InitAWSClients()` loads the **active account from SQLite** and falls back to file/env config. Switching accounts or credentials re-runs this (`controllers/aws_reload.go`).
 - `db_service/`: GORM + SQLite (`aethrops_data.db`). Desktop stores it under `~/.aethrops/`, and mobile uses the directory passed to `SetDataDirectory`. Secret keys are encrypted at rest through `db_service.Encrypt/Decrypt`.
@@ -71,7 +71,7 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
 - SMTP config (`service/mail_service.go`) and the MFA device (`service/mfa_service.go`) are stored as files under `db_service.GetConfigDirectory()`, not in SQLite.
 
 ### Data-heavy flows
-- **S3 transfers never go through the backend.** `POST /s3/buckets/{b}/upload` and `GET /s3/buckets/{b}/objects/{key}` only return 15-minute **presigned URLs**. `S3Service` (`dio`) then PUTs or GETs directly against S3 with a separate persistent `Dio`, and throttles its progress callbacks.
+- **S3 transfers never go through the backend.** `POST /s3/buckets/{b}/upload` and `GET /s3/buckets/{b}/objects/{key}` only return 15-minute **presigned URLs**. For uploads, `S3Service` PUTs directly to S3 with a separate `Dio` client and throttles its progress callbacks. Viewing and downloading open the presigned URL in the system browser (`launchUrl` in `s3_browser_screen.dart`).
 - **CloudWatch live logs** use Server-Sent Events. `GET /api/cloudwatch/lambda/{fn}/logs` streams `data: {json}` events with event IDs. `service/cloudwatch_service.go` tries the native StartLiveTail API first and falls back to a shared polling loop with a dedup cache. Each stream also writes to a log session file (`service/log_session_service.go`), which can be downloaded from `/api/cloudwatch/logs/download/{sessionId}`. On the Flutter side, `CloudWatchService.streamLambdaLogs` parses the SSE by hand.
 
 ### Flutter (`awsmgr_ui/lib/`)
