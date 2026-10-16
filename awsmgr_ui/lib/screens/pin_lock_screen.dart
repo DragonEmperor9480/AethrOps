@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
@@ -25,12 +26,16 @@ class _PinLockScreenState extends State<PinLockScreen> {
   String _confirmPin = '';
   bool _isConfirming = false;
   bool _showBiometric = false;
+  bool _verifying = false;
+  DateTime? _lockedUntil;
+  Timer? _lockTimer;
   final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _checkBiometric();
+    if (!widget.isSetup) _restoreLockout();
     // Request focus for keyboard input
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
@@ -39,6 +44,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
 
   @override
   void dispose() {
+    _lockTimer?.cancel();
     _focusNode.dispose();
     super.dispose();
   }
@@ -54,6 +60,37 @@ class _PinLockScreenState extends State<PinLockScreen> {
         _authenticateWithBiometric();
       }
     }
+  }
+
+  /// A lockout from an earlier session still applies after reopening
+  Future<void> _restoreLockout() async {
+    final remaining = await SecurityService.pinLockoutRemaining();
+    if (remaining != null && mounted) _startLockout(remaining);
+  }
+
+  bool get _isLocked =>
+      _lockedUntil != null && DateTime.now().isBefore(_lockedUntil!);
+
+  void _startLockout(Duration duration) {
+    _lockTimer?.cancel();
+    setState(() => _lockedUntil = DateTime.now().add(duration));
+    // Tick every second to update the countdown, and clear it when done
+    _lockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (!_isLocked) {
+        timer.cancel();
+        setState(() => _lockedUntil = null);
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  String _formatLockout() {
+    final left = _lockedUntil!.difference(DateTime.now());
+    final seconds = left.inSeconds + 1;
+    if (seconds < 60) return '${seconds}s';
+    return '${left.inMinutes + 1} min';
   }
 
   Future<void> _authenticateWithBiometric() async {
@@ -92,6 +129,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 
   void _handleVerifyMode(String number) {
+    if (_isLocked || _verifying) return;
     setState(() {
       if (_pin.length < 6) {
         _pin += number;
@@ -120,18 +158,30 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 
   Future<void> _verifyPin() async {
-    final isValid = await SecurityService.verifyPin(_pin);
-    if (isValid) {
-      if (mounted) Navigator.of(context).pop(true);
+    _verifying = true;
+    final result = await SecurityService.verifyPin(_pin);
+    _verifying = false;
+    if (!mounted) return;
+    if (result.success) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    setState(() => _pin = '');
+    if (result.lockedFor != null) {
+      _startLockout(result.lockedFor!);
+      ToastUtils.show(
+        context,
+        'Too many attempts. Try again in ${_formatLockout()}',
+        isError: true,
+      );
     } else {
-      if (mounted) {
-        ToastUtils.show(context, 'Invalid PIN', isError: true);
-      }
-      setState(() => _pin = '');
+      ToastUtils.show(context, 'Invalid PIN', isError: true);
     }
   }
 
   void _onBackspace() {
+    if (_verifying) return;
     setState(() {
       if (_isConfirming && _confirmPin.isNotEmpty) {
         _confirmPin = _confirmPin.substring(0, _confirmPin.length - 1);
@@ -269,8 +319,13 @@ class _PinLockScreenState extends State<PinLockScreen> {
                               ? (_isConfirming
                                     ? 'Re-enter your 6-digit PIN'
                                     : 'Create a 6-digit PIN')
+                              : _isLocked
+                              ? 'Too many attempts. Try again in ${_formatLockout()}'
                               : 'Enter your 6-digit PIN to unlock',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _isLocked ? Colors.red : Colors.grey[600],
+                          ),
                         ),
                         const SizedBox(height: 32),
                         _buildPinDots(currentPin),

@@ -54,11 +54,7 @@ class AWSCredentialsService {
     } catch (e) {
       // Handle decryption errors (e.g., when app signature changes)
       // Clear corrupted data
-      try {
-        await _storage.deleteAll();
-      } catch (clearError) {
-        // Ignore clear errors
-      }
+      await _clearCorruptedCredentials();
 
       return {'accessKey': null, 'secretKey': null, 'region': null};
     }
@@ -73,13 +69,21 @@ class AWSCredentialsService {
     } catch (e) {
       // Handle decryption errors
       // Clear corrupted data
-      try {
-        await _storage.deleteAll();
-      } catch (clearError) {
-        // Ignore clear errors
-      }
+      await _clearCorruptedCredentials();
 
       return false;
+    }
+  }
+
+  /// Remove only this service's keys. deleteAll() would also wipe the app
+  /// PIN and turn the lock off.
+  static Future<void> _clearCorruptedCredentials() async {
+    for (final key in [_keyAccessKey, _keySecretKey, _keyRegion]) {
+      try {
+        await _storage.delete(key: key);
+      } catch (_) {
+        // Ignore clear errors
+      }
     }
   }
 
