@@ -9,6 +9,8 @@ const AuthTokenEnv = "AETHROPS_AUTH_TOKEN"
 
 const IamUsersFetchedSuccessfully = "IAM User(s) fetched sucessfully"
 const BatchUserCreationCompleted = "Batch user creation completed"
+const IamUserCreatedSuccessfully = "IAM User created successfully"
+const IamUserDeletedSuccessfully = "IAM User deleted successfully"
 
 const IAMGroupCreatedSuccessfully = "IAM Group created sucessfully"
 const IAMGroupsFetchedSuccessfully = "IAM Group(s) fetched sucessfully"

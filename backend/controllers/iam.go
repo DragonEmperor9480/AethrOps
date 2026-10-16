@@ -114,6 +114,85 @@ func CreateMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// CreateIAMUser creates a single IAM user, optionally with a console password
+func CreateIAMUser(w http.ResponseWriter, r *http.Request) {
+	var req models.UserCreationRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.Error(w, http.StatusBadRequest, constants.FailedToDecodeRequestBody)
+		return
+	}
+
+	if req.Username == "" {
+		utils.Error(w, http.StatusBadRequest, constants.UsernameRequired)
+		return
+	}
+
+	userStatus := constants.UserCreatedSuccess
+	passwordStatus := 0
+	var err error
+	if req.Password != "" {
+		userStatus, passwordStatus, err = service.CreateIAMUserWithPassword(req.Username, req.Password, req.RequireReset)
+	} else {
+		userStatus, err = service.CreateIAMUser(req.Username)
+	}
+
+	switch userStatus {
+	case constants.UserAlreadyExists:
+		utils.Error(w, http.StatusConflict, "User '"+req.Username+"' already exists")
+		return
+	case constants.UserCreationError:
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToCreateIamUSer+": "+err.Error())
+		return
+	}
+
+	// The user exists at this point; report a password failure explicitly
+	switch passwordStatus {
+	case constants.PasswordPolicyViolation:
+		utils.Error(w, http.StatusBadRequest, "User created, but the password does not meet the AWS password policy")
+		return
+	case constants.PasswordUserNotFound, constants.PasswordAlreadyExists:
+		utils.Error(w, http.StatusConflict, "User created, but setting the password failed")
+		return
+	case constants.PasswordCreationError:
+		utils.Error(w, http.StatusInternalServerError, "User created, but setting the password failed: "+err.Error())
+		return
+	}
+
+	utils.Success(w, http.StatusOK, constants.IamUserCreatedSuccessfully, map[string]interface{}{
+		"username":      req.Username,
+		"password_set":  req.Password != "",
+		"require_reset": req.Password != "" && req.RequireReset,
+	})
+}
+
+// DeleteIAMUser deletes a single IAM user. Without ?force=true it refuses when the
+// user still has dependencies; with it, dependencies are removed first.
+func DeleteIAMUser(w http.ResponseWriter, r *http.Request) {
+	username := mux.Vars(r)["username"]
+	force := r.URL.Query().Get("force") == "true"
+
+	if !force {
+		deps, err := service.CheckUserDependencies(username)
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if deps.HasDependencies() {
+			utils.Error(w, http.StatusConflict, constants.UserHasDependencies)
+			return
+		}
+	}
+
+	result := service.DeleteMultipleIAMUsers([]models.UserDeletionRequest{{Username: username, Force: force}})[0]
+	if !result.Success {
+		utils.Error(w, http.StatusInternalServerError, result.Error)
+		return
+	}
+
+	utils.Success(w, http.StatusOK, constants.IamUserDeletedSuccessfully, map[string]string{"username": username})
+}
+
 // CheckUserDependencies checks what dependencies a user has before deletion
 func CheckUserDependencies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

@@ -11,6 +11,8 @@ const FailedToGetCallerIdentity = "Failed to get caller identity"
 const FailedToListIamUser = "Failed tp list IAM User(s)"
 const FailedToDecodeRequestBody = "Failed to decode request body"
 const NoUsersFound = "No users found"
+const UsernameRequired = "username is required"
+const UserHasDependencies = "User has dependencies. Use force=true to delete with dependencies."
 const FailedToCreateIamGroup = "Failed to create IAM Group"
 
 //IAM groups
