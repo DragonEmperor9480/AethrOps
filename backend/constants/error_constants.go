@@ -7,6 +7,7 @@ const InvalidHost = "Invalid host"
 
 // IAM
 const FailedToCreateIamUSer = "Failed to create IAM User"
+const FailedToGetCallerIdentity = "Failed to get caller identity"
 const FailedToListIamUser = "Failed tp list IAM User(s)"
 const FailedToDecodeRequestBody = "Failed to decode request body"
 const NoUsersFound = "No users found"

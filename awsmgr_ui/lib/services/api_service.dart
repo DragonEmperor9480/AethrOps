@@ -21,7 +21,7 @@ class ApiService {
         .get(Uri.parse('$baseUrl/iam/caller-identity'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      return _envelopeData(response);
     }
     throw Exception('Failed to get caller identity');
   }

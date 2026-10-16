@@ -23,7 +23,7 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 
 	result, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, constants.FailedToCreateIamUSer)
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToGetCallerIdentity)
 		return
 	}
 
