@@ -79,6 +79,16 @@ func InitAWSClients() error {
 		return fmt.Errorf("failed to load AWS default config: %w", err)
 	}
 
+	setAWSClients(cfg)
+	return nil
+}
+
+// setAWSClients installs clients for a new credential set. Region-specific EC2
+// clients cached for the previous credentials are dropped, otherwise calls with
+// ?region= would keep acting on the previous account.
+func setAWSClients(cfg aws.Config) {
+	ec2ClientCache.Clear()
+
 	// Store config for creating region-specific clients
 	awsConfig = cfg
 
@@ -88,7 +98,20 @@ func InitAWSClients() error {
 	LambdaClient = lambda.NewFromConfig(cfg)
 	S3Client = s3.NewFromConfig(cfg)
 	STSClient = sts.NewFromConfig(cfg)
-	return nil
+}
+
+// ResetAWSClients drops all clients, including cached region-specific EC2 clients,
+// when no credentials remain.
+func ResetAWSClients() {
+	ec2ClientCache.Clear()
+	awsConfig = aws.Config{}
+
+	EC2Client = nil
+	IAMClient = nil
+	LogsClient = nil
+	LambdaClient = nil
+	S3Client = nil
+	STSClient = nil
 }
 
 // initAWSClientsFromFile is a legacy fallback to load AWS credentials from ~/.aethrops/credentials and config files
@@ -112,15 +135,7 @@ func initAWSClientsFromFile() error {
 		return err
 	}
 
-	// Store config for creating region-specific clients
-	awsConfig = cfg
-
-	EC2Client = ec2.NewFromConfig(cfg)
-	IAMClient = iam.NewFromConfig(cfg)
-	LogsClient = cloudwatchlogs.NewFromConfig(cfg)
-	LambdaClient = lambda.NewFromConfig(cfg)
-	S3Client = s3.NewFromConfig(cfg)
-	STSClient = sts.NewFromConfig(cfg)
+	setAWSClients(cfg)
 	return nil
 }
 

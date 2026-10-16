@@ -270,12 +270,7 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 			_ = utils.InitAWSClients()
 		} else {
 			// No other accounts, reset the clients
-			utils.EC2Client = nil
-			utils.IAMClient = nil
-			utils.LogsClient = nil
-			utils.LambdaClient = nil
-			utils.S3Client = nil
-			utils.STSClient = nil
+			utils.ResetAWSClients()
 		}
 	}
 

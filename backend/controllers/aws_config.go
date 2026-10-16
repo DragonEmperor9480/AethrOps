@@ -96,12 +96,7 @@ func DeleteAWSConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Reset standard AWS clients
-	utils.EC2Client = nil
-	utils.IAMClient = nil
-	utils.LogsClient = nil
-	utils.LambdaClient = nil
-	utils.S3Client = nil
-	utils.STSClient = nil
+	utils.ResetAWSClients()
 
 	respondJSON(w, http.StatusOK, map[string]string{"message": "AWS credentials deleted successfully"})
 }
