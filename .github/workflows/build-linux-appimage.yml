@@ -88,7 +88,6 @@ jobs:
           APPDIR="$(dirname "$(readlink -f "$0")")"
           export LD_LIBRARY_PATH="$APPDIR/lib:$LD_LIBRARY_PATH"
           cd "$APPDIR"
-          ./aethrops_core &
           exec "$APPDIR/aethrops" "$@"
           EOF
           chmod +x build/appimage/aethrops.AppDir/AppRun
