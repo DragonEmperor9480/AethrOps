@@ -70,14 +70,18 @@ class _S3ScreenState extends State<S3Screen> {
           })
           .toList();
 
-      setState(() {
-        _buckets = bucketList;
-        _filteredBuckets = bucketList;
-      });
+      if (mounted) {
+        setState(() {
+          _buckets = bucketList;
+          _filteredBuckets = bucketList;
+        });
+      }
     } catch (e) {
       _showError('Failed to load buckets: $e');
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -216,7 +220,9 @@ class _S3ScreenState extends State<S3Screen> {
     );
 
     if (result != null && result.isNotEmpty) {
-      setState(() => _operationInProgress = true);
+      if (mounted) {
+        setState(() => _operationInProgress = true);
+      }
       try {
         await ApiService.createS3Bucket(result);
         _showSuccess('Bucket "$result" created successfully');
@@ -224,7 +230,9 @@ class _S3ScreenState extends State<S3Screen> {
       } catch (e) {
         _showError('Failed to create bucket: $e');
       } finally {
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -357,7 +365,9 @@ class _S3ScreenState extends State<S3Screen> {
     );
 
     if (confirm == true) {
-      setState(() => _operationInProgress = true);
+      if (mounted) {
+        setState(() => _operationInProgress = true);
+      }
       try {
         await ApiService.deleteS3Bucket(bucketName);
         _showSuccess('Bucket "$bucketName" deleted successfully');
@@ -365,7 +375,9 @@ class _S3ScreenState extends State<S3Screen> {
       } catch (e) {
         _showError('Failed to delete bucket: $e');
       } finally {
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }

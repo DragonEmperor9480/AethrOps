@@ -47,15 +47,19 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
         widget.instanceId,
         region: widget.region,
       );
-      setState(() {
-        _instanceDetails = details;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _instanceDetails = details;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -81,7 +85,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     );
 
     if (confirm == true) {
-      setState(() => _operationInProgress = true);
+      if (mounted) {
+        setState(() => _operationInProgress = true);
+      }
       try {
         await ApiService.startEC2Instance(
           widget.instanceId,
@@ -93,7 +99,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
       } catch (e) {
         _showError('Failed to start instance: $e');
       } finally {
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -107,7 +115,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     );
 
     if (confirm == true) {
-      setState(() => _operationInProgress = true);
+      if (mounted) {
+        setState(() => _operationInProgress = true);
+      }
       try {
         await ApiService.stopEC2Instance(
           widget.instanceId,
@@ -119,7 +129,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
       } catch (e) {
         _showError('Failed to stop instance: $e');
       } finally {
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -133,7 +145,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     );
 
     if (confirm == true) {
-      setState(() => _operationInProgress = true);
+      if (mounted) {
+        setState(() => _operationInProgress = true);
+      }
       try {
         await ApiService.rebootEC2Instance(
           widget.instanceId,
@@ -145,7 +159,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
       } catch (e) {
         _showError('Failed to reboot instance: $e');
       } finally {
-        setState(() => _operationInProgress = false);
+        if (mounted) {
+          setState(() => _operationInProgress = false);
+        }
       }
     }
   }
@@ -161,7 +177,9 @@ class _EC2InstanceDetailsScreenState extends State<EC2InstanceDetailsScreen> {
     );
 
     if (confirm == true) {
-      setState(() => _operationInProgress = true);
+      if (mounted) {
+        setState(() => _operationInProgress = true);
+      }
       try {
         await ApiService.terminateEC2Instance(
           widget.instanceId,

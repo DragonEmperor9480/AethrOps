@@ -35,13 +35,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     final biometrics = await SecurityService.getAvailableBiometrics();
     final biometricNames = biometrics.map((b) => b.name).toList();
 
-    setState(() {
-      _securityEnabled = securityEnabled;
-      _biometricEnabled = biometricEnabled;
-      _canUseBiometric = canUseBiometric;
-      _availableBiometrics = biometricNames;
-      _loading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _securityEnabled = securityEnabled;
+        _biometricEnabled = biometricEnabled;
+        _canUseBiometric = canUseBiometric;
+        _availableBiometrics = biometricNames;
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _toggleSecurity(bool value) async {
@@ -58,17 +60,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       );
 
       if (result == true) {
-        setState(() => _securityEnabled = true);
+        if (mounted) {
+          setState(() => _securityEnabled = true);
+        }
       }
     } else {
       // Disable security - verify PIN first
       final verified = await _verifyCurrentPin();
       if (verified) {
         await SecurityService.disableSecurity();
-        setState(() {
-          _securityEnabled = false;
-          _biometricEnabled = false;
-        });
+        if (mounted) {
+          setState(() {
+            _securityEnabled = false;
+            _biometricEnabled = false;
+          });
+        }
         if (mounted) {
           ToastUtils.show(context, 'Security disabled', isError: false);
         }
@@ -125,7 +131,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       final success = await SecurityService.authenticateWithBiometric();
       if (success) {
         await SecurityService.setBiometricEnabled(true);
-        setState(() => _biometricEnabled = true);
+        if (mounted) {
+          setState(() => _biometricEnabled = true);
+        }
         if (mounted) {
           ToastUtils.show(
             context,
@@ -144,7 +152,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       }
     } else {
       await SecurityService.setBiometricEnabled(false);
-      setState(() => _biometricEnabled = false);
+      if (mounted) {
+        setState(() => _biometricEnabled = false);
+      }
       if (mounted) {
         ToastUtils.show(
           context,

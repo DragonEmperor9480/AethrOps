@@ -33,14 +33,18 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
       final deps = await ApiService.checkGroupDependencies(groupname);
       final policies = await ApiService.listGroupPolicies(groupname);
 
-      setState(() {
-        _dependencies = deps;
-        _policies = policies;
-      });
+      if (mounted) {
+        setState(() {
+          _dependencies = deps;
+          _policies = policies;
+        });
+      }
     } catch (e) {
       _showError('Failed to load group details: $e');
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -74,7 +78,9 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
       final currentArns = result['current_arns'] as List<String>;
 
       // Show loading overlay
-      setState(() => _loading = true);
+      if (mounted) {
+        setState(() => _loading = true);
+      }
 
       try {
         // Determine which policies to attach and detach
@@ -129,7 +135,9 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
       } catch (e) {
         _showError('Failed to sync policies: $e');
       } finally {
-        setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+        }
       }
     }
   }
@@ -146,7 +154,9 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
     );
 
     if (result != null && result.isNotEmpty) {
-      setState(() => _loading = true);
+      if (mounted) {
+        setState(() => _loading = true);
+      }
 
       try {
         int addedCount = 0;
@@ -169,7 +179,9 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
       } catch (e) {
         _showError('Failed to add users: $e');
       } finally {
-        setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+        }
       }
     }
   }
@@ -629,10 +641,12 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
     setState(() => _loading = true);
     try {
       final policies = await ApiService.listIAMPolicies(scope: _scopeFilter);
-      setState(() {
-        _policies = policies;
-        _filterPolicies();
-      });
+      if (mounted) {
+        setState(() {
+          _policies = policies;
+          _filterPolicies();
+        });
+      }
     } catch (e) {
       if (mounted) {
         ToastUtils.show(context, 'Failed to load policies: $e', isError: true);
@@ -1003,10 +1017,12 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
     setState(() => _loading = true);
     try {
       final users = await ApiService.listIAMUsers();
-      setState(() {
-        _users = users;
-        _filterUsers();
-      });
+      if (mounted) {
+        setState(() {
+          _users = users;
+          _filterUsers();
+        });
+      }
     } catch (e) {
       if (mounted) {
         ToastUtils.show(context, 'Failed to load users: $e', isError: true);

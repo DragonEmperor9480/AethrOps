@@ -36,18 +36,22 @@ class _AboutScreenState extends State<AboutScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
-          _version = data['version'] ?? '1.0.0';
-          _osName = data['os_name'] ?? 'Unknown';
-          _buildNumber = data['build_number'] ?? 1;
-        });
+        if (mounted) {
+          setState(() {
+            _version = data['version'] ?? '1.0.0';
+            _osName = data['os_name'] ?? 'Unknown';
+            _buildNumber = data['build_number'] ?? 1;
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _version = '1.0.0';
-        _osName = 'Unknown';
-        _buildNumber = 1;
-      });
+      if (mounted) {
+        setState(() {
+          _version = '1.0.0';
+          _osName = 'Unknown';
+          _buildNumber = 1;
+        });
+      }
     }
   }
 

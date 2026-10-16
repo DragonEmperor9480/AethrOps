@@ -972,9 +972,11 @@ class _EC2ScreenState extends State<EC2Screen> {
                       await awsConfig.setRegion(region);
 
                       // Then update local state
-                      setState(() {
-                        _selectedRegion = region;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _selectedRegion = region;
+                        });
+                      }
 
                       await _saveSettings();
                       _loadInstances();

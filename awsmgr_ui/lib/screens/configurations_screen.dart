@@ -48,12 +48,16 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
       final hasConfig = await EmailConfigService.hasEmailConfig();
       if (hasConfig) {
         final config = await EmailConfigService.getEmailConfig();
-        setState(() {
-          _hasEmailConfig = true;
-          _senderEmail = config?['sender_email'];
-        });
+        if (mounted) {
+          setState(() {
+            _hasEmailConfig = true;
+            _senderEmail = config?['sender_email'];
+          });
+        }
       } else {
-        setState(() => _hasEmailConfig = false);
+        if (mounted) {
+          setState(() => _hasEmailConfig = false);
+        }
       }
     } catch (e) {
       debugPrint('Error loading email config: $e');
@@ -64,16 +68,22 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
     try {
       final device = await ApiService.getMFADevice();
       if (device['configured'] == true) {
-        setState(() {
-          _hasMFADevice = true;
-          _mfaDeviceName = device['device_name'];
-        });
+        if (mounted) {
+          setState(() {
+            _hasMFADevice = true;
+            _mfaDeviceName = device['device_name'];
+          });
+        }
       } else {
-        setState(() => _hasMFADevice = false);
+        if (mounted) {
+          setState(() => _hasMFADevice = false);
+        }
       }
     } catch (e) {
       debugPrint('Error loading MFA device: $e');
-      setState(() => _hasMFADevice = false);
+      if (mounted) {
+        setState(() => _hasMFADevice = false);
+      }
     }
   }
 
@@ -186,10 +196,12 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
     if (confirmed == true) {
       try {
         await EmailConfigService.deleteEmailConfig();
-        setState(() {
-          _hasEmailConfig = false;
-          _senderEmail = null;
-        });
+        if (mounted) {
+          setState(() {
+            _hasEmailConfig = false;
+            _senderEmail = null;
+          });
+        }
 
         if (mounted) {
           ToastUtils.show(
@@ -319,10 +331,12 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
     if (confirmed == true) {
       try {
         await ApiService.deleteMFADevice();
-        setState(() {
-          _hasMFADevice = false;
-          _mfaDeviceName = null;
-        });
+        if (mounted) {
+          setState(() {
+            _hasMFADevice = false;
+            _mfaDeviceName = null;
+          });
+        }
 
         if (mounted) {
           ToastUtils.show(context, 'MFA device deleted', isError: false);

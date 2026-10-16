@@ -63,15 +63,19 @@ class _SecurityWrapperState extends State<SecurityWrapper>
     final securityEnabled = await SecurityService.isSecurityEnabled();
 
     if (!securityEnabled) {
-      setState(() {
-        _isUnlocked = true;
-        _isChecking = false;
-        _hasCompletedInitialAuth = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isUnlocked = true;
+          _isChecking = false;
+          _hasCompletedInitialAuth = true;
+        });
+      }
       return;
     }
 
-    setState(() => _isChecking = false);
+    if (mounted) {
+      setState(() => _isChecking = false);
+    }
 
     if (mounted) {
       _showPinScreen();
@@ -87,10 +91,12 @@ class _SecurityWrapperState extends State<SecurityWrapper>
     );
 
     if (result == true) {
-      setState(() {
-        _isUnlocked = true;
-        _hasCompletedInitialAuth = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isUnlocked = true;
+          _hasCompletedInitialAuth = true;
+        });
+      }
     } else {
       if (mounted) {
         _showPinScreen();

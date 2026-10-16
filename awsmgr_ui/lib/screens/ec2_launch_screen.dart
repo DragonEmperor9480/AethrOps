@@ -76,15 +76,19 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         await awsConfig.initialize();
       }
 
-      setState(() {
-        _regions = awsConfig.availableRegions;
-        _selectedRegion = awsConfig.currentRegion;
-      });
+      if (mounted) {
+        setState(() {
+          _regions = awsConfig.availableRegions;
+          _selectedRegion = awsConfig.currentRegion;
+        });
+      }
 
       // Load resources for the default region
       await _loadRegionResources();
     } catch (e) {
-      setState(() => _isLoadingData = false);
+      if (mounted) {
+        setState(() => _isLoadingData = false);
+      }
       if (mounted) {
         ToastUtils.show(
           context,
@@ -108,35 +112,37 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
         Ec2Service.listAMIs(region: _selectedRegion),
       ]);
 
-      setState(() {
-        _keyPairs = results[0];
-        _vpcs = results[1];
-        _subnets = results[2];
-        _securityGroups = results[3];
-        _amis = results[4];
-        _isLoadingData = false;
+      if (mounted) {
+        setState(() {
+          _keyPairs = results[0];
+          _vpcs = results[1];
+          _subnets = results[2];
+          _securityGroups = results[3];
+          _amis = results[4];
+          _isLoadingData = false;
 
-        // Reset selections when region changes
-        _selectedKeyPair = null;
-        _selectedVpc = null;
-        _selectedSubnet = null;
-        _selectedSecurityGroups.clear();
-        _selectedAmiId = null;
+          // Reset selections when region changes
+          _selectedKeyPair = null;
+          _selectedVpc = null;
+          _selectedSubnet = null;
+          _selectedSecurityGroups.clear();
+          _selectedAmiId = null;
 
-        // Auto-select Default VPC, or first available
-        if (_vpcs.isNotEmpty) {
-          final defaultVpc = _vpcs.firstWhere(
-            (vpc) => vpc['is_default'] == true,
-            orElse: () => _vpcs.first,
-          );
-          _selectedVpc = defaultVpc['vpc_id'];
-        }
+          // Auto-select Default VPC, or first available
+          if (_vpcs.isNotEmpty) {
+            final defaultVpc = _vpcs.firstWhere(
+              (vpc) => vpc['is_default'] == true,
+              orElse: () => _vpcs.first,
+            );
+            _selectedVpc = defaultVpc['vpc_id'];
+          }
 
-        // Auto-select first AMI if available
-        if (_amis.isNotEmpty && !_useCustomAmi) {
-          _selectedAmiId = _amis.first['image_id'];
-        }
-      });
+          // Auto-select first AMI if available
+          if (_amis.isNotEmpty && !_useCustomAmi) {
+            _selectedAmiId = _amis.first['image_id'];
+          }
+        });
+      }
 
       // Show warnings for empty resources
       if (mounted) {
@@ -813,7 +819,9 @@ class _Ec2LaunchScreenState extends State<Ec2LaunchScreen> {
                                   },
                                 );
                                 // Update parent UI to show correct count
-                                setState(() {});
+                                if (mounted) {
+                                  setState(() {});
+                                }
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(

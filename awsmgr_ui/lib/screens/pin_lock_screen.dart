@@ -53,7 +53,9 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (!widget.isSetup) {
       final biometricEnabled = await SecurityService.isBiometricEnabled();
       final canUse = await SecurityService.canUseBiometric();
-      setState(() => _showBiometric = biometricEnabled && canUse);
+      if (mounted) {
+        setState(() => _showBiometric = biometricEnabled && canUse);
+      }
 
       // Auto-trigger biometric on launch if enabled
       if (_showBiometric) {

@@ -44,7 +44,9 @@ class _SplashScreenState extends State<SplashScreen> {
         setState(() => _status = 'Starting local backend...');
         await BackendService.start();
 
-        setState(() => _status = 'Establishing secure connection...');
+        if (mounted) {
+          setState(() => _status = 'Establishing secure connection...');
+        }
         await Future.delayed(const Duration(milliseconds: 600));
 
         final isRunning = await BackendService.isRunning();
@@ -55,11 +57,15 @@ class _SplashScreenState extends State<SplashScreen> {
       }
 
       // 2. Query auth-status from backend
-      setState(() => _status = 'Checking authentication status...');
+      if (mounted) {
+        setState(() => _status = 'Checking authentication status...');
+      }
       final authResult = await AWSProfileService.getAuthStatus();
       final status = authResult['status'] as String;
 
-      setState(() => _status = 'Blasting you off into AethrOps! 🚀');
+      if (mounted) {
+        setState(() => _status = 'Blasting you off into AethrOps! 🚀');
+      }
       await Future.delayed(const Duration(milliseconds: 600));
 
       if (mounted) {

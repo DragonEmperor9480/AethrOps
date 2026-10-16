@@ -117,14 +117,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final identity = await ApiService.getCallerIdentity();
       final username = identity['username'] ?? 'User';
 
-      setState(() {
-        _username = username;
-        _region = region;
-        _greeting = _getGreeting();
-        _quote = _getRandomQuote();
-        _isLoadingUserInfo = false;
-        _isConnected = true;
-      });
+      if (mounted) {
+        setState(() {
+          _username = username;
+          _region = region;
+          _greeting = _getGreeting();
+          _quote = _getRandomQuote();
+          _isLoadingUserInfo = false;
+          _isConnected = true;
+        });
+      }
     } catch (e) {
       debugPrint('Error loading user info: $e');
       // Try to load region even if identity fails
@@ -133,13 +135,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _region = credentials['region'] ?? '';
       } catch (_) {}
 
-      setState(() {
-        _username = 'User';
-        _greeting = _getGreeting();
-        _quote = _getRandomQuote();
-        _isLoadingUserInfo = false;
-        _isConnected = false;
-      });
+      if (mounted) {
+        setState(() {
+          _username = 'User';
+          _greeting = _getGreeting();
+          _quote = _getRandomQuote();
+          _isLoadingUserInfo = false;
+          _isConnected = false;
+        });
+      }
     }
   }
 

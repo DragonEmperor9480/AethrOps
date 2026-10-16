@@ -268,7 +268,9 @@ class _CredentialsDialogState extends State<CredentialsDialog> {
     if (confirmed != true) return;
 
     // Send email
-    setState(() => _sending = true);
+    if (mounted) {
+      setState(() => _sending = true);
+    }
     try {
       await ApiService.sendUserCredentialsEmail(
         username: credential['username']!,

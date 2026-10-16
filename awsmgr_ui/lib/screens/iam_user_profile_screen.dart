@@ -742,23 +742,25 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
     setState(() => _loading = true);
     try {
       final policies = await ApiService.listIAMPolicies(scope: _scopeFilter);
-      setState(() {
-        _policies = policies;
+      if (mounted) {
+        setState(() {
+          _policies = policies;
 
-        // Pre-select policies that are already attached (match by name)
-        // Also build the current ARNs list
-        _currentPolicyArns.clear();
-        for (var policy in _policies) {
-          final policyName = policy['policy_name']?.toString() ?? '';
-          final policyArn = policy['policy_arn']?.toString() ?? '';
-          if (_attachedPolicyNames.contains(policyName)) {
-            _selectedPolicyArns.add(policyArn);
-            _currentPolicyArns.add(policyArn);
+          // Pre-select policies that are already attached (match by name)
+          // Also build the current ARNs list
+          _currentPolicyArns.clear();
+          for (var policy in _policies) {
+            final policyName = policy['policy_name']?.toString() ?? '';
+            final policyArn = policy['policy_arn']?.toString() ?? '';
+            if (_attachedPolicyNames.contains(policyName)) {
+              _selectedPolicyArns.add(policyArn);
+              _currentPolicyArns.add(policyArn);
+            }
           }
-        }
 
-        _filterPolicies();
-      });
+          _filterPolicies();
+        });
+      }
     } catch (e) {
       if (mounted) {
         ToastUtils.show(context, 'Failed to load policies: $e', isError: true);
