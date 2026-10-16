@@ -41,14 +41,9 @@ class ExitHandler {
     );
 
     if (shouldExit == true) {
-      // Send shutdown request to backend
-      try {
-        await BackendService.client
-            .post(Uri.parse('${BackendService.baseUrl}/api/shutdown'))
-            .timeout(const Duration(milliseconds: 500));
-      } catch (_) {
-        // Ignore errors - backend might already be down
-      }
+      // Stop the backend: shutdown request + wait on desktop, FFI StopBackend
+      // on Android (an HTTP shutdown there would os.Exit the whole app)
+      await BackendService.stop();
 
       // Exit immediately
       await exitApp();

@@ -261,14 +261,19 @@ class BackendService {
       // Desktop: Call graceful shutdown endpoint and wait for process to exit
       if (_process != null) {
         await client
-            .post(Uri.parse('$baseUrl/shutdown'))
+            .post(Uri.parse('$baseUrl/api/shutdown'))
             .timeout(const Duration(seconds: 1));
 
         // Wait for process to exit (backend handles its own cleanup)
-        await _process!.exitCode.timeout(
+        final exitCode = await _process!.exitCode.timeout(
           const Duration(seconds: 5),
           onTimeout: () => -1,
         );
+
+        // Still running after the grace period: don't leave it orphaned
+        if (exitCode == -1) {
+          _process!.kill(ProcessSignal.sigkill);
+        }
 
         _process = null;
       }
