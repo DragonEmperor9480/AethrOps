@@ -59,14 +59,13 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
   - **S3, EC2 and CloudWatch:** still use the older layout of one file per operation under `models/<service>/` (e.g. `models/s3/CreateS3FolderModel.go`), with mixed snake_case/PascalCase file names.
   - Several IAM routes in `routes.go` are commented out or marked `NEED TO IMPLEMENT IT LATER` while the refactor is in progress.
 - `utils/aws_client.go`: global SDK clients (`utils.EC2Client`, `IAMClient`, `S3Client`, …) plus a per-region EC2 client cache. `InitAWSClients()` loads the **active account from SQLite** and falls back to file/env config. Switching accounts or credentials re-runs this (`controllers/aws_reload.go`).
-- `db_service/`: GORM + SQLite (`aethrops_data.db`). Desktop stores it under `~/.aethrops/`, and mobile uses the directory passed to `SetDataDirectory`. Secret keys are encrypted at rest through `db_service.Encrypt/Decrypt`.
+- `db_service/`: GORM + SQLite (`aethrops.db`; v1.1 started a fresh database, and the old `aethrops_data.db` is ignored). Desktop stores it under `~/.aethrops/`, and mobile uses the directory passed to `SetDataDirectory`. Secret keys are encrypted at rest through `db_service.Encrypt/Decrypt`.
 - `service/`: IAM business logic (see above), plus longer-running and cross-cutting features such as CloudWatch log streaming and sessions, SMTP mail for sending IAM credentials, and MFA.
 
 ### AWS accounts and credentials
 - Accounts are stored in the `AWSAccount` table (`db_service/models.go`), with exactly one `IsActive`. `controllers/aws_accounts.go` handles creating, listing, activating and deleting accounts, and `GET /api/aws/auth-status` returns `authenticated` | `select_account` | `no_accounts`. Activating an account must re-run `utils.InitAWSClients()`, because the global SDK clients are swapped in place.
 - `/api/aws/config` (`controllers/aws_config.go`) and the FFI `SetAWSCredentials` export are the **older** credential paths, based on `~/.aethrops/credentials` files and env vars. The DB-backed account system is the primary path.
-- **Secrets at rest** use AES-GCM with a random per-install key, `secret.key` (mode 0600) in the config directory, created on first use (`db_service/encryption.go`). Deleting it makes every stored secret unreadable.
-  - On startup, `InitDB` re-encrypts account secrets written by older builds with the old hardcoded key.
+- **Secrets at rest** use AES-GCM with a random per-install key, `secret.key` (mode 0600) in the config directory, created on first use (`db_service/encryption.go`). Deleting it makes every stored secret unreadable. There is deliberately no migration of data from older builds.
   - The SMTP password is stored encrypted (`sender_pass_enc`) and is never returned by `GET /api/email/config`, which only reports `has_password`.
 - SMTP config (`service/mail_service.go`) and the MFA device (`service/mfa_service.go`) are stored as files under `db_service.GetConfigDirectory()`, not in SQLite.
 

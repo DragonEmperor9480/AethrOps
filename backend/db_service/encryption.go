@@ -14,10 +14,6 @@ import (
 	"sync"
 )
 
-// Key used by older builds. It is public (it was in the source), so it is only
-// used to migrate existing secrets to the per-install key.
-const legacyEncryptionKey = "aethrops-32byte-encryption-key!!"
-
 const keyFileName = "secret.key"
 
 var (
@@ -141,43 +137,4 @@ func decryptWithKey(key []byte, ciphertext string) (string, error) {
 	}
 
 	return string(plaintext), nil
-}
-
-// migrateLegacySecrets re-encrypts account secrets that were stored with the old
-// hardcoded key so they are protected by the per-install key.
-func migrateLegacySecrets() {
-	key, err := getEncryptionKey()
-	if err != nil {
-		log.Printf("Warning: cannot migrate stored secrets: %v", err)
-		return
-	}
-
-	var accounts []AWSAccount
-	if err := DB.Find(&accounts).Error; err != nil {
-		log.Printf("Warning: cannot migrate stored secrets: %v", err)
-		return
-	}
-
-	for _, acc := range accounts {
-		if _, err := decryptWithKey(key, acc.SecretAccessKey); err == nil {
-			continue // already uses the per-install key
-		}
-
-		plaintext, err := decryptWithKey([]byte(legacyEncryptionKey), acc.SecretAccessKey)
-		if err != nil {
-			log.Printf("Warning: secret for profile %q cannot be decrypted; re-add the account", acc.ProfileName)
-			continue
-		}
-
-		reencrypted, err := encryptWithKey(key, plaintext)
-		if err != nil {
-			log.Printf("Warning: failed to re-encrypt secret for profile %q: %v", acc.ProfileName, err)
-			continue
-		}
-		if err := DB.Model(&acc).Update("secret_access_key", reencrypted).Error; err != nil {
-			log.Printf("Warning: failed to save re-encrypted secret for profile %q: %v", acc.ProfileName, err)
-			continue
-		}
-		log.Printf("Migrated secret for profile %q to the per-install key", acc.ProfileName)
-	}
 }

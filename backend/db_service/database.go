@@ -11,6 +11,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// Database file name. v1.1 starts with a fresh database; files from older
+// builds (aethrops_data.db) are left on disk but never opened.
+const dbFileName = "aethrops.db"
+
 var DB *gorm.DB
 var dataDir string
 
@@ -51,14 +55,14 @@ func InitDB() error {
 
 	if dataDir != "" {
 		// Use provided data directory (for mobile)
-		dbPath = filepath.Join(dataDir, "aethrops_data.db")
+		dbPath = filepath.Join(dataDir, dbFileName)
 	} else {
 		// Use home directory (for desktop)
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return err
 		}
-		dbPath = filepath.Join(homeDir, ".aethrops", "aethrops_data.db")
+		dbPath = filepath.Join(homeDir, ".aethrops", dbFileName)
 	}
 
 	// Create directory if it doesn't exist
@@ -92,9 +96,6 @@ func InitDB() error {
 
 	// Set file permissions to owner only
 	_ = os.Chmod(dbPath, 0600)
-
-	// Re-encrypt secrets written with the old hardcoded key
-	migrateLegacySecrets()
 
 	return nil
 }

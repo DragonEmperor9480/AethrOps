@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/DragonEmperor9480/AethrOps/db_service"
@@ -22,14 +21,13 @@ type EmailConfig struct {
 const emailConfigFileName = "email_config.json"
 
 // storedEmailConfig is the on-disk format. The SMTP password is encrypted with
-// the per-install key; SenderPass is only read to migrate older plaintext files.
+// the per-install key.
 type storedEmailConfig struct {
-	SMTPHost       string `json:"smtp_host"`
-	SMTPPort       int    `json:"smtp_port"`
-	SenderEmail    string `json:"sender_email"`
-	SenderName     string `json:"sender_name"`
-	SenderPassEnc  string `json:"sender_pass_enc,omitempty"`
-	SenderPassText string `json:"sender_pass,omitempty"`
+	SMTPHost      string `json:"smtp_host"`
+	SMTPPort      int    `json:"smtp_port"`
+	SenderEmail   string `json:"sender_email"`
+	SenderName    string `json:"sender_name"`
+	SenderPassEnc string `json:"sender_pass_enc,omitempty"`
 }
 
 // LoadEmailConfig loads email configuration from file, including the decrypted password
@@ -59,19 +57,12 @@ func LoadEmailConfig() (*EmailConfig, error) {
 		SenderName:  stored.SenderName,
 	}
 
-	switch {
-	case stored.SenderPassEnc != "":
+	if stored.SenderPassEnc != "" {
 		pass, err := db_service.Decrypt(stored.SenderPassEnc)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decrypt email password; please save the email settings again")
 		}
 		config.SenderPass = pass
-	case stored.SenderPassText != "":
-		// Older builds stored the password in plaintext: encrypt it now
-		config.SenderPass = stored.SenderPassText
-		if err := SaveEmailConfig(*config); err != nil {
-			log.Printf("Warning: failed to encrypt stored email password: %v", err)
-		}
 	}
 
 	return config, nil
