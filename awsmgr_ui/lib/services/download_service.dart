@@ -19,32 +19,17 @@ class DownloadService {
 
     debugPrint('Checking Android storage permissions...');
 
-    // Try manageExternalStorage first (for Android 11+)
-    PermissionStatus status = await Permission.manageExternalStorage.status;
-    debugPrint('manageExternalStorage status: $status');
+    // On Android 13+ (API 33+), storage permissions are scoped and saving to downloads/app directory does not require broad permissions.
+    // Check standard storage permission for Android 12 and lower.
+    PermissionStatus status = await Permission.storage.status;
+    debugPrint('storage status: $status');
 
-    if (!status.isGranted) {
-      status = await Permission.manageExternalStorage.request();
-      debugPrint('manageExternalStorage after request: $status');
-
-      if (!status.isGranted) {
-        // Fallback to regular storage permission for older Android versions
-        status = await Permission.storage.status;
-        debugPrint('storage status: $status');
-
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-          debugPrint('storage after request: $status');
-        }
-
-        if (!status.isGranted) {
-          debugPrint('Storage permission denied');
-          return false;
-        }
-      }
+    if (!status.isGranted && !status.isPermanentlyDenied) {
+      status = await Permission.storage.request();
+      debugPrint('storage after request: $status');
     }
 
-    debugPrint('Storage permission granted');
+    debugPrint('Storage permission check complete');
     return true;
   }
 
@@ -135,7 +120,7 @@ class DownloadService {
 
   /// Get error message for permission denial
   static String getPermissionDeniedMessage() {
-    return 'Storage permission required. Please grant "All files access" in:\n'
+    return 'Storage permission required. Please grant storage permission in:\n'
         'Settings > Apps > AethrOps > Permissions';
   }
 }
