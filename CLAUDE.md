@@ -15,8 +15,10 @@ Pinned toolchain versions (Flutter 3.41.3, Go 1.24.3, JDK 17, NDK r26d, etc.) ar
 # then copies the backend binary into build/linux/x64/debug/bundle/
 ./scripts/run_linux.sh
 
-# Backend only (desktop HTTP server on 127.0.0.1:9480)
-cd backend && go build -o aethrops_core main.go && ./aethrops_core
+# Backend only (desktop HTTP server on 127.0.0.1:9480). It refuses to start without a token,
+# and every request needs `Authorization: Bearer <token>`:
+cd backend && go build -o aethrops_core main.go && AETHROPS_AUTH_TOKEN=dev ./aethrops_core
+curl -H 'Authorization: Bearer dev' http://127.0.0.1:9480/api/version
 
 # Android: cross-compile backend_ffi to libbackend.so for each ABI (needs ANDROID_NDK_HOME or auto-detects)
 ./scripts/build_backend_android.sh   # then: cd awsmgr_ui && flutter build apk
@@ -39,7 +41,10 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
 
 ### One backend, two hosts
 - `backend/` (module `github.com/DragonEmperor9480/AethrOps`) holds all the logic. Its `main.go` runs a Gorilla Mux HTTP server on `127.0.0.1:9480` for desktop. The Flutter app spawns it as a child process named `aethrops_core`, which must sit next to the Flutter executable. The backend exits when its stdin closes, so it dies with the parent.
-- `backend_ffi/` is a separate Go module that imports `backend` through `replace ... => ../backend` and is built with `-buildmode=c-shared` into `libbackend.so` for Android. It exports C functions (`SetDataDirectory`, `SetAWSCredentials`, `StartBackend`, `StopBackend`). `StartBackend` starts the **same HTTP server and routes** in-process on port 9480.
+- `backend_ffi/` is a separate Go module that imports `backend` through `replace ... => ../backend` and is built with `-buildmode=c-shared` into `libbackend.so` for Android. It exports C functions (`SetDataDirectory`, `SetAuthToken`, `SetAWSCredentials`, `StartBackend`, `StopBackend`). `StartBackend` starts the **same HTTP server and routes** in-process on port 9480.
+- **The local API is authenticated.** `backend/middleware/auth.go` (`middleware.Secure`) wraps the router in both hosts. It rejects any `Host` other than `127.0.0.1:9480` / `localhost:9480`, which blocks DNS rebinding, and any request without the per-launch bearer token, including `/health`. There is deliberately no CORS.
+  - **Token flow:** Flutter generates the token in `BackendService` and passes it through the `AETHROPS_AUTH_TOKEN` env var on desktop, or the `SetAuthToken` FFI export (called before `StartBackend`) on Android.
+  - **In Dart, every backend call must go through `BackendService.client` (package:http) or `S3Service._dio`,** which already carry the header. A bare `http.get` gets a 401. Never add the header to `S3Service._s3Dio`, which talks directly to S3.
 - So the Flutter side always talks HTTP. `awsmgr_ui/lib/services/backend_service.dart` decides whether to spawn a process (desktop) or `dlopen` the library over FFI (mobile). Any new backend initialization step must be added to both `backend/main.go` and `backend_ffi/main.go`.
 
 ### Backend layering (`backend/`)

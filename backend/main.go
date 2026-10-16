@@ -5,32 +5,24 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/DragonEmperor9480/AethrOps/constants"
 	"github.com/DragonEmperor9480/AethrOps/db_service"
+	"github.com/DragonEmperor9480/AethrOps/middleware"
 	"github.com/DragonEmperor9480/AethrOps/routes"
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/gorilla/mux"
 )
 
-// CORS middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 func main() {
+	// The Flutter app passes a per-launch token; refuse to serve without one.
+	token := os.Getenv(constants.AuthTokenEnv)
+	if token == "" {
+		log.Fatalf("%s is not set. The backend must be started by the AethrOps app.", constants.AuthTokenEnv)
+	}
+	os.Unsetenv(constants.AuthTokenEnv)
+	middleware.SetAuthToken(token)
+
 	// Fail-safe: Detect if the parent Flutter process terminates abruptly (stdin closed)
 	go func() {
 		buf := make([]byte, 1)
@@ -64,11 +56,11 @@ func main() {
 	// Register all API routes
 	routes.RegisterRoutes(r)
 
-	log.Println("Server running on http://127.0.0.1:9480")
+	log.Println("Server running on http://" + constants.BackendAddress)
 
 	server := &http.Server{
-		Addr:           "127.0.0.1:9480",
-		Handler:        corsMiddleware(r),
+		Addr:    constants.BackendAddress,
+		Handler: middleware.Secure(r),
 	}
 
 	if err := server.ListenAndServe(); err != nil {

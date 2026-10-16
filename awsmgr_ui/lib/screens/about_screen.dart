@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -9,7 +8,6 @@ import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import 'contributors_screen.dart';
 import 'features_screen.dart';
-
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -31,7 +29,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
   Future<void> _loadVersionInfo() async {
     try {
-      final response = await http.get(
+      final response = await BackendService.client.get(
         Uri.parse('${BackendService.baseUrl}/api/version'),
       );
 
@@ -71,17 +69,15 @@ class _AboutScreenState extends State<AboutScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
     try {
       // Query the local Go backend update endpoint
-      final response = await http.get(
-        Uri.parse('${BackendService.baseUrl}/api/version/check'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await BackendService.client
+          .get(Uri.parse('${BackendService.baseUrl}/api/version/check'))
+          .timeout(const Duration(seconds: 10));
 
       // Dismiss loading dialog
       if (mounted) {
@@ -115,7 +111,11 @@ class _AboutScreenState extends State<AboutScreen> {
       }
       debugPrint('Update check failed: $e');
       if (mounted) {
-        ToastUtils.show(context, 'Unable to check for updates right now.', isError: true);
+        ToastUtils.show(
+          context,
+          'Unable to check for updates right now.',
+          isError: true,
+        );
       }
     }
   }
@@ -156,7 +156,9 @@ class _AboutScreenState extends State<AboutScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryPurple,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () {
               Navigator.pop(context);
@@ -195,7 +197,9 @@ class _AboutScreenState extends State<AboutScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryBlue,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.pop(context),
             child: const Text('Awesome'),
@@ -215,10 +219,7 @@ class _AboutScreenState extends State<AboutScreen> {
     if (isLandscape) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('About AethrOps'),
-          centerTitle: true,
-        ),
+        appBar: AppBar(title: const Text('About AethrOps'), centerTitle: true),
         body: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           child: Center(
@@ -545,7 +546,11 @@ class _AboutScreenState extends State<AboutScreen> {
         const SizedBox(height: 20),
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppTheme.primaryPurple, AppTheme.primaryBlue, AppTheme.accentCyan],
+            colors: [
+              AppTheme.primaryPurple,
+              AppTheme.primaryBlue,
+              AppTheme.accentCyan,
+            ],
           ).createShader(bounds),
           child: const Text(
             'AethrOps',
@@ -975,7 +980,10 @@ class _AboutScreenState extends State<AboutScreen> {
                 onTap: () => _launchURL('https://github.com/DragonEmperor9480'),
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   child: Text(
                     'Amrutesh',
                     style: TextStyle(
@@ -983,7 +991,9 @@ class _AboutScreenState extends State<AboutScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryPurple,
                       decoration: TextDecoration.underline,
-                      decorationColor: AppTheme.primaryPurple.withValues(alpha: 0.5),
+                      decorationColor: AppTheme.primaryPurple.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ),
                 ),

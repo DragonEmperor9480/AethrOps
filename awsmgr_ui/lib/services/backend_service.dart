@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ffi';
+import 'dart:math';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +17,9 @@ typedef StopBackendDart = int Function();
 typedef SetDataDirectoryNative = Int32 Function(Pointer<Utf8>);
 typedef SetDataDirectoryDart = int Function(Pointer<Utf8>);
 
+typedef SetAuthTokenNative = Int32 Function(Pointer<Utf8>);
+typedef SetAuthTokenDart = int Function(Pointer<Utf8>);
+
 typedef SetAWSCredentialsNative =
     Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>);
 typedef SetAWSCredentialsDart =
@@ -25,6 +29,23 @@ class BackendService {
   static Process? _process;
   static DynamicLibrary? _lib;
   static const String baseUrl = 'http://127.0.0.1:9480';
+
+  // Per-launch secret shared with the backend. The local API is reachable by
+  // browsers and other apps on the device, so every request must carry it.
+  static final String _authToken = _generateAuthToken();
+
+  static Map<String, String> get authHeaders => {
+    'Authorization': 'Bearer $_authToken',
+  };
+
+  /// HTTP client for backend calls; adds the auth header to every request.
+  static final http.Client client = _BackendAuthClient();
+
+  static String _generateAuthToken() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return base64UrlEncode(bytes).replaceAll('=', '');
+  }
 
   static Future<void> start() async {
     try {
@@ -73,6 +94,18 @@ class BackendService {
       setDataDir(dirPtr);
       calloc.free(dirPtr);
 
+      // Hand the auth token to the backend before it starts serving
+      final setAuthToken = _lib!
+          .lookupFunction<SetAuthTokenNative, SetAuthTokenDart>('SetAuthToken');
+
+      final tokenPtr = _authToken.toNativeUtf8();
+      final tokenResult = setAuthToken(tokenPtr);
+      calloc.free(tokenPtr);
+
+      if (tokenResult != 0) {
+        throw Exception('Failed to set backend auth token');
+      }
+
       // Start backend
       final startBackend = _lib!
           .lookupFunction<StartBackendNative, StartBackendDart>('StartBackend');
@@ -97,6 +130,7 @@ class BackendService {
       backend,
       [],
       workingDirectory: _getBackendDir(),
+      environment: {'AETHROPS_AUTH_TOKEN': _authToken},
     );
 
     // Listen to output
@@ -131,22 +165,35 @@ class BackendService {
     return exePath.substring(0, exePath.lastIndexOf(Platform.pathSeparator));
   }
 
+  /// True only when our own backend (one that accepts our token) is up.
   static Future<bool> isRunning() async {
+    return await _healthStatus() == 200;
+  }
+
+  /// Status code of the health check, or null if nothing is listening.
+  static Future<int?> _healthStatus() async {
     try {
-      final response = await http
+      final response = await client
           .get(Uri.parse('$baseUrl/health'))
           .timeout(const Duration(seconds: 2));
-      return response.statusCode == 200;
+      return response.statusCode;
     } catch (e) {
-      return false;
+      return null;
     }
   }
 
   static Future<void> _waitForBackend() async {
     for (int i = 0; i < 30; i++) {
       await Future.delayed(const Duration(milliseconds: 500));
-      if (await isRunning()) {
+      final status = await _healthStatus();
+      if (status == 200) {
         return;
+      }
+      // Something is listening but rejects our token: another instance owns the port.
+      if (status == 401) {
+        throw Exception(
+          'Port 9480 is in use by another AethrOps instance. Close it and try again.',
+        );
       }
     }
     throw Exception('Backend failed to start within 15 seconds');
@@ -184,7 +231,7 @@ class BackendService {
 
     // Use HTTP API for desktop
     try {
-      final response = await http.post(
+      final response = await client.post(
         Uri.parse('$baseUrl/api/aws/config'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
@@ -213,7 +260,7 @@ class BackendService {
 
       // Desktop: Call graceful shutdown endpoint and wait for process to exit
       if (_process != null) {
-        await http
+        await client
             .post(Uri.parse('$baseUrl/shutdown'))
             .timeout(const Duration(seconds: 1));
 
@@ -231,5 +278,21 @@ class BackendService {
       _process?.kill(ProcessSignal.sigkill);
       _process = null;
     }
+  }
+}
+
+/// Adds the backend auth header to requests aimed at the local backend only,
+/// so the token is never sent anywhere else.
+class _BackendAuthClient extends http.BaseClient {
+  final http.Client _inner = http.Client();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    final backendUri = Uri.parse(BackendService.baseUrl);
+    if (request.url.host == backendUri.host &&
+        request.url.port == backendUri.port) {
+      request.headers.addAll(BackendService.authHeaders);
+    }
+    return _inner.send(request);
   }
 }

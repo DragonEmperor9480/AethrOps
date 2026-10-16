@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'backend_service.dart';
 
 class AWSCredentialsService {
@@ -24,7 +23,7 @@ class AWSCredentialsService {
 
     // Also save to backend (creates credential files)
     try {
-      final response = await http.post(
+      final response = await BackendService.client.post(
         Uri.parse('${BackendService.baseUrl}/api/aws/config'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
@@ -93,7 +92,7 @@ class AWSCredentialsService {
 
     // Also delete from filesystem via backend API
     try {
-      final response = await http.delete(
+      final response = await BackendService.client.delete(
         Uri.parse('${BackendService.baseUrl}/api/aws/config'),
       );
 

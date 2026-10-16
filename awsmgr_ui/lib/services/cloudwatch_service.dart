@@ -7,7 +7,7 @@ import 'backend_service.dart';
 class LogEntry {
   final String message;
   final DateTime timestamp;
-  
+
   // Cache for pre-parsed structures to optimize UI list scroll performance
   final Map<String, dynamic>? parsedJson;
   final String? jsonPrefix;
@@ -22,13 +22,15 @@ class LogEntry {
   factory LogEntry.fromJson(Map<String, dynamic> json) {
     final rawMessage = json['message'] ?? '';
     final parsed = _tryParseJson(rawMessage);
-    
+
     return LogEntry(
       message: rawMessage,
       timestamp: json['timestamp'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['timestamp'])
           : null,
-      parsedJson: parsed != null ? parsed['json'] as Map<String, dynamic>? : null,
+      parsedJson: parsed != null
+          ? parsed['json'] as Map<String, dynamic>?
+          : null,
       jsonPrefix: parsed != null ? parsed['prefix'] as String? : null,
     );
   }
@@ -39,7 +41,9 @@ class LogEntry {
 
     int startIndex = -1;
     if (jsonStartIndex != -1 && arrayStartIndex != -1) {
-      startIndex = jsonStartIndex < arrayStartIndex ? jsonStartIndex : arrayStartIndex;
+      startIndex = jsonStartIndex < arrayStartIndex
+          ? jsonStartIndex
+          : arrayStartIndex;
     } else if (jsonStartIndex != -1) {
       startIndex = jsonStartIndex;
     } else if (arrayStartIndex != -1) {
@@ -114,7 +118,7 @@ class CloudWatchService {
 
     try {
       final request = http.Request('GET', Uri.parse(url));
-      final response = await request.send();
+      final response = await BackendService.client.send(request);
 
       if (response.statusCode != 200) {
         throw Exception('Failed to connect to log stream');

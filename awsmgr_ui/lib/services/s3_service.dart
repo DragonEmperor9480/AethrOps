@@ -8,6 +8,7 @@ class S3Service {
   static final Dio _dio = Dio(
     BaseOptions(
       baseUrl: '${BackendService.baseUrl}/api',
+      headers: BackendService.authHeaders,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(minutes: 5),
       sendTimeout: const Duration(minutes: 10),
@@ -67,11 +68,15 @@ class S3Service {
       // 1. Get presigned GET URL
       final presignedUrl = await getPresignedDownloadUrl(bucketName, objectKey);
 
-      debugPrint('Downloading directly from S3 to temporary file: $presignedUrl');
+      debugPrint(
+        'Downloading directly from S3 to temporary file: $presignedUrl',
+      );
 
       // 2. Create a temporary file
       final tempDir = Directory.systemTemp;
-      final tempFile = File('${tempDir.path}/s3_download_${DateTime.now().millisecondsSinceEpoch}.tmp');
+      final tempFile = File(
+        '${tempDir.path}/s3_download_${DateTime.now().millisecondsSinceEpoch}.tmp',
+      );
 
       int lastUpdate = 0;
       double lastProgress = 0.0;
@@ -133,9 +138,7 @@ class S3Service {
       final response = await _dio.post(
         '/s3/buckets/$bucketName/upload',
         data: {'key': objectKey},
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
       String? presignedUrl;
@@ -159,11 +162,7 @@ class S3Service {
       await _s3Dio.put(
         presignedUrl,
         data: file.openRead(),
-        options: Options(
-          headers: {
-            Headers.contentLengthHeader: fileSize,
-          },
-        ),
+        options: Options(headers: {Headers.contentLengthHeader: fileSize}),
         onSendProgress: (sent, total) {
           final actualTotal = total > 0 ? total : fileSize;
           final progress = sent / actualTotal;

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import '../theme/app_theme.dart';
 import '../services/backend_service.dart';
 
@@ -44,7 +43,7 @@ class ExitHandler {
     if (shouldExit == true) {
       // Send shutdown request to backend
       try {
-        await http
+        await BackendService.client
             .post(Uri.parse('${BackendService.baseUrl}/api/shutdown'))
             .timeout(const Duration(milliseconds: 500));
       } catch (_) {

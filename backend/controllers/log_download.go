@@ -66,7 +66,6 @@ func DownloadLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Stream file to client
 	if _, err := io.Copy(w, file); err != nil {

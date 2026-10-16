@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DragonEmperor9480/AethrOps/constants"
 	"github.com/DragonEmperor9480/AethrOps/db_service"
+	"github.com/DragonEmperor9480/AethrOps/middleware"
 	"github.com/DragonEmperor9480/AethrOps/routes"
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
@@ -17,24 +19,6 @@ import (
 )
 
 var server *http.Server
-
-// CORS middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
 
 //export SetDataDirectory
 func SetDataDirectory(dir *C.char) int {
@@ -99,8 +83,25 @@ func isValidAWSRegion(region string) bool {
 	return strings.Contains(region, "-")
 }
 
+//export SetAuthToken
+func SetAuthToken(token *C.char) int {
+	tokenStr := C.GoString(token)
+	if tokenStr == "" {
+		log.Printf("Error: Empty auth token provided")
+		return 1
+	}
+	middleware.SetAuthToken(tokenStr)
+	return 0
+}
+
 //export StartBackend
 func StartBackend() int {
+	// The server outlives the Flutter engine when Android re-launches the app in the
+	// same process; SetAuthToken has already rotated the token, so just reuse it.
+	if server != nil {
+		return 0
+	}
+
 	if err := db_service.InitDB(); err != nil {
 		log.Printf("Warning: Database initialization failed: %v", err)
 	}
@@ -124,14 +125,14 @@ func StartBackend() int {
 	}).Methods("GET")
 
 	server = &http.Server{
-		Addr:         "127.0.0.1:9480",
-		Handler:      corsMiddleware(r),
+		Addr:         constants.BackendAddress,
+		Handler:      middleware.Secure(r),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 0, // Disable write timeout for SSE streaming
 	}
 
 	go func() {
-		log.Println("Backend starting on http://127.0.0.1:9480")
+		log.Println("Backend starting on http://" + constants.BackendAddress)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("Server error: %v", err)
 		}
@@ -145,6 +146,7 @@ func StartBackend() int {
 func StopBackend() int {
 	if server != nil {
 		server.Close()
+		server = nil
 	}
 	return 0
 }

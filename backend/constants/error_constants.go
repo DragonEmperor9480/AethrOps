@@ -2,6 +2,8 @@ package constants
 
 // Request
 const InvalidRequestBody = "Invalid request body"
+const Unauthorized = "Unauthorized"
+const InvalidHost = "Invalid host"
 
 // IAM
 const FailedToCreateIamUSer = "Failed to create IAM User"

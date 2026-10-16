@@ -9,7 +9,7 @@ class ApiService {
 
   // IAM Caller Identity
   static Future<Map<String, dynamic>> getCallerIdentity() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/caller-identity'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -20,7 +20,7 @@ class ApiService {
 
   // IAM Users
   static Future<List<dynamic>> listIAMUsers() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/users'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -33,7 +33,7 @@ class ApiService {
   static Future<Map<String, dynamic>> createMultipleIAMUsers(
     List<Map<String, dynamic>> users,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/batch'),
           headers: {'Content-Type': 'application/json'},
@@ -61,7 +61,7 @@ class ApiService {
       body['require_reset'] = requireReset;
     }
 
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users'),
           headers: {'Content-Type': 'application/json'},
@@ -78,7 +78,7 @@ class ApiService {
   static Future<Map<String, dynamic>> checkUserDependencies(
     String username,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/users/$username/dependencies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -88,7 +88,7 @@ class ApiService {
   }
 
   static Future<List<dynamic>> getUserGroups(String username) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/users/$username/groups'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -102,7 +102,7 @@ class ApiService {
     String username,
     String policyArn,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/$username/policies'),
           headers: {'Content-Type': 'application/json'},
@@ -118,7 +118,7 @@ class ApiService {
   static Future<Map<String, dynamic>> attachMultipleUserPolicies(
     List<Map<String, String>> attachments,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/policies/batch'),
           headers: {'Content-Type': 'application/json'},
@@ -139,7 +139,7 @@ class ApiService {
     List<String> desiredArns,
     List<String> currentArns,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/$username/policies/sync'),
           headers: {'Content-Type': 'application/json'},
@@ -163,7 +163,7 @@ class ApiService {
     required String password,
     required String email,
   }) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/send-credentials'),
           headers: {'Content-Type': 'application/json'},
@@ -184,7 +184,7 @@ class ApiService {
 
   // Email Configuration
   static Future<Map<String, dynamic>> getEmailConfig() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/email/config'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -200,7 +200,7 @@ class ApiService {
     required String senderPass,
     required String senderName,
   }) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/email/config'),
           headers: {'Content-Type': 'application/json'},
@@ -226,7 +226,7 @@ class ApiService {
     required String senderEmail,
     required String senderPass,
   }) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/email/test'),
           headers: {'Content-Type': 'application/json'},
@@ -246,7 +246,7 @@ class ApiService {
   }
 
   static Future<void> deleteEmailConfig() async {
-    final response = await http
+    final response = await BackendService.client
         .delete(Uri.parse('$baseUrl/email/config'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
@@ -257,7 +257,7 @@ class ApiService {
 
   // MFA Device Configuration
   static Future<Map<String, dynamic>> getMFADevice() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/settings/mfa'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -270,7 +270,7 @@ class ApiService {
     required String deviceName,
     required String deviceArn,
   }) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/settings/mfa'),
           headers: {'Content-Type': 'application/json'},
@@ -288,7 +288,7 @@ class ApiService {
   }
 
   static Future<void> deleteMFADevice() async {
-    final response = await http
+    final response = await BackendService.client
         .delete(Uri.parse('$baseUrl/settings/mfa'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
@@ -304,7 +304,9 @@ class ApiService {
     final url = force
         ? '$baseUrl/iam/users/$username?force=true'
         : '$baseUrl/iam/users/$username';
-    final response = await http.delete(Uri.parse(url)).timeout(_timeout);
+    final response = await BackendService.client
+        .delete(Uri.parse(url))
+        .timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete user');
     }
@@ -313,7 +315,7 @@ class ApiService {
   static Future<List<dynamic>> checkMultipleUserDependencies(
     List<String> usernames,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/batch/dependencies'),
           headers: {'Content-Type': 'application/json'},
@@ -331,7 +333,7 @@ class ApiService {
   static Future<Map<String, dynamic>> deleteMultipleIAMUsers(
     List<Map<String, dynamic>> users,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/users/batch/delete'),
           headers: {'Content-Type': 'application/json'},
@@ -352,7 +354,7 @@ class ApiService {
     final uri = Uri.parse(
       '$baseUrl/iam/policies',
     ).replace(queryParameters: {'scope': scope});
-    final response = await http.get(uri).timeout(_timeout);
+    final response = await BackendService.client.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['policies'] ?? [];
@@ -362,7 +364,7 @@ class ApiService {
 
   // IAM Groups
   static Future<List<dynamic>> listIAMGroups() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/groups'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -373,7 +375,7 @@ class ApiService {
   }
 
   static Future<void> createIAMGroup(String groupname) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/groups'),
           headers: {'Content-Type': 'application/json'},
@@ -388,7 +390,7 @@ class ApiService {
   static Future<Map<String, dynamic>> checkGroupDependencies(
     String groupname,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/groups/$groupname/dependencies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -404,14 +406,14 @@ class ApiService {
     final uri = Uri.parse(
       '$baseUrl/iam/groups/$groupname${force ? '?force=true' : ''}',
     );
-    final response = await http.delete(uri).timeout(_timeout);
+    final response = await BackendService.client.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to delete group');
     }
   }
 
   static Future<void> addUserToGroup(String groupname, String username) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/groups/$groupname/users'),
           headers: {'Content-Type': 'application/json'},
@@ -424,7 +426,7 @@ class ApiService {
   }
 
   static Future<List<dynamic>> listGroupPolicies(String groupname) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/iam/groups/$groupname/policies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -438,7 +440,7 @@ class ApiService {
     String groupname,
     String policyArn,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/iam/groups/$groupname/policies'),
           headers: {'Content-Type': 'application/json'},
@@ -455,7 +457,7 @@ class ApiService {
     String policyArn,
   ) async {
     final encodedArn = Uri.encodeComponent(policyArn);
-    final response = await http
+    final response = await BackendService.client
         .delete(
           Uri.parse('$baseUrl/iam/groups/$groupname/policies/$encodedArn'),
         )
@@ -467,7 +469,7 @@ class ApiService {
 
   // S3 Buckets
   static Future<String> listS3Buckets() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/s3/buckets'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -478,7 +480,7 @@ class ApiService {
   }
 
   static Future<void> createS3Bucket(String bucketname) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/s3/buckets'),
           headers: {'Content-Type': 'application/json'},
@@ -491,7 +493,7 @@ class ApiService {
   }
 
   static Future<void> deleteS3Bucket(String bucketname) async {
-    final response = await http
+    final response = await BackendService.client
         .delete(Uri.parse('$baseUrl/s3/buckets/$bucketname'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
@@ -500,7 +502,7 @@ class ApiService {
   }
 
   static Future<String> listS3Objects(String bucketname) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/s3/buckets/$bucketname/objects'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -513,7 +515,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getBucketVersioning(
     String bucketname,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/s3/buckets/$bucketname/versioning'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -526,7 +528,7 @@ class ApiService {
     String bucketname,
     String status,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .put(
           Uri.parse('$baseUrl/s3/buckets/$bucketname/versioning'),
           headers: {'Content-Type': 'application/json'},
@@ -543,7 +545,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getBucketMFADelete(
     String bucketname,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/s3/buckets/$bucketname/mfa-delete'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -557,7 +559,7 @@ class ApiService {
     String status,
     String mfaToken,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .put(
           Uri.parse('$baseUrl/s3/buckets/$bucketname/mfa-delete'),
           headers: {'Content-Type': 'application/json'},
@@ -581,7 +583,7 @@ class ApiService {
       Uri.parse('$baseUrl/s3/buckets/$bucketname/objects/$objectkey'),
     );
 
-    final response = await request.send();
+    final response = await BackendService.client.send(request);
     if (response.statusCode != 200) {
       throw Exception('Failed to download object');
     }
@@ -606,7 +608,7 @@ class ApiService {
     final uri = Uri.parse(
       '$baseUrl/s3/buckets/$bucketname/items',
     ).replace(queryParameters: {'prefix': prefix});
-    final response = await http.get(uri).timeout(_timeout);
+    final response = await BackendService.client.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final items = data['items'];
@@ -630,7 +632,7 @@ class ApiService {
     request.fields['key'] = key;
     request.files.add(await http.MultipartFile.fromPath('file', file.path));
 
-    final response = await request.send();
+    final response = await BackendService.client.send(request);
     if (response.statusCode != 200) {
       throw Exception('Failed to upload file');
     }
@@ -640,7 +642,7 @@ class ApiService {
     String bucketname,
     String objectkey,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .delete(Uri.parse('$baseUrl/s3/buckets/$bucketname/objects/$objectkey'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
@@ -652,7 +654,7 @@ class ApiService {
     String bucketname,
     String folderPath,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/s3/buckets/$bucketname/folder'),
           headers: {'Content-Type': 'application/json'},
@@ -672,7 +674,7 @@ class ApiService {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/instances');
 
-    final response = await http.get(uri).timeout(_timeout);
+    final response = await BackendService.client.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
@@ -681,7 +683,7 @@ class ApiService {
   }
 
   static Future<List<dynamic>> listEC2InstancesAllRegions() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/ec2/instances/all-regions'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -692,7 +694,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getEC2Dashboard() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/ec2/dashboard'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -714,7 +716,7 @@ class ApiService {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/instances/$instanceId');
 
-    final response = await http.get(uri).timeout(_timeout);
+    final response = await BackendService.client.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -731,7 +733,7 @@ class ApiService {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/start');
 
-    final response = await http.post(uri).timeout(_timeout);
+    final response = await BackendService.client.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to start instance');
@@ -748,7 +750,7 @@ class ApiService {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/stop');
 
-    final response = await http.post(uri).timeout(_timeout);
+    final response = await BackendService.client.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to stop instance');
@@ -765,7 +767,7 @@ class ApiService {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/reboot');
 
-    final response = await http.post(uri).timeout(_timeout);
+    final response = await BackendService.client.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to reboot instance');
@@ -782,7 +784,7 @@ class ApiService {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/instances/$instanceId/terminate');
 
-    final response = await http.delete(uri).timeout(_timeout);
+    final response = await BackendService.client.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
       final error = json.decode(response.body);
       throw Exception(error['error'] ?? 'Failed to terminate instance');
@@ -801,7 +803,7 @@ class ApiService {
     final uri = Uri.parse(
       '$baseUrl/ec2/instances/by-state',
     ).replace(queryParameters: queryParams);
-    final response = await http.get(uri).timeout(_timeout);
+    final response = await BackendService.client.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
@@ -811,7 +813,7 @@ class ApiService {
 
   // AWS Configuration
   static Future<Map<String, dynamic>> getAWSConfig() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/aws/config'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
@@ -825,7 +827,7 @@ class ApiService {
     String secretAccessKey,
     String region,
   ) async {
-    final response = await http
+    final response = await BackendService.client
         .post(
           Uri.parse('$baseUrl/aws/config'),
           headers: {'Content-Type': 'application/json'},
@@ -845,7 +847,7 @@ class ApiService {
 
   // List all Lambda functions
   static Future<List<String>> listLambdaFunctions() async {
-    final response = await http
+    final response = await BackendService.client
         .get(Uri.parse('$baseUrl/cloudwatch/lambda/functions'))
         .timeout(_timeout);
 
@@ -860,7 +862,9 @@ class ApiService {
   static Future<String> downloadLogs(String sessionId) async {
     final url = '$baseUrl/cloudwatch/logs/download/$sessionId';
 
-    final response = await http.get(Uri.parse(url)).timeout(_timeout);
+    final response = await BackendService.client
+        .get(Uri.parse(url))
+        .timeout(_timeout);
 
     if (response.statusCode == 200) {
       return response.body; // Return the log file content

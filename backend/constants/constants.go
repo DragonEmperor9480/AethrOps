@@ -1,5 +1,12 @@
 package constants
 
+// Local API listen address. Only loopback; the Flutter app talks to it over HTTP.
+const BackendPort = "9480"
+const BackendAddress = "127.0.0.1:" + BackendPort
+
+// Environment variable the desktop app uses to pass the per-launch API token.
+const AuthTokenEnv = "AETHROPS_AUTH_TOKEN"
+
 const IamUsersFetchedSuccessfully = "IAM User(s) fetched sucessfully"
 const BatchUserCreationCompleted = "Batch user creation completed"
 

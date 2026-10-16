@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/ec2_launch_request.dart';
 import 'backend_service.dart';
 
@@ -9,7 +8,7 @@ class Ec2Service {
   static Future<Map<String, dynamic>> launchInstance(
     Ec2LaunchRequest request,
   ) async {
-    final response = await http.post(
+    final response = await BackendService.client.post(
       Uri.parse('$baseUrl/ec2/instances'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(request.toJson()),
@@ -30,7 +29,7 @@ class Ec2Service {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/security-groups');
 
-    final response = await http.get(uri);
+    final response = await BackendService.client.get(uri);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['security_groups'] ?? [];
@@ -45,7 +44,7 @@ class Ec2Service {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/key-pairs');
 
-    final response = await http.get(uri);
+    final response = await BackendService.client.get(uri);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['key_pairs'] ?? [];
@@ -60,7 +59,7 @@ class Ec2Service {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/subnets');
 
-    final response = await http.get(uri);
+    final response = await BackendService.client.get(uri);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['subnets'] ?? [];
@@ -75,7 +74,7 @@ class Ec2Service {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/vpcs');
 
-    final response = await http.get(uri);
+    final response = await BackendService.client.get(uri);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['vpcs'] ?? [];
@@ -90,7 +89,7 @@ class Ec2Service {
           ).replace(queryParameters: {'region': region})
         : Uri.parse('$baseUrl/ec2/amis');
 
-    final response = await http.get(uri);
+    final response = await BackendService.client.get(uri);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['amis'] ?? [];
@@ -99,7 +98,9 @@ class Ec2Service {
   }
 
   static Future<List<String>> listRegions() async {
-    final response = await http.get(Uri.parse('$baseUrl/ec2/regions'));
+    final response = await BackendService.client.get(
+      Uri.parse('$baseUrl/ec2/regions'),
+    );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return List<String>.from(data['regions'] ?? []);
