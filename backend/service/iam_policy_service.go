@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/DragonEmperor9480/AethrOps/models"
@@ -33,6 +34,12 @@ func AttachMultiplePolicies(requests []models.AttachPolicyRequest) []models.Atta
 		wg.Add(1)
 		go func(index int, request models.AttachPolicyRequest) {
 			defer wg.Done()
+			// net/http cannot recover panics in goroutines; one would kill the backend
+			defer func() {
+				if r := recover(); r != nil {
+					results[index] = models.AttachPolicyResult{Username: request.Username, PolicyArn: request.PolicyArn, Error: fmt.Sprintf("internal error: %v", r)}
+				}
+			}()
 
 			result := models.AttachPolicyResult{
 				Username:  request.Username,
@@ -101,6 +108,14 @@ func SyncUserPolicies(username string, desiredArns, currentArns []string) models
 		wg.Add(1)
 		go func(policyArn string) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					mu.Lock()
+					defer mu.Unlock()
+					result.AttachErrors = append(result.AttachErrors, fmt.Sprintf("%s: internal error: %v", policyArn, r))
+					result.Success = false
+				}
+			}()
 			err := AttachUserPolicy(username, policyArn)
 			mu.Lock()
 			defer mu.Unlock()
@@ -119,6 +134,14 @@ func SyncUserPolicies(username string, desiredArns, currentArns []string) models
 		wg.Add(1)
 		go func(policyArn string) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					mu.Lock()
+					defer mu.Unlock()
+					result.DetachErrors = append(result.DetachErrors, fmt.Sprintf("%s: internal error: %v", policyArn, r))
+					result.Success = false
+				}
+			}()
 			err := DetachUserPolicy(username, policyArn)
 			mu.Lock()
 			defer mu.Unlock()

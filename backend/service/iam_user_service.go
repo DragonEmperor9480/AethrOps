@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/DragonEmperor9480/AethrOps/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 )
 
 // CreateMultipleIAMUsers creates multiple IAM users in parallel using goroutines
@@ -25,6 +28,12 @@ func CreateMultipleIAMUsers(requests []models.UserCreationRequest) []models.User
 		// Launch goroutine for each user creation
 		go func(index int, request models.UserCreationRequest) {
 			defer wg.Done()
+			// net/http cannot recover panics in goroutines; one would kill the backend
+			defer func() {
+				if r := recover(); r != nil {
+					results[index] = models.UserCreationResult{Username: request.Username, Error: fmt.Sprintf("internal error: %v", r)}
+				}
+			}()
 
 			result := models.UserCreationResult{
 				Username: request.Username,
@@ -217,6 +226,11 @@ func CheckMultipleUserDependencies(usernames []string) []models.UserDependencies
 
 		go func(index int, user string) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					results[index] = models.UserDependenciesResult{Username: user, Error: fmt.Sprintf("internal error: %v", r)}
+				}
+			}()
 
 			deps, err := CheckUserDependencies(user)
 
@@ -234,11 +248,15 @@ func CheckMultipleUserDependencies(usernames []string) []models.UserDependencies
 			} else {
 				// Get policy ARNs for managed policies
 				ctx := context.TODO()
-				policiesResult, _ := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
+				policiesResult, err := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
 					UserName: aws.String(user),
 				})
-				for _, p := range policiesResult.AttachedPolicies {
-					result.PolicyArns = append(result.PolicyArns, aws.ToString(p.PolicyArn))
+				if err != nil {
+					result.Error = "failed to list attached policies: " + err.Error()
+				} else {
+					for _, p := range policiesResult.AttachedPolicies {
+						result.PolicyArns = append(result.PolicyArns, aws.ToString(p.PolicyArn))
+					}
 				}
 			}
 
@@ -260,6 +278,11 @@ func DeleteMultipleIAMUsers(requests []models.UserDeletionRequest) []models.User
 
 		go func(index int, request models.UserDeletionRequest) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					results[index] = models.UserDeletionResult{Username: request.Username, Error: fmt.Sprintf("internal error: %v", r)}
+				}
+			}()
 
 			ctx := context.TODO()
 			result := models.UserDeletionResult{
@@ -280,9 +303,15 @@ func DeleteMultipleIAMUsers(requests []models.UserDeletionRequest) []models.User
 					}
 
 					// Get policy ARNs and detach
-					policiesResult, _ := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
+					policiesResult, err := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
 						UserName: aws.String(request.Username),
 					})
+					if err != nil {
+						// Deleting would fail with DeleteConflict anyway; report the real cause
+						result.Error = "failed to list attached policies: " + err.Error()
+						results[index] = result
+						return
+					}
 					for _, p := range policiesResult.AttachedPolicies {
 						_, _ = utils.IAMClient.DetachUserPolicy(ctx, &iam.DetachUserPolicyInput{
 							UserName:  aws.String(request.Username),
@@ -355,31 +384,43 @@ func CheckUserDependencies(username string) (*models.UserDependencies, error) {
 	}
 
 	// Get groups
-	groupsResult, _ := utils.IAMClient.ListGroupsForUser(ctx, &iam.ListGroupsForUserInput{
+	groupsResult, err := utils.IAMClient.ListGroupsForUser(ctx, &iam.ListGroupsForUserInput{
 		UserName: aws.String(username),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list groups: %w", err)
+	}
 	for _, g := range groupsResult.Groups {
 		deps.Groups = append(deps.Groups, aws.ToString(g.GroupName))
 	}
 
 	// Get attached managed policies
-	policiesResult, _ := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
+	policiesResult, err := utils.IAMClient.ListAttachedUserPolicies(ctx, &iam.ListAttachedUserPoliciesInput{
 		UserName: aws.String(username),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attached policies: %w", err)
+	}
 	for _, p := range policiesResult.AttachedPolicies {
 		deps.ManagedPolicies = append(deps.ManagedPolicies, aws.ToString(p.PolicyName))
 	}
 
 	// Get inline policies
-	inlineResult, _ := utils.IAMClient.ListUserPolicies(ctx, &iam.ListUserPoliciesInput{
+	inlineResult, err := utils.IAMClient.ListUserPolicies(ctx, &iam.ListUserPoliciesInput{
 		UserName: aws.String(username),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list inline policies: %w", err)
+	}
 	deps.InlinePolicies = append(deps.InlinePolicies, inlineResult.PolicyNames...)
 
 	// Get access keys
-	keysResult, _ := utils.IAMClient.ListAccessKeys(ctx, &iam.ListAccessKeysInput{
+	keysResult, err := utils.IAMClient.ListAccessKeys(ctx, &iam.ListAccessKeysInput{
 		UserName: aws.String(username),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list access keys: %w", err)
+	}
 	for _, k := range keysResult.AccessKeyMetadata {
 		deps.AccessKeys = append(deps.AccessKeys, aws.ToString(k.AccessKeyId))
 	}
@@ -388,6 +429,13 @@ func CheckUserDependencies(username string) (*models.UserDependencies, error) {
 	_, err = utils.IAMClient.GetLoginProfile(ctx, &iam.GetLoginProfileInput{
 		UserName: aws.String(username),
 	})
+	if err != nil {
+		// NoSuchEntity just means the user has no console password
+		var notFound *iamtypes.NoSuchEntityException
+		if !errors.As(err, &notFound) {
+			return nil, fmt.Errorf("failed to check login profile: %w", err)
+		}
+	}
 	deps.HasLoginProfile = (err == nil)
 
 	return deps, nil
