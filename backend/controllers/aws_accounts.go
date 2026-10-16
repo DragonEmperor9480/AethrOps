@@ -7,14 +7,21 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/DragonEmperor9480/AethrOps/db_service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
+
+// accountMu serializes changes to the active account so the database flag and
+// the installed AWS clients always move together.
+var accountMu sync.Mutex
 
 // GetAuthStatus checks the current AWS account status in the database
 func GetAuthStatus(w http.ResponseWriter, r *http.Request) {
@@ -150,15 +157,16 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If this is the first account, or it's requested to be active, auto-active
-	var count int64
-	db_service.DB.Model(&db_service.AWSAccount{}).Count(&count)
-	isActive := count == 0
+	accountMu.Lock()
+	defer accountMu.Unlock()
 
-	// If making this active, deactivate all others
-	if isActive {
-		db_service.DB.Model(&db_service.AWSAccount{}).Where("is_active = ?", true).Update("is_active", false)
+	// The first account becomes the active one
+	var count int64
+	if err := db_service.DB.Model(&db_service.AWSAccount{}).Count(&count).Error; err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to read accounts: "+err.Error())
+		return
 	}
+	isActive := count == 0
 
 	account := db_service.AWSAccount{
 		ProfileName:     req.ProfileName,
@@ -169,16 +177,22 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 		IsActive:        isActive,
 	}
 
-	if err := db_service.DB.Create(&account).Error; err != nil {
+	err = db_service.DB.Transaction(func(tx *gorm.DB) error {
+		if isActive {
+			if err := tx.Model(&db_service.AWSAccount{}).Where("is_active = ?", true).Update("is_active", false).Error; err != nil {
+				return err
+			}
+		}
+		return tx.Create(&account).Error
+	})
+	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to save account to database: "+err.Error())
 		return
 	}
 
-	// If it became the active account, initialize the active AWS clients
+	// The credentials were just validated with this config, so use it directly
 	if isActive {
-		if err := utils.InitAWSClients(); err != nil {
-			log.Printf("Warning: Failed to initialize AWS clients for new account: %v", err)
-		}
+		utils.UseAWSConfig(cfg)
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
@@ -202,6 +216,9 @@ func ActivateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	accountMu.Lock()
+	defer accountMu.Unlock()
+
 	// Find the account
 	var target db_service.AWSAccount
 	if err := db_service.DB.First(&target, req.ID).Error; err != nil {
@@ -209,21 +226,18 @@ func ActivateAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Deactivate all others
-	db_service.DB.Model(&db_service.AWSAccount{}).Where("is_active = ?", true).Update("is_active", false)
-
-	// Activate target
-	target.IsActive = true
-	if err := db_service.DB.Save(&target).Error; err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to activate account")
-		return
-	}
-
-	// Reinitialize AWS clients with the newly activated account
-	if err := utils.InitAWSClients(); err != nil {
+	// Build the clients first: if the account can't be used, nothing changes
+	cfg, err := utils.LoadAccountConfig(target)
+	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to initialize AWS clients for activated profile: "+err.Error())
 		return
 	}
+
+	if err := setActiveAccount(db_service.DB, target.ID); err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to activate account: "+err.Error())
+		return
+	}
+	utils.UseAWSConfig(cfg)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "Account profile activated successfully",
@@ -245,6 +259,9 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	accountMu.Lock()
+	defer accountMu.Unlock()
+
 	// Find account
 	var target db_service.AWSAccount
 	if err := db_service.DB.First(&target, uint(id)).Error; err != nil {
@@ -254,28 +271,64 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	wasActive := target.IsActive
 
+	// When deleting the active account, promote another one, but only if its
+	// clients can be built. Otherwise no account is left active and the user
+	// is asked to pick one.
+	var next *db_service.AWSAccount
+	var nextCfg aws.Config
+	if wasActive {
+		var candidate db_service.AWSAccount
+		if err := db_service.DB.Where("id <> ?", target.ID).First(&candidate).Error; err == nil {
+			if cfg, err := utils.LoadAccountConfig(candidate); err == nil {
+				next, nextCfg = &candidate, cfg
+			} else {
+				log.Printf("Not activating account %q after delete: %v", candidate.ProfileName, err)
+			}
+		}
+	}
+
 	// Delete (Hard delete to avoid unique constraint violations on re-creation)
-	if err := db_service.DB.Unscoped().Delete(&target).Error; err != nil {
+	err = db_service.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Unscoped().Delete(&target).Error; err != nil {
+			return err
+		}
+		if next != nil {
+			return setActiveAccount(tx, next.ID)
+		}
+		return nil
+	})
+	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to delete account")
 		return
 	}
 
-	// If the deleted account was active, clear AWS client singletons
 	if wasActive {
-		// Try to activate another account if any exist
-		var nextAccount db_service.AWSAccount
-		if err := db_service.DB.First(&nextAccount).Error; err == nil {
-			nextAccount.IsActive = true
-			db_service.DB.Save(&nextAccount)
-			_ = utils.InitAWSClients()
+		if next != nil {
+			utils.UseAWSConfig(nextCfg)
 		} else {
-			// No other accounts, reset the clients
 			utils.ResetAWSClients()
 		}
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"message": "Account deleted successfully",
+	})
+}
+
+// setActiveAccount makes id the only active account, atomically.
+func setActiveAccount(db *gorm.DB, id uint) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&db_service.AWSAccount{}).Where("is_active = ? AND id <> ?", true, id).Update("is_active", false).Error; err != nil {
+			return err
+		}
+		res := tx.Model(&db_service.AWSAccount{}).Where("id = ?", id).Update("is_active", true)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
 	})
 }
 

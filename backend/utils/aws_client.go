@@ -49,38 +49,43 @@ func InitAWSClients() error {
 		return initAWSClientsFromFile()
 	}
 
-	// 3. Decrypt the secret access key
-	decryptedSecret, err := db_service.Decrypt(activeAccount.SecretAccessKey)
+	cfg, err := LoadAccountConfig(activeAccount)
 	if err != nil {
-		return fmt.Errorf("failed to decrypt AWS secret key: %w", err)
+		return err
 	}
 
-	// Dynamic min helper
-	minVal := func(a, b int) int {
-		if a < b {
-			return a
-		}
-		return b
+	setAWSClients(cfg)
+	return nil
+}
+
+// LoadAccountConfig builds an SDK config for a stored account without installing
+// it, so callers can make sure the account is usable before switching to it.
+func LoadAccountConfig(account db_service.AWSAccount) (aws.Config, error) {
+	decryptedSecret, err := db_service.Decrypt(account.SecretAccessKey)
+	if err != nil {
+		return aws.Config{}, fmt.Errorf("failed to decrypt AWS secret key: %w", err)
 	}
+
 	log.Printf("Initializing AWS clients for profile: %s (Region: %s, AccessKey: %s...)",
-		activeAccount.ProfileName, activeAccount.Region, activeAccount.AccessKeyID[:minVal(5, len(activeAccount.AccessKeyID))])
+		account.ProfileName, account.Region, account.AccessKeyID[:min(5, len(account.AccessKeyID))])
 
-	// 4. Create in-memory config using the decrypted static credentials
-	ctx := context.TODO()
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithRegion(activeAccount.Region),
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(account.Region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			activeAccount.AccessKeyID,
+			account.AccessKeyID,
 			decryptedSecret,
 			"",
 		)),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to load AWS default config: %w", err)
+		return aws.Config{}, fmt.Errorf("failed to load AWS default config: %w", err)
 	}
+	return cfg, nil
+}
 
+// UseAWSConfig installs clients built from cfg, replacing the current ones.
+func UseAWSConfig(cfg aws.Config) {
 	setAWSClients(cfg)
-	return nil
 }
 
 // setAWSClients installs clients for a new credential set. Region-specific EC2
