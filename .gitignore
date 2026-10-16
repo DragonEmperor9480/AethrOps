@@ -42,3 +42,6 @@ release/*
 
 # Something you should not know
 secerets*
+# Local-only docs
+REQUIREMENTS.md
+docs/
