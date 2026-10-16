@@ -54,7 +54,7 @@ class S3Service {
   }) async {
     try {
       final urlResponse = await _dio.get(
-        '/s3/buckets/$bucketName/objects/$objectKey',
+        '/s3/buckets/${Uri.encodeComponent(bucketName)}/objects/${Uri.encodeComponent(objectKey)}',
         queryParameters: download ? {'download': 'true'} : null,
       );
 
@@ -156,7 +156,7 @@ class S3Service {
 
       // 1. Get presigned PUT URL from backend
       final response = await _dio.post(
-        '/s3/buckets/$bucketName/upload',
+        '/s3/buckets/${Uri.encodeComponent(bucketName)}/upload',
         data: {'key': objectKey},
         options: Options(headers: {'Content-Type': 'application/json'}),
       );

@@ -7,6 +7,10 @@ import (
 
 // RegisterRoutes registers all API routes on the provided mux router
 func RegisterRoutes(r *mux.Router) {
+	// Don't "clean" paths: S3 keys may legitimately contain "//" or "/../", and
+	// cleaning would redirect them to a different path (and a different object).
+	r.SkipClean(true)
+
 	// Health check
 	r.HandleFunc("/health", api.HealthCheck).Methods("GET")
 

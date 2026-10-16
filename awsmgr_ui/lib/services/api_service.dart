@@ -7,6 +7,10 @@ class ApiService {
   static String get baseUrl => '${BackendService.baseUrl}/api';
   static const _timeout = Duration(seconds: 30);
 
+  /// Percent-encodes a value used as a single URL path segment (IAM names,
+  /// bucket names, S3 keys). S3 keys may contain `/`, `?`, `#`, `%` or spaces.
+  static String _seg(String value) => Uri.encodeComponent(value);
+
   /// Human-readable error from a failed backend response. Understands both
   /// the old `{"error": ...}` and the envelope `{"message": ...}` formats and
   /// falls back when the body is empty or not JSON.
@@ -100,7 +104,7 @@ class ApiService {
     String username,
   ) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/iam/users/$username/dependencies'))
+        .get(Uri.parse('$baseUrl/iam/users/${_seg(username)}/dependencies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -110,7 +114,7 @@ class ApiService {
 
   static Future<List<dynamic>> getUserGroups(String username) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/iam/users/$username/groups'))
+        .get(Uri.parse('$baseUrl/iam/users/${_seg(username)}/groups'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       return _envelopeData(response)['groups'] ?? [];
@@ -124,7 +128,7 @@ class ApiService {
   ) async {
     final response = await BackendService.client
         .post(
-          Uri.parse('$baseUrl/iam/users/$username/policies'),
+          Uri.parse('$baseUrl/iam/users/${_seg(username)}/policies'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'policy_arn': policyArn}),
         )
@@ -159,7 +163,7 @@ class ApiService {
   ) async {
     final response = await BackendService.client
         .post(
-          Uri.parse('$baseUrl/iam/users/$username/policies/sync'),
+          Uri.parse('$baseUrl/iam/users/${_seg(username)}/policies/sync'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'desired_arns': desiredArns,
@@ -315,8 +319,8 @@ class ApiService {
     bool force = false,
   }) async {
     final url = force
-        ? '$baseUrl/iam/users/$username?force=true'
-        : '$baseUrl/iam/users/$username';
+        ? '$baseUrl/iam/users/${_seg(username)}?force=true'
+        : '$baseUrl/iam/users/${_seg(username)}';
     final response = await BackendService.client
         .delete(Uri.parse(url))
         .timeout(_timeout);
@@ -402,7 +406,7 @@ class ApiService {
     String groupname,
   ) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/iam/groups/$groupname/dependencies'))
+        .get(Uri.parse('$baseUrl/iam/groups/${_seg(groupname)}/dependencies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       return _envelopeData(response);
@@ -417,7 +421,7 @@ class ApiService {
     bool force = false,
   }) async {
     final uri = Uri.parse(
-      '$baseUrl/iam/groups/$groupname${force ? '?force=true' : ''}',
+      '$baseUrl/iam/groups/${_seg(groupname)}${force ? '?force=true' : ''}',
     );
     final response = await BackendService.client.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
@@ -428,7 +432,7 @@ class ApiService {
   static Future<void> addUserToGroup(String groupname, String username) async {
     final response = await BackendService.client
         .post(
-          Uri.parse('$baseUrl/iam/groups/$groupname/users'),
+          Uri.parse('$baseUrl/iam/groups/${_seg(groupname)}/users'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'username': username}),
         )
@@ -440,7 +444,7 @@ class ApiService {
 
   static Future<List<dynamic>> listGroupPolicies(String groupname) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/iam/groups/$groupname/policies'))
+        .get(Uri.parse('$baseUrl/iam/groups/${_seg(groupname)}/policies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -455,7 +459,7 @@ class ApiService {
   ) async {
     final response = await BackendService.client
         .post(
-          Uri.parse('$baseUrl/iam/groups/$groupname/policies'),
+          Uri.parse('$baseUrl/iam/groups/${_seg(groupname)}/policies'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'policy_arn': policyArn}),
         )
@@ -474,7 +478,9 @@ class ApiService {
     final encodedArn = Uri.encodeComponent(policyArn);
     final response = await BackendService.client
         .delete(
-          Uri.parse('$baseUrl/iam/groups/$groupname/policies/$encodedArn'),
+          Uri.parse(
+            '$baseUrl/iam/groups/${_seg(groupname)}/policies/$encodedArn',
+          ),
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
@@ -511,7 +517,7 @@ class ApiService {
 
   static Future<void> deleteS3Bucket(String bucketname) async {
     final response = await BackendService.client
-        .delete(Uri.parse('$baseUrl/s3/buckets/$bucketname'))
+        .delete(Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception(errorMessage(response, 'Failed to delete bucket'));
@@ -520,7 +526,7 @@ class ApiService {
 
   static Future<String> listS3Objects(String bucketname) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/s3/buckets/$bucketname/objects'))
+        .get(Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/objects'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -533,7 +539,7 @@ class ApiService {
     String bucketname,
   ) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/s3/buckets/$bucketname/versioning'))
+        .get(Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/versioning'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -547,7 +553,7 @@ class ApiService {
   ) async {
     final response = await BackendService.client
         .put(
-          Uri.parse('$baseUrl/s3/buckets/$bucketname/versioning'),
+          Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/versioning'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'status': status}),
         )
@@ -562,7 +568,7 @@ class ApiService {
     String bucketname,
   ) async {
     final response = await BackendService.client
-        .get(Uri.parse('$baseUrl/s3/buckets/$bucketname/mfa-delete'))
+        .get(Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/mfa-delete'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -577,7 +583,7 @@ class ApiService {
   ) async {
     final response = await BackendService.client
         .put(
-          Uri.parse('$baseUrl/s3/buckets/$bucketname/mfa-delete'),
+          Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/mfa-delete'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'status': status, 'mfa_token': mfaToken}),
         )
@@ -595,7 +601,9 @@ class ApiService {
   }) async {
     final request = http.Request(
       'GET',
-      Uri.parse('$baseUrl/s3/buckets/$bucketname/objects/$objectkey'),
+      Uri.parse(
+        '$baseUrl/s3/buckets/${_seg(bucketname)}/objects/${_seg(objectkey)}',
+      ),
     );
 
     final response = await BackendService.client.send(request);
@@ -621,7 +629,7 @@ class ApiService {
     String prefix,
   ) async {
     final uri = Uri.parse(
-      '$baseUrl/s3/buckets/$bucketname/items',
+      '$baseUrl/s3/buckets/${_seg(bucketname)}/items',
     ).replace(queryParameters: {'prefix': prefix});
     final response = await BackendService.client.get(uri).timeout(_timeout);
     if (response.statusCode == 200) {
@@ -642,7 +650,7 @@ class ApiService {
   ) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$baseUrl/s3/buckets/$bucketname/upload'),
+      Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/upload'),
     );
     request.fields['key'] = key;
     request.files.add(await http.MultipartFile.fromPath('file', file.path));
@@ -658,7 +666,11 @@ class ApiService {
     String objectkey,
   ) async {
     final response = await BackendService.client
-        .delete(Uri.parse('$baseUrl/s3/buckets/$bucketname/objects/$objectkey'))
+        .delete(
+          Uri.parse(
+            '$baseUrl/s3/buckets/${_seg(bucketname)}/objects/${_seg(objectkey)}',
+          ),
+        )
         .timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception(errorMessage(response, 'Failed to delete object'));
@@ -671,7 +683,7 @@ class ApiService {
   ) async {
     final response = await BackendService.client
         .post(
-          Uri.parse('$baseUrl/s3/buckets/$bucketname/folder'),
+          Uri.parse('$baseUrl/s3/buckets/${_seg(bucketname)}/folder'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'folder_path': folderPath}),
         )

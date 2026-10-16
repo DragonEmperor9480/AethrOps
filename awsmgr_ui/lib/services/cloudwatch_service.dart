@@ -115,7 +115,8 @@ class CloudWatchService {
   // Stream Lambda logs using Server-Sent Events with proper SSE parsing
   // Yields either LogEntry or Map with sessionId
   static Stream<dynamic> streamLambdaLogs(String functionName) async* {
-    final url = '$baseUrl/cloudwatch/lambda/$functionName/logs';
+    final url =
+        '$baseUrl/cloudwatch/lambda/${Uri.encodeComponent(functionName)}/logs';
 
     try {
       final request = http.Request('GET', Uri.parse(url));
