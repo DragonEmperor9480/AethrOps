@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/DragonEmperor9480/AethrOps/models/iam/group"
-	"github.com/DragonEmperor9480/AethrOps/models/iam/policy"
-	"github.com/DragonEmperor9480/AethrOps/models/iam/user"
+	"github.com/DragonEmperor9480/AethrOps/constants"
+	"github.com/DragonEmperor9480/AethrOps/models"
 	"github.com/DragonEmperor9480/AethrOps/service"
 	"github.com/DragonEmperor9480/AethrOps/utils"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/gorilla/mux"
 )
@@ -22,7 +23,7 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 
 	result, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToCreateIamUSer)
 		return
 	}
 
@@ -51,8 +52,7 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 		}
 		userType = "AssumedRole"
 	}
-
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "Caller identity retrieved successfully", map[string]interface{}{
 		"username":   username,
 		"user_type":  userType,
 		"account_id": *result.Account,
@@ -63,143 +63,55 @@ func GetCallerIdentity(w http.ResponseWriter, r *http.Request) {
 
 // ListIAMUsers returns all IAM users
 func ListIAMUsers(w http.ResponseWriter, r *http.Request) {
-	output, err := user.FetchIAMUsers()
+	ctx := context.TODO()
+	result, err := utils.IAMClient.ListUsers(ctx, &iam.ListUsersInput{})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToListIamUser)
 		return
 	}
 
-	users := parseTabSeparated(output, []string{"username", "user_id", "create_date"})
-	respondJSON(w, http.StatusOK, map[string]interface{}{"users": users})
+	users := make([]map[string]string, 0, len(result.Users))
+	for _, u := range result.Users {
+		users = append(users, map[string]string{
+			"username":    aws.ToString(u.UserName),
+			"user_id":     aws.ToString(u.UserId),
+			"create_date": u.CreateDate.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
+	utils.Success(w, http.StatusOK, constants.IamUsersFetchedSuccessfully, map[string]interface{}{"users": users})
 }
 
 // CreateMultipleIAMUsers creates multiple IAM users in parallel
 func CreateMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Users []struct {
-			Username     string `json:"username"`
-			Password     string `json:"password"`
-			RequireReset bool   `json:"require_reset"`
-		} `json:"users"`
-	}
+	var req models.BatchCreateIAMUsersRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.FailedToDecodeRequestBody)
 		return
 	}
 
 	if len(req.Users) == 0 {
-		respondError(w, http.StatusBadRequest, "at least one user is required")
+		utils.Error(w, http.StatusBadRequest, constants.NoUsersFound)
 		return
-	}
-
-	// Convert to model request format
-	requests := make([]user.UserCreationRequest, len(req.Users))
-	for i, u := range req.Users {
-		requests[i] = user.UserCreationRequest{
-			Username:     u.Username,
-			Password:     u.Password,
-			RequireReset: u.RequireReset,
-		}
 	}
 
 	// Create users in parallel
-	results := user.CreateMultipleIAMUsers(requests)
+	results := service.CreateMultipleIAMUsers(req.Users)
 
-	// Count successes and failures
 	successCount := 0
-	failureCount := 0
 	for _, result := range results {
 		if result.Success {
 			successCount++
-		} else {
-			failureCount++
 		}
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"message":       "Batch user creation completed",
+	utils.Success(w, http.StatusOK, constants.BatchUserCreationCompleted, map[string]interface{}{
 		"total":         len(results),
 		"success_count": successCount,
-		"failure_count": failureCount,
+		"failure_count": len(results) - successCount,
 		"results":       results,
 	})
-}
-
-// CreateIAMUser creates a new IAM user with optional password
-func CreateIAMUser(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Username     string `json:"username"`
-		Password     string `json:"password"`      // Optional
-		RequireReset bool   `json:"require_reset"` // Only used if password is provided
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if req.Username == "" {
-		respondError(w, http.StatusBadRequest, "username is required")
-		return
-	}
-
-	// If password is provided, use combined function
-	if req.Password != "" {
-		userStatus, passwordStatus, err := user.CreateIAMUserWithPassword(req.Username, req.Password, req.RequireReset)
-
-		// Check user creation status first
-		switch userStatus {
-		case user.UserAlreadyExists:
-			respondError(w, http.StatusConflict, "User '"+req.Username+"' already exists")
-			return
-		case user.UserCreationError:
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		// User created, check password status
-		switch passwordStatus {
-		case user.PasswordUserNotFound:
-			respondError(w, http.StatusNotFound, "User not found after creation")
-			return
-		case user.PasswordPolicyViolation:
-			respondError(w, http.StatusBadRequest, "Password does not meet AWS policy requirements")
-			return
-		case user.PasswordAlreadyExists:
-			respondError(w, http.StatusConflict, "Password already exists for user")
-			return
-		case user.PasswordCreationError:
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		case user.PasswordCreatedSuccess:
-			respondJSON(w, http.StatusOK, map[string]interface{}{
-				"message":       "User created with password",
-				"username":      req.Username,
-				"password_set":  true,
-				"require_reset": req.RequireReset,
-			})
-			return
-		}
-	}
-
-	// No password provided, just create user
-	status, err := user.CreateIAMUser(req.Username)
-
-	switch status {
-	case user.UserAlreadyExists:
-		respondError(w, http.StatusConflict, "User '"+req.Username+"' already exists")
-		return
-	case user.UserCreationError:
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	case user.UserCreatedSuccess:
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message":      "User created",
-			"username":     req.Username,
-			"password_set": false,
-		})
-	}
 }
 
 // CheckUserDependencies checks what dependencies a user has before deletion
@@ -207,7 +119,7 @@ func CheckUserDependencies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	deps, err := user.CheckUserDependencies(username)
+	deps, err := service.CheckUserDependencies(username)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -233,7 +145,7 @@ func CheckMultipleUserDependencies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check dependencies in parallel
-	dependencies := user.CheckMultipleUserDependencies(req.Usernames)
+	dependencies := service.CheckMultipleUserDependencies(req.Usernames)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"dependencies": dependencies,
@@ -260,16 +172,16 @@ func DeleteMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert to model request format
-	requests := make([]user.UserDeletionRequest, len(req.Users))
+	requests := make([]models.UserDeletionRequest, len(req.Users))
 	for i, u := range req.Users {
-		requests[i] = user.UserDeletionRequest{
+		requests[i] = models.UserDeletionRequest{
 			Username: u.Username,
 			Force:    u.Force,
 		}
 	}
 
 	// Delete users in parallel
-	results := user.DeleteMultipleIAMUsers(requests)
+	results := service.DeleteMultipleIAMUsers(requests)
 
 	// Count successes and failures
 	successCount := 0
@@ -289,36 +201,6 @@ func DeleteMultipleIAMUsers(w http.ResponseWriter, r *http.Request) {
 		"failure_count": failureCount,
 		"results":       results,
 	})
-}
-
-// DeleteIAMUser deletes an IAM user (with force flag to remove dependencies)
-func DeleteIAMUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	username := vars["username"]
-
-	// Check for force parameter
-	force := r.URL.Query().Get("force") == "true"
-
-	if !force {
-		// Check if user has dependencies
-		deps, err := user.CheckUserDependencies(username)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if deps.HasDependencies() {
-			respondError(w, http.StatusBadRequest, "User has dependencies. Use force=true to delete with dependencies.")
-			return
-		}
-	}
-
-	err := user.DeleteIAMUserAPI(username)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	respondJSON(w, http.StatusOK, map[string]string{"message": "User deleted", "username": username})
 }
 
 // SetUserPassword sets initial password for a user
@@ -341,22 +223,22 @@ func SetUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := user.SetInitialUserPasswordModel(username, req.Password, req.RequireReset)
+	status, err := service.SetInitialUserPasswordModel(username, req.Password, req.RequireReset)
 
 	switch status {
-	case user.PasswordUserNotFound:
+	case constants.PasswordUserNotFound:
 		respondError(w, http.StatusNotFound, "User '"+username+"' does not exist")
 		return
-	case user.PasswordPolicyViolation:
+	case constants.PasswordPolicyViolation:
 		respondError(w, http.StatusBadRequest, "Password does not meet AWS policy requirements")
 		return
-	case user.PasswordAlreadyExists:
+	case constants.PasswordAlreadyExists:
 		respondError(w, http.StatusConflict, "Password already exists for user '"+username+"'")
 		return
-	case user.PasswordCreationError:
+	case constants.PasswordCreationError:
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
-	case user.PasswordCreatedSuccess:
+	case constants.PasswordCreatedSuccess:
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"message":       "Password set successfully",
 			"username":      username,
@@ -379,7 +261,7 @@ func UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := user.UpdateUserPasswordModel(username, req.Password)
+	err := service.UpdateUserPasswordModel(username, req.Password)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -393,7 +275,7 @@ func ListAccessKeys(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	keys, err := user.ListAccessKeysForUserModel(username)
+	keys, err := service.ListAccessKeysForUserModel(username)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -409,39 +291,50 @@ func ListAccessKeys(w http.ResponseWriter, r *http.Request) {
 
 // ListIAMGroups returns all IAM groups
 func ListIAMGroups(w http.ResponseWriter, r *http.Request) {
-	output, err := group.FetchIAMGroups()
+	ctx := context.TODO()
+	result, err := utils.IAMClient.ListGroups(ctx, &iam.ListGroupsInput{})
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, "Failed to list IAM groups")
 		return
 	}
 
-	groups := parseTabSeparated(output, []string{"groupname", "group_id", "create_date"})
-	respondJSON(w, http.StatusOK, map[string]interface{}{"groups": groups})
+	groups := make([]map[string]string, 0, len(result.Groups))
+	for _, g := range result.Groups {
+		groups = append(groups, map[string]string{
+			"groupname":   aws.ToString(g.GroupName),
+			"group_id":    aws.ToString(g.GroupId),
+			"create_date": g.CreateDate.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
+	utils.Success(w, http.StatusOK, constants.IAMGroupsFetchedSuccessfully, map[string]interface{}{"groups": groups})
 }
 
 // CreateIAMGroup creates a new IAM group
 func CreateIAMGroup(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		GroupName string `json:"groupname"`
-	}
+	var req models.CreateGroup
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
 	if req.GroupName == "" {
-		respondError(w, http.StatusBadRequest, "groupname is required")
+		utils.Error(w, http.StatusBadRequest, "groupname is required")
 		return
 	}
 
-	err := group.CreateIAMGroup(req.GroupName)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	status, err := service.CreateIAMGroup(req.GroupName)
+	switch status {
+	case constants.GroupAlreadyExists:
+		utils.Error(w, http.StatusConflict, "Group '"+req.GroupName+"' already exists")
+		return
+	case constants.GroupCreationError:
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Group created", "groupname": req.GroupName})
+	utils.Success(w, http.StatusOK, constants.IAMGroupCreatedSuccessfully, nil)
 }
 
 // DeleteIAMGroup deletes an IAM group
@@ -453,20 +346,20 @@ func DeleteIAMGroup(w http.ResponseWriter, r *http.Request) {
 	force := r.URL.Query().Get("force") == "true"
 
 	if force {
-		err := group.ForceDeleteGroup(groupname)
+		err := service.ForceDeleteGroup(groupname)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			utils.Error(w, http.StatusInternalServerError, constants.FailedToDeleteGroup)
 			return
 		}
 	} else {
-		err := group.DeleteGroupModel(groupname)
+		err := service.DeleteGroupModel(groupname)
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			utils.Error(w, http.StatusInternalServerError, constants.FailedToDeleteGroup)
 			return
 		}
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "Group deleted", "groupname": groupname})
+	utils.Success(w, http.StatusOK, "Group deleted successfully", map[string]string{"groupname": groupname})
 }
 
 // CheckGroupDependencies checks if a group has dependencies
@@ -474,13 +367,13 @@ func CheckGroupDependencies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	deps, err := group.CheckGroupDependencies(groupname)
+	deps, err := service.CheckGroupDependencies(groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, deps)
+	utils.Success(w, http.StatusOK, "", deps)
 }
 
 // AddUserToGroup adds a user to a group
@@ -488,22 +381,20 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	var req struct {
-		Username string `json:"username"`
-	}
+	var req models.Username
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
-	err := group.AddUserToGroupModel(req.Username, groupname)
+	err := service.AddUserToGroupModel(req.Username, groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, constants.FailedToAddUserToGroup)
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "User added to group", "username": req.Username, "groupname": groupname})
+	utils.Success(w, http.StatusOK, "User added to group", map[string]string{"username": req.Username, "groupname": groupname})
 }
 
 // RemoveUserFromGroup removes a user from a group
@@ -512,13 +403,13 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 	groupname := vars["groupname"]
 	username := vars["username"]
 
-	err := group.RemoveUserFromGroupModel(username, groupname)
+	err := service.RemoveUserFromGroupModel(username, groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, "Failed to remove user from group")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "User removed from group", "username": username, "groupname": groupname})
+	utils.Success(w, http.StatusOK, "User removed from group", map[string]string{"username": username, "groupname": groupname})
 }
 
 // ListUsersInGroup lists all users in a group
@@ -526,13 +417,13 @@ func ListUsersInGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	users, err := group.ListUsersInGroupModel(groupname)
+	users, err := service.ListUsersInGroupModel(groupname)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "", map[string]interface{}{
 		"groupname": groupname,
 		"users":     users,
 	})
@@ -543,8 +434,8 @@ func ListUserGroups(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	groups := group.ListUserGroupsModel(username)
-	respondJSON(w, http.StatusOK, map[string]interface{}{"username": username, "groups": groups})
+	groups := service.ListUserGroupsModel(username)
+	utils.Success(w, http.StatusOK, "", map[string]interface{}{"username": username, "groups": groups})
 }
 
 // AttachGroupPolicy attaches a policy to a group
@@ -566,7 +457,7 @@ func AttachGroupPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := group.AttachGroupPolicy(groupname, req.PolicyArn)
+	err := service.AttachGroupPolicy(groupname, req.PolicyArn)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -581,7 +472,7 @@ func DetachGroupPolicy(w http.ResponseWriter, r *http.Request) {
 	groupname := vars["groupname"]
 	policyArn := vars["policy_arn"]
 
-	err := group.DetachGroupPolicy(groupname, policyArn)
+	err := service.DetachGroupPolicy(groupname, policyArn)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -595,7 +486,7 @@ func ListGroupPolicies(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupname := vars["groupname"]
 
-	policies, err := group.ListGroupPolicies(groupname)
+	policies, err := service.ListGroupPolicies(groupname)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -612,7 +503,7 @@ func ListIAMPolicies(w http.ResponseWriter, r *http.Request) {
 		scope = "All"
 	}
 
-	policies, err := policy.ListPoliciesModel(scope)
+	policies, err := service.ListPoliciesModel(scope)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -643,7 +534,7 @@ func AttachUserPolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := policy.AttachUserPolicy(username, req.PolicyArn); err != nil {
+	if err := service.AttachUserPolicy(username, req.PolicyArn); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -658,32 +549,30 @@ func AttachUserPolicy(w http.ResponseWriter, r *http.Request) {
 // AttachMultipleUserPolicies attaches multiple policies to users in parallel
 func AttachMultipleUserPolicies(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Attachments []policy.AttachPolicyRequest `json:"attachments"`
+		Attachments []models.AttachPolicyRequest `json:"attachments"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
 	if len(req.Attachments) == 0 {
-		respondError(w, http.StatusBadRequest, "at least one attachment is required")
+		utils.Error(w, http.StatusBadRequest, "at least one attachment is required")
 		return
 	}
 
-	results := policy.AttachMultiplePolicies(req.Attachments)
+	results := service.AttachMultiplePolicies(req.Attachments)
 
 	successCount := 0
-	failureCount := 0
 	for _, result := range results {
 		if result.Success {
 			successCount++
-		} else {
-			failureCount++
 		}
 	}
+	failureCount := len(results) - successCount
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "", map[string]interface{}{
 		"message":       "Batch policy attachment completed",
 		"total":         len(results),
 		"success_count": successCount,
@@ -703,26 +592,22 @@ func SyncUserPolicies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		respondError(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
-	result := policy.SyncUserPolicies(username, req.DesiredArns, req.CurrentArns)
+	result := service.SyncUserPolicies(username, req.DesiredArns, req.CurrentArns)
 
 	respondJSON(w, http.StatusOK, result)
 }
 
 // SendUserCredentialsEmail sends IAM credentials to user via email
+// TODO: TO USE DB HERE LATER
 func SendUserCredentialsEmail(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Username   string `json:"username"`
-		Password   string `json:"password"`
-		Email      string `json:"email"`
-		ConsoleURL string `json:"console_url"`
-	}
+	var req models.ShareUserCredentials
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		utils.Error(w, http.StatusBadRequest, constants.InvalidRequestBody)
 		return
 	}
 
@@ -752,38 +637,17 @@ func SendUserCredentialsEmail(w http.ResponseWriter, r *http.Request) {
 
 	err = service.SendIAMCredentialsEmail(emailConfig, req.Username, req.Password, req.Email, consoleURL)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		utils.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
+	utils.Success(w, http.StatusOK, "Credentials sent successfully", map[string]interface{}{
 		"message": "Credentials sent successfully",
 		"email":   req.Email,
 	})
 }
 
 // ============ HELPER FUNCTIONS ============
-
-func parseTabSeparated(output string, fields []string) []map[string]string {
-	result := []map[string]string{}
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		parts := strings.Split(line, "\t")
-		if len(parts) >= len(fields) {
-			item := make(map[string]string)
-			for i, field := range fields {
-				item[field] = parts[i]
-			}
-			result = append(result, item)
-		}
-	}
-
-	return result
-}
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
