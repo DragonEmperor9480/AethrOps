@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'api_service.dart';
 import 'backend_service.dart';
 
 class AWSProfileService {
@@ -68,7 +69,10 @@ class AWSProfileService {
       }
       return {
         'success': false,
-        'message': data['error'] ?? 'Failed to create account',
+        'message': ApiService.errorMessage(
+          response,
+          'Failed to create account',
+        ),
       };
     } catch (e) {
       debugPrint('Error creating AWS account: $e');
@@ -91,7 +95,10 @@ class AWSProfileService {
       }
       return {
         'success': false,
-        'message': data['error'] ?? 'Failed to activate account',
+        'message': ApiService.errorMessage(
+          response,
+          'Failed to activate account',
+        ),
       };
     } catch (e) {
       debugPrint('Error activating AWS account: $e');
@@ -112,7 +119,10 @@ class AWSProfileService {
       }
       return {
         'success': false,
-        'message': data['error'] ?? 'Failed to delete account',
+        'message': ApiService.errorMessage(
+          response,
+          'Failed to delete account',
+        ),
       };
     } catch (e) {
       debugPrint('Error deleting AWS account: $e');

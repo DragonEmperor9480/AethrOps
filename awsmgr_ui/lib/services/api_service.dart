@@ -7,6 +7,22 @@ class ApiService {
   static String get baseUrl => '${BackendService.baseUrl}/api';
   static const _timeout = Duration(seconds: 30);
 
+  /// Human-readable error from a failed backend response. Understands both
+  /// the old `{"error": ...}` and the envelope `{"message": ...}` formats and
+  /// falls back when the body is empty or not JSON.
+  static String errorMessage(http.Response response, String fallback) {
+    try {
+      final body = json.decode(response.body);
+      if (body is Map) {
+        final message = body['error'] ?? body['message'];
+        if (message is String && message.isNotEmpty) return message;
+      }
+    } catch (_) {
+      // Not JSON (e.g. empty 405 body); use the fallback
+    }
+    return fallback;
+  }
+
   /// Payload of an endpoint using the backend's response envelope
   /// (`{"status", "message", "data"}`). Empty when `data` is absent.
   static Map<String, dynamic> _envelopeData(http.Response response) {
@@ -23,7 +39,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return _envelopeData(response);
     }
-    throw Exception('Failed to get caller identity');
+    throw Exception(errorMessage(response, 'Failed to get caller identity'));
   }
 
   // IAM Users
@@ -34,7 +50,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return _envelopeData(response)['users'] ?? [];
     }
-    throw Exception('Failed to load users');
+    throw Exception(errorMessage(response, 'Failed to load users'));
   }
 
   static Future<Map<String, dynamic>> createMultipleIAMUsers(
@@ -51,8 +67,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to create users');
+      throw Exception(errorMessage(response, 'Failed to create users'));
     }
   }
 
@@ -77,8 +92,7 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to create user');
+      throw Exception(errorMessage(response, 'Failed to create user'));
     }
   }
 
@@ -91,7 +105,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to check dependencies');
+    throw Exception(errorMessage(response, 'Failed to check dependencies'));
   }
 
   static Future<List<dynamic>> getUserGroups(String username) async {
@@ -101,7 +115,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return _envelopeData(response)['groups'] ?? [];
     }
-    throw Exception('Failed to get user groups');
+    throw Exception(errorMessage(response, 'Failed to get user groups'));
   }
 
   static Future<void> attachUserPolicy(
@@ -116,8 +130,7 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to attach policy');
+      throw Exception(errorMessage(response, 'Failed to attach policy'));
     }
   }
 
@@ -135,8 +148,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to attach policies');
+      throw Exception(errorMessage(response, 'Failed to attach policies'));
     }
   }
 
@@ -159,8 +171,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to sync policies');
+      throw Exception(errorMessage(response, 'Failed to sync policies'));
     }
   }
 
@@ -183,8 +194,9 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to send credentials email');
+      throw Exception(
+        errorMessage(response, 'Failed to send credentials email'),
+      );
     }
   }
 
@@ -196,7 +208,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to get email config');
+    throw Exception(errorMessage(response, 'Failed to get email config'));
   }
 
   static Future<void> saveEmailConfig({
@@ -221,8 +233,7 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to save email config');
+      throw Exception(errorMessage(response, 'Failed to save email config'));
     }
   }
 
@@ -246,8 +257,7 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to send test email');
+      throw Exception(errorMessage(response, 'Failed to send test email'));
     }
   }
 
@@ -256,8 +266,7 @@ class ApiService {
         .delete(Uri.parse('$baseUrl/email/config'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to delete email config');
+      throw Exception(errorMessage(response, 'Failed to delete email config'));
     }
   }
 
@@ -269,7 +278,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to get MFA device');
+    throw Exception(errorMessage(response, 'Failed to get MFA device'));
   }
 
   static Future<void> saveMFADevice({
@@ -288,8 +297,7 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to save MFA device');
+      throw Exception(errorMessage(response, 'Failed to save MFA device'));
     }
   }
 
@@ -298,8 +306,7 @@ class ApiService {
         .delete(Uri.parse('$baseUrl/settings/mfa'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to delete MFA device');
+      throw Exception(errorMessage(response, 'Failed to delete MFA device'));
     }
   }
 
@@ -314,7 +321,7 @@ class ApiService {
         .delete(Uri.parse(url))
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete user');
+      throw Exception(errorMessage(response, 'Failed to delete user'));
     }
   }
 
@@ -333,7 +340,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['dependencies'] ?? [];
     }
-    throw Exception('Failed to check dependencies');
+    throw Exception(errorMessage(response, 'Failed to check dependencies'));
   }
 
   static Future<Map<String, dynamic>> deleteMultipleIAMUsers(
@@ -350,8 +357,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to delete users');
+      throw Exception(errorMessage(response, 'Failed to delete users'));
     }
   }
 
@@ -365,7 +371,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['policies'] ?? [];
     }
-    throw Exception('Failed to load policies');
+    throw Exception(errorMessage(response, 'Failed to load policies'));
   }
 
   // IAM Groups
@@ -376,7 +382,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return _envelopeData(response)['groups'] ?? [];
     }
-    throw Exception('Failed to load groups');
+    throw Exception(errorMessage(response, 'Failed to load groups'));
   }
 
   static Future<void> createIAMGroup(String groupname) async {
@@ -388,7 +394,7 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to create group');
+      throw Exception(errorMessage(response, 'Failed to create group'));
     }
   }
 
@@ -401,7 +407,9 @@ class ApiService {
     if (response.statusCode == 200) {
       return _envelopeData(response);
     }
-    throw Exception('Failed to check group dependencies');
+    throw Exception(
+      errorMessage(response, 'Failed to check group dependencies'),
+    );
   }
 
   static Future<void> deleteIAMGroup(
@@ -413,7 +421,7 @@ class ApiService {
     );
     final response = await BackendService.client.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete group');
+      throw Exception(errorMessage(response, 'Failed to delete group'));
     }
   }
 
@@ -426,7 +434,7 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to add user to group');
+      throw Exception(errorMessage(response, 'Failed to add user to group'));
     }
   }
 
@@ -438,7 +446,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['policies'] ?? [];
     }
-    throw Exception('Failed to list group policies');
+    throw Exception(errorMessage(response, 'Failed to list group policies'));
   }
 
   static Future<void> attachGroupPolicy(
@@ -453,7 +461,9 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to attach policy to group');
+      throw Exception(
+        errorMessage(response, 'Failed to attach policy to group'),
+      );
     }
   }
 
@@ -468,7 +478,9 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to detach policy from group');
+      throw Exception(
+        errorMessage(response, 'Failed to detach policy from group'),
+      );
     }
   }
 
@@ -481,7 +493,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['buckets'] ?? '';
     }
-    throw Exception('Failed to load buckets');
+    throw Exception(errorMessage(response, 'Failed to load buckets'));
   }
 
   static Future<void> createS3Bucket(String bucketname) async {
@@ -493,7 +505,7 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to create bucket');
+      throw Exception(errorMessage(response, 'Failed to create bucket'));
     }
   }
 
@@ -502,7 +514,7 @@ class ApiService {
         .delete(Uri.parse('$baseUrl/s3/buckets/$bucketname'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete bucket');
+      throw Exception(errorMessage(response, 'Failed to delete bucket'));
     }
   }
 
@@ -514,7 +526,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['objects'] ?? '';
     }
-    throw Exception('Failed to load objects');
+    throw Exception(errorMessage(response, 'Failed to load objects'));
   }
 
   static Future<Map<String, dynamic>> getBucketVersioning(
@@ -526,7 +538,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to get versioning status');
+    throw Exception(errorMessage(response, 'Failed to get versioning status'));
   }
 
   static Future<void> setBucketVersioning(
@@ -542,8 +554,7 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to update versioning');
+      throw Exception(errorMessage(response, 'Failed to update versioning'));
     }
   }
 
@@ -556,7 +567,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to get MFA delete status');
+    throw Exception(errorMessage(response, 'Failed to get MFA delete status'));
   }
 
   static Future<void> updateBucketMFADelete(
@@ -573,8 +584,7 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to update MFA delete');
+      throw Exception(errorMessage(response, 'Failed to update MFA delete'));
     }
   }
 
@@ -622,7 +632,7 @@ class ApiService {
       }
       return (items as List).map((item) => S3Item.fromJson(item)).toList();
     }
-    throw Exception('Failed to load items');
+    throw Exception(errorMessage(response, 'Failed to load items'));
   }
 
   static Future<void> uploadS3Object(
@@ -651,7 +661,7 @@ class ApiService {
         .delete(Uri.parse('$baseUrl/s3/buckets/$bucketname/objects/$objectkey'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete object');
+      throw Exception(errorMessage(response, 'Failed to delete object'));
     }
   }
 
@@ -667,7 +677,7 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to create folder');
+      throw Exception(errorMessage(response, 'Failed to create folder'));
     }
   }
 
@@ -684,7 +694,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
     }
-    throw Exception('Failed to load EC2 instances');
+    throw Exception(errorMessage(response, 'Failed to load EC2 instances'));
   }
 
   static Future<List<dynamic>> listEC2InstancesAllRegions() async {
@@ -695,7 +705,9 @@ class ApiService {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
     }
-    throw Exception('Failed to load EC2 instances from all regions');
+    throw Exception(
+      errorMessage(response, 'Failed to load EC2 instances from all regions'),
+    );
   }
 
   static Future<Map<String, dynamic>> getEC2Dashboard() async {
@@ -705,7 +717,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to load EC2 dashboard');
+    throw Exception(errorMessage(response, 'Failed to load EC2 dashboard'));
   }
 
   // REMOVED: listAWSRegions, listAMIs, listSecurityGroups, listKeyPairs, listSubnets, listVPCs
@@ -725,7 +737,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to get instance details');
+    throw Exception(errorMessage(response, 'Failed to get instance details'));
   }
 
   static Future<void> startEC2Instance(
@@ -740,8 +752,7 @@ class ApiService {
 
     final response = await BackendService.client.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to start instance');
+      throw Exception(errorMessage(response, 'Failed to start instance'));
     }
   }
 
@@ -757,8 +768,7 @@ class ApiService {
 
     final response = await BackendService.client.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to stop instance');
+      throw Exception(errorMessage(response, 'Failed to stop instance'));
     }
   }
 
@@ -774,8 +784,7 @@ class ApiService {
 
     final response = await BackendService.client.post(uri).timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to reboot instance');
+      throw Exception(errorMessage(response, 'Failed to reboot instance'));
     }
   }
 
@@ -791,8 +800,7 @@ class ApiService {
 
     final response = await BackendService.client.delete(uri).timeout(_timeout);
     if (response.statusCode != 200) {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to terminate instance');
+      throw Exception(errorMessage(response, 'Failed to terminate instance'));
     }
   }
 
@@ -813,7 +821,7 @@ class ApiService {
       final data = json.decode(response.body);
       return data['instances'] ?? [];
     }
-    throw Exception('Failed to get instances by state');
+    throw Exception(errorMessage(response, 'Failed to get instances by state'));
   }
 
   // AWS Configuration
@@ -824,7 +832,7 @@ class ApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
-    throw Exception('Failed to get AWS config');
+    throw Exception(errorMessage(response, 'Failed to get AWS config'));
   }
 
   static Future<void> configureAWS(
@@ -844,7 +852,7 @@ class ApiService {
         )
         .timeout(_timeout);
     if (response.statusCode != 200) {
-      throw Exception('Failed to configure AWS: ${response.body}');
+      throw Exception(errorMessage(response, 'Failed to configure AWS'));
     }
   }
 
@@ -860,7 +868,7 @@ class ApiService {
       final data = json.decode(response.body);
       return List<String>.from(data['functions'] ?? []);
     }
-    throw Exception('Failed to load Lambda functions');
+    throw Exception(errorMessage(response, 'Failed to load Lambda functions'));
   }
 
   // Download logs for a session
@@ -874,6 +882,11 @@ class ApiService {
     if (response.statusCode == 200) {
       return response.body; // Return the log file content
     }
-    throw Exception('Failed to download logs: ${response.statusCode}');
+    throw Exception(
+      errorMessage(
+        response,
+        'Failed to download logs (${response.statusCode})',
+      ),
+    );
   }
 }

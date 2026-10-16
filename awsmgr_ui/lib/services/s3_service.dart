@@ -14,7 +14,8 @@ class S3Service {
       sendTimeout: const Duration(minutes: 10),
       // Optimize for large file transfers
       receiveDataWhenStatusError: false,
-      validateStatus: (status) => status != null && status < 500,
+      // Accept every status so callers can surface the backend's error message
+      validateStatus: (status) => status != null,
     ),
   );
 
@@ -27,6 +28,23 @@ class S3Service {
       sendTimeout: const Duration(minutes: 10),
     ),
   );
+
+  /// Error text from a failed backend response (`{"error"}` or `{"message"}`).
+  static String _errorMessage(Response response, String fallback) {
+    var data = response.data;
+    if (data is String) {
+      try {
+        data = json.decode(data);
+      } catch (_) {
+        return fallback;
+      }
+    }
+    if (data is Map) {
+      final message = data['error'] ?? data['message'];
+      if (message is String && message.isNotEmpty) return message;
+    }
+    return fallback;
+  }
 
   /// Get secure presigned download URL for an S3 object
   static Future<String> getPresignedDownloadUrl(
@@ -49,7 +67,9 @@ class S3Service {
       }
 
       if (presignedUrl == null) {
-        throw Exception('Failed to get presigned download URL');
+        throw Exception(
+          _errorMessage(urlResponse, 'Failed to get presigned download URL'),
+        );
       }
 
       return presignedUrl;
@@ -150,7 +170,9 @@ class S3Service {
       }
 
       if (presignedUrl == null) {
-        throw Exception('Failed to get presigned upload URL');
+        throw Exception(
+          _errorMessage(response, 'Failed to get presigned upload URL'),
+        );
       }
 
       debugPrint('Uploading directly to S3: $presignedUrl');

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../models/ec2_launch_request.dart';
+import 'api_service.dart';
 import 'backend_service.dart';
 
 class Ec2Service {
@@ -17,8 +18,9 @@ class Ec2Service {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      final error = json.decode(response.body);
-      throw Exception(error['error'] ?? 'Failed to launch instance');
+      throw Exception(
+        ApiService.errorMessage(response, 'Failed to launch instance'),
+      );
     }
   }
 
@@ -34,7 +36,9 @@ class Ec2Service {
       final data = json.decode(response.body);
       return data['security_groups'] ?? [];
     }
-    throw Exception('Failed to load security groups');
+    throw Exception(
+      ApiService.errorMessage(response, 'Failed to load security groups'),
+    );
   }
 
   static Future<List<dynamic>> listKeyPairs({String? region}) async {
@@ -49,7 +53,9 @@ class Ec2Service {
       final data = json.decode(response.body);
       return data['key_pairs'] ?? [];
     }
-    throw Exception('Failed to load key pairs');
+    throw Exception(
+      ApiService.errorMessage(response, 'Failed to load key pairs'),
+    );
   }
 
   static Future<List<dynamic>> listSubnets({String? region}) async {
@@ -64,7 +70,9 @@ class Ec2Service {
       final data = json.decode(response.body);
       return data['subnets'] ?? [];
     }
-    throw Exception('Failed to load subnets');
+    throw Exception(
+      ApiService.errorMessage(response, 'Failed to load subnets'),
+    );
   }
 
   static Future<List<dynamic>> listVpcs({String? region}) async {
@@ -79,7 +87,7 @@ class Ec2Service {
       final data = json.decode(response.body);
       return data['vpcs'] ?? [];
     }
-    throw Exception('Failed to load VPCs');
+    throw Exception(ApiService.errorMessage(response, 'Failed to load VPCs'));
   }
 
   static Future<List<dynamic>> listAMIs({String? region}) async {
@@ -94,7 +102,7 @@ class Ec2Service {
       final data = json.decode(response.body);
       return data['amis'] ?? [];
     }
-    throw Exception('Failed to load AMIs');
+    throw Exception(ApiService.errorMessage(response, 'Failed to load AMIs'));
   }
 
   static Future<List<String>> listRegions() async {
@@ -105,6 +113,8 @@ class Ec2Service {
       final data = json.decode(response.body);
       return List<String>.from(data['regions'] ?? []);
     }
-    throw Exception('Failed to load regions');
+    throw Exception(
+      ApiService.errorMessage(response, 'Failed to load regions'),
+    );
   }
 }

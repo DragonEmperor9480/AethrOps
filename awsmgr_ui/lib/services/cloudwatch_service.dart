@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'api_service.dart';
 import 'backend_service.dart';
 
 class LogEntry {
@@ -121,7 +122,13 @@ class CloudWatchService {
       final response = await BackendService.client.send(request);
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to connect to log stream');
+        final errorResponse = await http.Response.fromStream(response);
+        throw Exception(
+          ApiService.errorMessage(
+            errorResponse,
+            'Failed to connect to log stream',
+          ),
+        );
       }
 
       String buffer = '';
