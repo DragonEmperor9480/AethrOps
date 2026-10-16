@@ -27,31 +27,43 @@ func init() {
 
 // InitLogDirectory initializes the log directory (call after setting AETHROPS_DATA_DIR)
 func InitLogDirectory() error {
-	// Use platform-appropriate log directory
-	logDir = getLogDirectory()
+	dir, err := getLogDirectory()
+	if err != nil {
+		return err
+	}
 
-	// Create log directory if it doesn't exist
-	if err := os.MkdirAll(logDir, 0750); err != nil {
+	// Owner-only: the files hold Lambda log output
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
+	logDir = dir
 	return nil
 }
 
-// getLogDirectory returns the appropriate log directory for the platform
-func getLogDirectory() string {
-	// Check if data directory is set (mobile platforms)
+// getLogDirectory returns the per-user log directory for the platform
+func getLogDirectory() (string, error) {
+	// Mobile: inside the app's data directory
 	if dataDir := os.Getenv("AETHROPS_DATA_DIR"); dataDir != "" {
-		return filepath.Join(dataDir, "logs")
+		return filepath.Join(dataDir, "logs"), nil
 	}
 
-	// Fallback to /tmp for desktop platforms
-	return "/tmp/aethrops_logs"
+	// Desktop: the user's cache directory (~/.cache on Linux,
+	// %LocalAppData% on Windows), not a shared /tmp path
+	if cacheDir, err := os.UserCacheDir(); err == nil {
+		return filepath.Join(cacheDir, "aethrops", "logs"), nil
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to find a log directory: %w", err)
+	}
+	return filepath.Join(homeDir, ".aethrops", "logs"), nil
 }
 
-// GetLogDirectory returns the log directory (public accessor for validation)
+// GetLogDirectory returns the log directory set up by InitLogDirectory
+// (public accessor for validation)
 func GetLogDirectory() string {
-	return getLogDirectory()
+	return logDir
 }
 
 // generateSessionID creates a unique session ID
@@ -63,6 +75,10 @@ func generateSessionID() string {
 
 // CreateLogSession creates a new log session with a temporary file
 func CreateLogSession(functionName string) (*cloudwatch_model.LogSession, error) {
+	if logDir == "" {
+		return nil, fmt.Errorf("log directory is not initialized")
+	}
+
 	sessionID := generateSessionID()
 	timestamp := time.Now().Format("20060102_150405")
 	filename := fmt.Sprintf("%s_%s_%s.log", functionName, timestamp, sessionID[:8])
