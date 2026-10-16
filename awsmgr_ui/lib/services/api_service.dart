@@ -7,6 +7,14 @@ class ApiService {
   static String get baseUrl => '${BackendService.baseUrl}/api';
   static const _timeout = Duration(seconds: 30);
 
+  /// Payload of an endpoint using the backend's response envelope
+  /// (`{"status", "message", "data"}`). Empty when `data` is absent.
+  static Map<String, dynamic> _envelopeData(http.Response response) {
+    final body = json.decode(response.body);
+    final data = body is Map<String, dynamic> ? body['data'] : null;
+    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+  }
+
   // IAM Caller Identity
   static Future<Map<String, dynamic>> getCallerIdentity() async {
     final response = await BackendService.client
@@ -24,8 +32,7 @@ class ApiService {
         .get(Uri.parse('$baseUrl/iam/users'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['users'] ?? [];
+      return _envelopeData(response)['users'] ?? [];
     }
     throw Exception('Failed to load users');
   }
@@ -92,8 +99,7 @@ class ApiService {
         .get(Uri.parse('$baseUrl/iam/users/$username/groups'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['groups'] ?? [];
+      return _envelopeData(response)['groups'] ?? [];
     }
     throw Exception('Failed to get user groups');
   }
@@ -368,8 +374,7 @@ class ApiService {
         .get(Uri.parse('$baseUrl/iam/groups'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['groups'] ?? [];
+      return _envelopeData(response)['groups'] ?? [];
     }
     throw Exception('Failed to load groups');
   }
