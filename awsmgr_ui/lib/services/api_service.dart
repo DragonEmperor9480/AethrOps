@@ -399,7 +399,7 @@ class ApiService {
         .get(Uri.parse('$baseUrl/iam/groups/$groupname/dependencies'))
         .timeout(_timeout);
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      return _envelopeData(response);
     }
     throw Exception('Failed to check group dependencies');
   }
