@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -76,22 +77,22 @@ func CheckForUpdates() (UpdateCheckResponse, error) {
 
 	resp, err := client.Get(githubURL)
 	if err != nil {
-		return UpdateCheckResponse{}, err
+		return UpdateCheckResponse{}, fmt.Errorf("failed to reach update server: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return UpdateCheckResponse{}, err
+		return UpdateCheckResponse{}, fmt.Errorf("update server returned %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
-		return UpdateCheckResponse{}, err
+		return UpdateCheckResponse{}, fmt.Errorf("failed to read version data: %w", err)
 	}
 
 	var versionData GitHubVersionData
 	if err := json.Unmarshal(body, &versionData); err != nil {
-		return UpdateCheckResponse{}, err
+		return UpdateCheckResponse{}, fmt.Errorf("invalid version data: %w", err)
 	}
 
 	var remote PlatformData
@@ -105,6 +106,11 @@ func CheckForUpdates() (UpdateCheckResponse, error) {
 	default:
 		// Fallback default to Linux metadata
 		remote = versionData.Linux
+	}
+
+	// A missing platform entry would otherwise read as build 0, i.e. "up to date"
+	if remote.BuildNumber <= 0 {
+		return UpdateCheckResponse{}, fmt.Errorf("version data has no build number for %s", current.OS)
 	}
 
 	updateAvailable := remote.BuildNumber > current.BuildNumber

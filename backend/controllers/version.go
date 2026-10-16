@@ -16,7 +16,8 @@ func GetVersion(w http.ResponseWriter, r *http.Request) {
 func CheckVersionUpdate(w http.ResponseWriter, r *http.Request) {
 	updateInfo, err := models.CheckForUpdates()
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		// The failure is upstream (GitHub), not in the local backend
+		respondError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	respondJSON(w, http.StatusOK, updateInfo)

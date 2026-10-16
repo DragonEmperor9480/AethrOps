@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
+import '../services/api_service.dart';
 import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
@@ -73,16 +74,23 @@ class _AboutScreenState extends State<AboutScreen> {
       },
     );
 
-    try {
-      // Query the local Go backend update endpoint
-      final response = await BackendService.client
-          .get(Uri.parse('${BackendService.baseUrl}/api/version/check'))
-          .timeout(const Duration(seconds: 10));
-
-      // Dismiss loading dialog
-      if (mounted) {
+    // Dismiss the loading dialog exactly once; a second pop would close this screen
+    var loadingVisible = true;
+    void dismissLoading() {
+      if (loadingVisible && mounted) {
+        loadingVisible = false;
         Navigator.of(context).pop();
       }
+    }
+
+    try {
+      // Query the local Go backend update endpoint. The backend's own GitHub
+      // request times out after 10 s, so allow a little longer here.
+      final response = await BackendService.client
+          .get(Uri.parse('${BackendService.baseUrl}/api/version/check'))
+          .timeout(const Duration(seconds: 15));
+
+      dismissLoading();
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -100,15 +108,21 @@ class _AboutScreenState extends State<AboutScreen> {
           }
         }
       } else {
-        throw Exception('Server returned status ${response.statusCode}');
+        final reason = ApiService.errorMessage(
+          response,
+          'Server returned status ${response.statusCode}',
+        );
+        debugPrint('Update check failed: $reason');
+        if (mounted) {
+          ToastUtils.show(
+            context,
+            'Unable to check for updates: $reason',
+            isError: true,
+          );
+        }
       }
     } catch (e) {
-      // Dismiss loading dialog if still open
-      if (mounted) {
-        try {
-          Navigator.of(context).pop();
-        } catch (_) {}
-      }
+      dismissLoading();
       debugPrint('Update check failed: $e');
       if (mounted) {
         ToastUtils.show(
