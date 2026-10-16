@@ -20,6 +20,8 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
   final _senderPassController = TextEditingController();
   final _senderNameController = TextEditingController(text: 'AethrOps');
   bool _obscurePassword = true;
+  // The backend never returns the saved password; blank keeps it
+  bool _hasSavedPassword = false;
   bool _isSaveLoading = false;
   bool _isTestLoading = false;
 
@@ -36,7 +38,7 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
         _smtpHostController.text = config['smtp_host'] ?? 'smtp.gmail.com';
         _smtpPortController.text = (config['smtp_port'] ?? 587).toString();
         _senderEmailController.text = config['sender_email'] ?? '';
-        _senderPassController.text = config['sender_pass'] ?? '';
+        _hasSavedPassword = config['has_password'] == true;
         _senderNameController.text = config['sender_name'] ?? 'AethrOps';
       });
     }
@@ -258,7 +260,9 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                       OneUIPillTextField(
                         controller: _senderPassController,
                         label: 'App Password',
-                        hint: 'Enter app password',
+                        hint: _hasSavedPassword
+                            ? 'Leave blank to keep the saved password'
+                            : 'Enter app password',
                         icon: Icons.lock,
                         obscureText: _obscurePassword,
                         suffixIcon: IconButton(
@@ -275,7 +279,8 @@ class _EmailConfigDialogState extends State<EmailConfigDialog> {
                           },
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if ((value == null || value.isEmpty) &&
+                              !_hasSavedPassword) {
                             return 'App password is required';
                           }
                           return null;

@@ -3,7 +3,10 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+
+	"github.com/DragonEmperor9480/AethrOps/db_service"
 
 	"gopkg.in/gomail.v2"
 )
@@ -16,31 +19,114 @@ type EmailConfig struct {
 	SenderName  string `json:"sender_name"`
 }
 
-// LoadEmailConfig loads email configuration from file
+const emailConfigFileName = "email_config.json"
+
+// storedEmailConfig is the on-disk format. The SMTP password is encrypted with
+// the per-install key; SenderPass is only read to migrate older plaintext files.
+type storedEmailConfig struct {
+	SMTPHost       string `json:"smtp_host"`
+	SMTPPort       int    `json:"smtp_port"`
+	SenderEmail    string `json:"sender_email"`
+	SenderName     string `json:"sender_name"`
+	SenderPassEnc  string `json:"sender_pass_enc,omitempty"`
+	SenderPassText string `json:"sender_pass,omitempty"`
+}
+
+// LoadEmailConfig loads email configuration from file, including the decrypted password
 func LoadEmailConfig() (*EmailConfig, error) {
-	emailConfigFile, err := configFilePath("email_config.json")
+	emailConfigFile, err := configFilePath(emailConfigFileName)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if file exists
-	if _, err := os.Stat(emailConfigFile); os.IsNotExist(err) {
+	data, err := os.ReadFile(emailConfigFile)
+	if os.IsNotExist(err) {
 		return nil, fmt.Errorf("email configuration not found")
 	}
-
-	// Read the file
-	data, err := os.ReadFile(emailConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read email config: %v", err)
 	}
 
-	// Parse JSON
-	var config EmailConfig
-	if err := json.Unmarshal(data, &config); err != nil {
+	var stored storedEmailConfig
+	if err := json.Unmarshal(data, &stored); err != nil {
 		return nil, fmt.Errorf("failed to parse email config: %v", err)
 	}
 
-	return &config, nil
+	config := &EmailConfig{
+		SMTPHost:    stored.SMTPHost,
+		SMTPPort:    stored.SMTPPort,
+		SenderEmail: stored.SenderEmail,
+		SenderName:  stored.SenderName,
+	}
+
+	switch {
+	case stored.SenderPassEnc != "":
+		pass, err := db_service.Decrypt(stored.SenderPassEnc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt email password; please save the email settings again")
+		}
+		config.SenderPass = pass
+	case stored.SenderPassText != "":
+		// Older builds stored the password in plaintext: encrypt it now
+		config.SenderPass = stored.SenderPassText
+		if err := SaveEmailConfig(*config); err != nil {
+			log.Printf("Warning: failed to encrypt stored email password: %v", err)
+		}
+	}
+
+	return config, nil
+}
+
+// SaveEmailConfig writes the email configuration with the password encrypted.
+// An empty SenderPass keeps the currently saved password.
+func SaveEmailConfig(config EmailConfig) error {
+	if config.SenderPass == "" {
+		existing, err := LoadEmailConfig()
+		if err != nil || existing.SenderPass == "" {
+			return fmt.Errorf("sender password is required")
+		}
+		config.SenderPass = existing.SenderPass
+	}
+
+	encPass, err := db_service.Encrypt(config.SenderPass)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt email password: %v", err)
+	}
+
+	data, err := json.MarshalIndent(storedEmailConfig{
+		SMTPHost:      config.SMTPHost,
+		SMTPPort:      config.SMTPPort,
+		SenderEmail:   config.SenderEmail,
+		SenderName:    config.SenderName,
+		SenderPassEnc: encPass,
+	}, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal email config: %v", err)
+	}
+
+	emailConfigFile, err := configFilePath(emailConfigFileName)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(emailConfigFile, data, 0600); err != nil {
+		return fmt.Errorf("failed to write email config file: %v", err)
+	}
+	return nil
+}
+
+// DeleteEmailConfig removes the saved email configuration. Returns false if none existed.
+func DeleteEmailConfig() (bool, error) {
+	emailConfigFile, err := configFilePath(emailConfigFileName)
+	if err != nil {
+		return false, err
+	}
+	if err := os.Remove(emailConfigFile); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to delete email config file: %v", err)
+	}
+	return true, nil
 }
 
 // SendIAMCredentialsEmail sends IAM username and password to user

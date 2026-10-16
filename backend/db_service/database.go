@@ -93,5 +93,8 @@ func InitDB() error {
 	// Set file permissions to owner only
 	_ = os.Chmod(dbPath, 0600)
 
+	// Re-encrypt secrets written with the old hardcoded key
+	migrateLegacySecrets()
+
 	return nil
 }

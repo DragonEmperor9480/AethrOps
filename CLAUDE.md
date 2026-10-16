@@ -65,7 +65,9 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
 ### AWS accounts and credentials
 - Accounts are stored in the `AWSAccount` table (`db_service/models.go`), with exactly one `IsActive`. `controllers/aws_accounts.go` handles creating, listing, activating and deleting accounts, and `GET /api/aws/auth-status` returns `authenticated` | `select_account` | `no_accounts`. Activating an account must re-run `utils.InitAWSClients()`, because the global SDK clients are swapped in place.
 - `/api/aws/config` (`controllers/aws_config.go`) and the FFI `SetAWSCredentials` export are the **older** credential paths, based on `~/.aethrops/credentials` files and env vars. The DB-backed account system is the primary path.
-- The AES-GCM key in `db_service/encryption.go` is a hardcoded constant. Changing it makes every stored secret unreadable.
+- **Secrets at rest** use AES-GCM with a random per-install key, `secret.key` (mode 0600) in the config directory, created on first use (`db_service/encryption.go`). Deleting it makes every stored secret unreadable.
+  - On startup, `InitDB` re-encrypts account secrets written by older builds with the old hardcoded key.
+  - The SMTP password is stored encrypted (`sender_pass_enc`) and is never returned by `GET /api/email/config`, which only reports `has_password`.
 - SMTP config (`service/mail_service.go`) and the MFA device (`service/mfa_service.go`) are stored as files under `db_service.GetConfigDirectory()`, not in SQLite.
 
 ### Data-heavy flows
