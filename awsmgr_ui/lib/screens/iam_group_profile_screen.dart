@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import '../widgets/screen_sized_dialog_box.dart';
 
 class IAMGroupProfileScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -454,7 +455,6 @@ class _IAMGroupProfileScreenState extends State<IAMGroupProfileScreen> {
     );
   }
 
-
   Widget _buildCollapsibleSection({
     required String title,
     required int count,
@@ -690,9 +690,9 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SizedBox(
-        width: 700,
-        height: 600,
+      child: ScreenSizedDialogBox(
+        maxWidth: 700,
+        maxHeight: 600,
         child: Column(
           children: [
             // Header
@@ -1055,9 +1055,9 @@ class _AddUsersToGroupDialogState extends State<AddUsersToGroupDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SizedBox(
-        width: 600,
-        height: 600,
+      child: ScreenSizedDialogBox(
+        maxWidth: 600,
+        maxHeight: 600,
         child: Column(
           children: [
             // Header

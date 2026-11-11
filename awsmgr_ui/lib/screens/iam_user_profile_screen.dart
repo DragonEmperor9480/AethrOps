@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import '../widgets/screen_sized_dialog_box.dart';
 
 class IAMUserProfileScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -702,7 +703,6 @@ class _IAMUserProfileScreenState extends State<IAMUserProfileScreen> {
       ),
     );
   }
-
 }
 
 // Attach Policies Dialog
@@ -807,9 +807,9 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
           ? AppTheme.cardBackgroundDark
           : AppTheme.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SizedBox(
-        width: 700,
-        height: 600,
+      child: ScreenSizedDialogBox(
+        maxWidth: 700,
+        maxHeight: 600,
         child: Column(
           children: [
             // Header
