@@ -7,12 +7,16 @@ import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'providers/aws_config_provider.dart';
 import 'utils/exit_handler.dart';
+import 'utils/orientation_lock.dart';
 
 // Global navigator key to access navigator context for dialogs
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Phones stay in portrait; tablets and desktop are not restricted.
+  await lockPhonesToPortrait();
 
   // Initialize window manager for desktop platforms
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
