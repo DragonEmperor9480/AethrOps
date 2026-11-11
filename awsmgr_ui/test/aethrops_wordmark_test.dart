@@ -12,8 +12,9 @@ void main() {
     final root = tester.widget<RichText>(find.byType(RichText)).text;
     final spans = <String, TextStyle>{};
     root.visitChildren((span) {
-      if (span is TextSpan && span.text != null)
+      if (span is TextSpan && span.text != null) {
         spans[span.text!] = span.style!;
+      }
       return true;
     });
 
