@@ -596,162 +596,171 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildVersionCard(bool isDark) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isNarrow = screenWidth < 500;
+    // Decide by the width the card actually gets, not the window width: in the
+    // landscape layout it sits in a column much narrower than the window
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 520;
 
-    final versionWidget = Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Text(
-          'Version: ',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white70 : Colors.black54,
-          ),
-        ),
-        Text(
-          _version,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Quantify',
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
-      ],
-    );
-
-    final dividerWidget = Container(
-      width: 1,
-      height: 16,
-      color: isDark
-          ? Colors.white.withValues(alpha: 0.2)
-          : Colors.black.withValues(alpha: 0.2),
-    );
-
-    final platformWidget = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.computer,
-          size: 16,
-          color: isDark ? Colors.white60 : Colors.black54,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          _osName,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: isDark ? Colors.white60 : Colors.black54,
-          ),
-        ),
-      ],
-    );
-
-    final updateButtonWidget = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: _checkForUpdates,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.system_update_alt,
-                size: 16,
-                color: AppTheme.primaryPurple,
+        final versionWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              'Version: ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white70 : Colors.black54,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Check Updates',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryPurple,
-                ),
+            ),
+            Text(
+              _version,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Quantify',
+                color: isDark ? Colors.white : Colors.black,
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    return Center(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isNarrow ? 16 : 20,
-          vertical: isNarrow ? 12 : 14,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.primaryPurple.withValues(alpha: 0.15),
-              AppTheme.primaryBlue.withValues(alpha: 0.15),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(
-            color: AppTheme.primaryPurple.withValues(alpha: 0.35),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.35)
-                  : Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
             ),
           ],
-        ),
-        child: isNarrow
-            ? Column(
+        );
+
+        final dividerWidget = Container(
+          width: 1,
+          height: 16,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.black.withValues(alpha: 0.2),
+        );
+
+        final platformWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.computer,
+              size: 16,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                _osName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
+              ),
+            ),
+          ],
+        );
+
+        final updateButtonWidget = Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _checkForUpdates,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
+                  Icon(
+                    Icons.system_update_alt,
+                    size: 16,
+                    color: AppTheme.primaryPurple,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Check Updates',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryPurple,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        return Center(
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isNarrow ? 16 : 20,
+              vertical: isNarrow ? 12 : 14,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryPurple.withValues(alpha: 0.15),
+                  AppTheme.primaryBlue.withValues(alpha: 0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.35),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.35)
+                      : Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: isNarrow
+                ? Column(
                     mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          versionWidget,
+                          const SizedBox(width: 12),
+                          dividerWidget,
+                          const SizedBox(width: 12),
+                          Flexible(child: platformWidget),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 1,
+                        width: 120,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.1),
+                      ),
+                      const SizedBox(height: 6),
+                      updateButtonWidget,
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       versionWidget,
                       const SizedBox(width: 12),
                       dividerWidget,
                       const SizedBox(width: 12),
                       platformWidget,
+                      const SizedBox(width: 12),
+                      dividerWidget,
+                      const SizedBox(width: 12),
+                      updateButtonWidget,
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 1,
-                    width: 120,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.1),
-                  ),
-                  const SizedBox(height: 6),
-                  updateButtonWidget,
-                ],
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  versionWidget,
-                  const SizedBox(width: 12),
-                  dividerWidget,
-                  const SizedBox(width: 12),
-                  platformWidget,
-                  const SizedBox(width: 12),
-                  dividerWidget,
-                  const SizedBox(width: 12),
-                  updateButtonWidget,
-                ],
-              ),
-      ),
+          ),
+        );
+      },
     );
   }
 
