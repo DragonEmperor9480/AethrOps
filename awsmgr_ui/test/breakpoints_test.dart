@@ -1,3 +1,4 @@
+import 'package:aethr_ops/screens/about_screen.dart';
 import 'package:aethr_ops/screens/settings_screen.dart';
 import 'package:aethr_ops/theme/app_theme.dart';
 import 'package:aethr_ops/theme/theme_provider.dart';
@@ -5,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'helpers/real_fonts.dart';
 
 Future<void> pumpSettings(WidgetTester tester, Size size) async {
   tester.view.physicalSize = size;
@@ -25,6 +28,7 @@ Future<void> pumpSettings(WidgetTester tester, Size size) async {
 bool isTwoColumn() => find.byType(ListView).evaluate().isEmpty;
 
 void main() {
+  setUpAll(loadRoboto);
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   // Sizes where the layout was already right keep it.
@@ -50,4 +54,28 @@ void main() {
     expect(isTwoColumn(), isFalse);
     expect(tester.takeException(), isNull);
   });
+
+  // About: the one-column layout has a collapsing SliverAppBar; the
+  // two-column layout has a plain AppBar.
+  for (final (size, twoColumns) in const [
+    (Size(360, 640), false),
+    (Size(700, 360), false),
+    (Size(800, 600), true),
+    (Size(1280, 800), true),
+  ]) {
+    testWidgets(
+      'about: ${twoColumns ? 'two columns' : 'one column'} at $size',
+      (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(theme: AppTheme.lightTheme, home: const AboutScreen()),
+        );
+        await tester.pump();
+        expect(find.byType(SliverAppBar).evaluate().isEmpty, twoColumns);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

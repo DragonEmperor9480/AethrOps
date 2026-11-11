@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import '../utils/breakpoints.dart';
 import 'contributors_screen.dart';
 import 'features_screen.dart';
 
@@ -230,9 +231,9 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
-    final isLandscape = width > height || width >= 900;
+    final isLandscape = Breakpoints.isTwoColumn(
+      MediaQuery.sizeOf(context).width,
+    );
 
     if (isLandscape) {
       return Scaffold(
