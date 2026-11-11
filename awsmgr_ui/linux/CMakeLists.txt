@@ -95,6 +95,22 @@ set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+# The app starts the Go backend (aethrops_core) from its own directory. The
+# bundle is recreated on every build, so copy the backend here, as part of the
+# install step, whenever it has been built (cd backend && go build -o
+# aethrops_core main.go). Checked at install time, not configure time, so a
+# backend built after the last CMake configure is still picked up.
+set(AETHROPS_BACKEND "${CMAKE_CURRENT_SOURCE_DIR}/../../backend/aethrops_core")
+install(CODE "
+  if(EXISTS \"${AETHROPS_BACKEND}\")
+    file(INSTALL \"${AETHROPS_BACKEND}\" DESTINATION \"${CMAKE_INSTALL_PREFIX}\"
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                       GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  else()
+    message(WARNING \"Backend not found at ${AETHROPS_BACKEND}; build it first or the app cannot start it.\")
+  endif()
+  " COMPONENT Runtime)
+
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 
