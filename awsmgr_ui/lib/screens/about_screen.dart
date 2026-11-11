@@ -253,7 +253,11 @@ class _AboutScreenState extends State<AboutScreen> {
                       children: [
                         _buildLandscapeBranding(isDark),
                         const SizedBox(height: 24),
-                        _buildVersionCard(isDark),
+                        AboutVersionCard(
+                          version: _version,
+                          osName: _osName,
+                          onCheckUpdates: _checkForUpdates,
+                        ),
                         const SizedBox(height: 24),
                         _buildMadeWithLove(isDark),
                       ],
@@ -443,7 +447,11 @@ class _AboutScreenState extends State<AboutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Version Info Card
-                  _buildVersionCard(isDark),
+                  AboutVersionCard(
+                    version: _version,
+                    osName: _osName,
+                    onCheckUpdates: _checkForUpdates,
+                  ),
 
                   const SizedBox(height: 24),
 
@@ -592,175 +600,6 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
         const SizedBox(height: 16),
       ],
-    );
-  }
-
-  Widget _buildVersionCard(bool isDark) {
-    // Decide by the width the card actually gets, not the window width: in the
-    // landscape layout it sits in a column much narrower than the window
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 520;
-
-        final versionWidget = Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              'Version: ',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-            ),
-            Text(
-              _version,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Quantify',
-                color: isDark ? Colors.white : Colors.black,
-              ),
-            ),
-          ],
-        );
-
-        final dividerWidget = Container(
-          width: 1,
-          height: 16,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.2)
-              : Colors.black.withValues(alpha: 0.2),
-        );
-
-        final platformWidget = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.computer,
-              size: 16,
-              color: isDark ? Colors.white60 : Colors.black54,
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                _osName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white60 : Colors.black54,
-                ),
-              ),
-            ),
-          ],
-        );
-
-        final updateButtonWidget = Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: _checkForUpdates,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.system_update_alt,
-                    size: 16,
-                    color: AppTheme.primaryPurple,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Check Updates',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryPurple,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-
-        return Center(
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isNarrow ? 16 : 20,
-              vertical: isNarrow ? 12 : 14,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryPurple.withValues(alpha: 0.15),
-                  AppTheme.primaryBlue.withValues(alpha: 0.15),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: AppTheme.primaryPurple.withValues(alpha: 0.35),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.35)
-                      : Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: isNarrow
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          versionWidget,
-                          const SizedBox(width: 12),
-                          dividerWidget,
-                          const SizedBox(width: 12),
-                          Flexible(child: platformWidget),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 1,
-                        width: 120,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.1),
-                      ),
-                      const SizedBox(height: 6),
-                      updateButtonWidget,
-                    ],
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      versionWidget,
-                      const SizedBox(width: 12),
-                      dividerWidget,
-                      const SizedBox(width: 12),
-                      platformWidget,
-                      const SizedBox(width: 12),
-                      dividerWidget,
-                      const SizedBox(width: 12),
-                      updateButtonWidget,
-                    ],
-                  ),
-          ),
-        );
-      },
     );
   }
 
@@ -1037,6 +876,201 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The "Version: x | OS | Check Updates" pill on the About screen. One row
+/// when there is room; otherwise version and OS on one line and the update
+/// button below.
+class AboutVersionCard extends StatelessWidget {
+  final String version;
+  final String osName;
+  final VoidCallback onCheckUpdates;
+
+  const AboutVersionCard({
+    super.key,
+    required this.version,
+    required this.osName,
+    required this.onCheckUpdates,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Decide by the width the card actually gets, not the window width: in the
+    // landscape layout it sits in a column much narrower than the window
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // One row needs roughly 530 px including the card's padding, so
+        // switch early; the text below also shrinks with "..." so the card
+        // can't overflow even if a version or OS name is unusually long
+        final isNarrow = constraints.maxWidth < 600;
+
+        final versionWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              'Version: ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
+            Flexible(
+              child: Text(
+                version,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Quantify',
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
+          ],
+        );
+
+        final dividerWidget = Container(
+          width: 1,
+          height: 16,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.black.withValues(alpha: 0.2),
+        );
+
+        final platformWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.computer,
+              size: 16,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                osName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
+              ),
+            ),
+          ],
+        );
+
+        final updateButtonWidget = Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onCheckUpdates,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.system_update_alt,
+                    size: 16,
+                    color: AppTheme.primaryPurple,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Check Updates',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryPurple,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        return Center(
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isNarrow ? 16 : 20,
+              vertical: isNarrow ? 12 : 14,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryPurple.withValues(alpha: 0.15),
+                  AppTheme.primaryBlue.withValues(alpha: 0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: AppTheme.primaryPurple.withValues(alpha: 0.35),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.35)
+                      : Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: isNarrow
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(child: versionWidget),
+                          const SizedBox(width: 12),
+                          dividerWidget,
+                          const SizedBox(width: 12),
+                          Flexible(child: platformWidget),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 1,
+                        width: 120,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.1),
+                      ),
+                      const SizedBox(height: 6),
+                      updateButtonWidget,
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: versionWidget),
+                      const SizedBox(width: 12),
+                      dividerWidget,
+                      const SizedBox(width: 12),
+                      Flexible(child: platformWidget),
+                      const SizedBox(width: 12),
+                      dividerWidget,
+                      const SizedBox(width: 12),
+                      updateButtonWidget,
+                    ],
+                  ),
+          ),
+        );
+      },
     );
   }
 }
