@@ -87,15 +87,11 @@ class _SplashScreenState extends State<SplashScreen> {
           }
         } else if (status == 'select_account') {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const AccountSelectorScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const AccountSelectorScreen()),
           );
         } else {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const CredentialsSetupScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const CredentialsSetupScreen()),
           );
         }
       }
@@ -116,135 +112,184 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: isDark
           ? const Color(0xFF121212)
           : const Color(0xFFF5F5F5),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(),
+      body: SplashContent(
+        status: _status,
+        hasError: _hasError,
+        onRetry: () {
+          setState(() {
+            _hasError = false;
+            _status = 'Retrying...';
+          });
+          _initialize();
+        },
+      ),
+    );
+  }
+}
 
-            // App Name
-            Text(
-              'AethrOps',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Quantify',
-                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                letterSpacing: -0.5,
+/// The splash layout: app name, rocket animation, status or error, tagline.
+class SplashContent extends StatelessWidget {
+  final String status;
+  final bool hasError;
+  final VoidCallback onRetry;
+
+  const SplashContent({
+    super.key,
+    required this.status,
+    required this.hasError,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Full size (250 animation, 60 gaps) from about 600 high; shorter
+        // windows shrink the animation and gaps first, then scroll.
+        final height = constraints.maxHeight;
+        final animationHeight = (height - (hasError ? 400 : 350)).clamp(
+          100.0,
+          250.0,
+        );
+        final gap = ((height - 480) / 2).clamp(24.0, 60.0);
+
+        return CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildColumn(isDark, animationHeight, gap),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildColumn(bool isDark, double animationHeight, double gap) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Spacer(),
+
+          // App Name
+          Text(
+            'AethrOps',
+            style: TextStyle(
+              fontSize: 40,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Quantify',
+              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              letterSpacing: -0.5,
+            ),
+          ),
+
+          SizedBox(height: gap),
+
+          // Lottie Animation
+          ColorFiltered(
+            colorFilter: isDark
+                ? const ColorFilter.matrix([
+                    -1, 0, 0, 0, 255, // Invert red
+                    0, -1, 0, 0, 255, // Invert green
+                    0, 0, -1, 0, 255, // Invert blue
+                    0, 0, 0, 1, 0, // Keep alpha
+                  ])
+                : const ColorFilter.mode(
+                    Colors.transparent,
+                    BlendMode.multiply,
+                  ),
+            child: SizedBox(
+              height: animationHeight,
+              child: Lottie.asset(
+                'assets/animations/Rocket in space.json',
+                fit: BoxFit.contain,
+                repeat: true,
               ),
             ),
+          ),
 
-            const SizedBox(height: 60),
+          SizedBox(height: gap),
 
-            // Lottie Animation
-            ColorFiltered(
-              colorFilter: isDark
-                  ? const ColorFilter.matrix([
-                      -1, 0, 0, 0, 255, // Invert red
-                      0, -1, 0, 0, 255, // Invert green
-                      0, 0, -1, 0, 255, // Invert blue
-                      0, 0, 0, 1, 0, // Keep alpha
-                    ])
-                  : const ColorFilter.mode(
-                      Colors.transparent,
-                      BlendMode.multiply,
-                    ),
-              child: SizedBox(
-                height: 250,
-                child: Lottie.asset(
-                  'assets/animations/Rocket in space.json',
-                  fit: BoxFit.contain,
-                  repeat: true,
+          // Status message with fun text
+          if (!hasError)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                status,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : const Color(0xFF666666),
+                  letterSpacing: 0.2,
                 ),
+                textAlign: TextAlign.center,
               ),
-            ),
-
-            const SizedBox(height: 60),
-
-            // Status message with fun text
-            if (!_hasError)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Text(
-                  _status,
+            )
+          else
+            Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorRed.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: AppTheme.errorRed,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  status,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white70 : const Color(0xFF666666),
-                    letterSpacing: 0.2,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              )
-            else
-              Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppTheme.errorRed.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      Icons.error_outline_rounded,
-                      size: 48,
-                      color: AppTheme.errorRed,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _status,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.errorRed,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _hasError = false;
-                        _status = 'Retrying...';
-                      });
-                      _initialize();
-                    },
-                    icon: const Icon(Icons.refresh_rounded, size: 20),
-                    label: const Text('Try Again'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryPurple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      elevation: 4,
-                    ),
-                  ),
-                ],
-              ),
-
-            const Spacer(),
-
-            // Footer tagline
-            if (!_hasError)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: Text(
-                  'Manage your AWS Infrastructure\nAnytime, Anywhere',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white38 : const Color(0xFF999999),
-                    height: 1.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.errorRed,
                   ),
                 ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded, size: 20),
+                  label: const Text('Try Again'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryPurple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 4,
+                  ),
+                ),
+              ],
+            ),
+
+          const Spacer(),
+
+          // Footer tagline
+          if (!hasError)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: Text(
+                'Manage your AWS Infrastructure\nAnytime, Anywhere',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white38 : const Color(0xFF999999),
+                  height: 1.5,
+                ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
