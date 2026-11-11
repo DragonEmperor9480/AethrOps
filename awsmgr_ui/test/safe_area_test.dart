@@ -1,3 +1,4 @@
+import 'package:aethr_ops/screens/about_screen.dart';
 import 'package:aethr_ops/screens/features_screen.dart';
 import 'package:aethr_ops/screens/settings_screen.dart';
 import 'package:aethr_ops/screens/splash_screen.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'helpers/real_fonts.dart';
 
 // A phone with a 24 px status bar and a 48 px gesture bar.
 const topInset = 24.0;
@@ -66,6 +69,7 @@ Future<void> expectEndClearsGestureBar(WidgetTester tester, Size size) async {
 }
 
 void main() {
+  setUpAll(loadRoboto);
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   for (final size in const [Size(360, 640), Size(800, 600)]) {
@@ -73,6 +77,13 @@ void main() {
       tester,
     ) async {
       await pumpWithInsets(tester, size, const SettingsScreen());
+      await expectEndClearsGestureBar(tester, size);
+    });
+
+    testWidgets('about scrolls clear of the gesture bar at $size', (
+      tester,
+    ) async {
+      await pumpWithInsets(tester, size, const AboutScreen());
       await expectEndClearsGestureBar(tester, size);
     });
 

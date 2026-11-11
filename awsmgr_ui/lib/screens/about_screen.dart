@@ -8,6 +8,7 @@ import '../services/backend_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import '../utils/breakpoints.dart';
+import '../utils/insets.dart';
 import 'contributors_screen.dart';
 import 'features_screen.dart';
 
@@ -240,7 +241,10 @@ class _AboutScreenState extends State<AboutScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(title: const Text('About AethrOps'), centerTitle: true),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          padding: withBottomInset(
+            context,
+            const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
@@ -443,7 +447,7 @@ class _AboutScreenState extends State<AboutScreen> {
           // Content
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: withBottomInset(context, const EdgeInsets.all(20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
