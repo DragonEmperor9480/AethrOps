@@ -109,9 +109,19 @@ var (
 )
 
 // StreamLambdaLogs streams logs from a Lambda function log group using AWS SDK.
-// It tries native StartLiveTail stream first and falls back to Singleflight Adaptive Polling on error.
-func StreamLambdaLogs(ctx context.Context, logGroupName string, logChan chan<- cloudwatch_model.LogEntry, errChan chan<- error) {
-	// 1. Try Native AWS StartLiveTail stream first
+//
+// By default it uses Singleflight Adaptive Polling (FilterLogEvents). The
+// native StartLiveTail stream is used only when useLiveTail is true: Live
+// Tail is billed per minute of session time ($0.01/min after 1,800 free
+// minutes a month), and the app must stay free for its users, so it is an
+// explicit opt-in. If Live Tail fails, polling takes over.
+func StreamLambdaLogs(ctx context.Context, logGroupName string, useLiveTail bool, logChan chan<- cloudwatch_model.LogEntry, errChan chan<- error) {
+	if !useLiveTail {
+		streamLambdaLogsFallback(ctx, logGroupName, logChan, errChan)
+		return
+	}
+
+	// Opt-in: native AWS StartLiveTail stream (billed per minute)
 	log.Printf("Attempting native HTTP/2 StartLiveTail stream for log group: %s", logGroupName)
 	err := streamLiveTailNative(ctx, logGroupName, logChan)
 	if err == nil {

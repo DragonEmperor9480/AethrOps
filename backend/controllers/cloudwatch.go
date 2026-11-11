@@ -63,7 +63,10 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// Start streaming logs
-	go service.StreamLambdaLogs(ctx, logGroupName, logChan, errChan)
+	// Polling by default; ?live_tail=true opts in to StartLiveTail, which AWS
+	// bills per minute (see service.StreamLambdaLogs). The app does not send it.
+	useLiveTail := r.URL.Query().Get("live_tail") == "true"
+	go service.StreamLambdaLogs(ctx, logGroupName, useLiveTail, logChan, errChan)
 
 	// Create a flusher for SSE
 	flusher, ok := w.(http.Flusher)
