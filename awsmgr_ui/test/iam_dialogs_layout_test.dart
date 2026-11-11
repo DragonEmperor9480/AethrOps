@@ -4,6 +4,8 @@ import 'package:aethr_ops/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'helpers/real_fonts.dart';
+
 // The dialogs load from the backend in initState. In a widget test every HTTP
 // request fails, so they show their empty state (header, search/filter block,
 // list area) plus an error toast.
@@ -13,11 +15,6 @@ final dialogs = <String, Widget Function()>{
       const AttachGroupPoliciesDialog(groupname: 'admins'),
   'group add users': () => const AddUsersToGroupDialog(groupname: 'admins'),
 };
-
-// The policy dialogs' scope filter row is too wide for phone widths and
-// large text; that is a separate problem (BUG-055), so those cases only run
-// for the add-users dialog for now.
-const narrowCasesSkipped = {'user attach policies', 'group attach policies'};
 
 Future<void> pumpDialog(
   WidgetTester tester,
@@ -56,14 +53,16 @@ Future<void> expectNoOverflow(WidgetTester tester) async {
 }
 
 void main() {
-  for (final entry in dialogs.entries) {
-    final narrow = !narrowCasesSkipped.contains(entry.key);
+  // Real text widths: with the Ahem test font the dialog titles wrap to three
+  // lines on a phone, which no device does.
+  setUpAll(loadRoboto);
 
-    for (final size in [
-      if (narrow) const Size(360, 640),
-      const Size(800, 360),
-      const Size(800, 600),
-      const Size(1280, 800),
+  for (final entry in dialogs.entries) {
+    for (final size in const [
+      Size(360, 640),
+      Size(800, 360),
+      Size(800, 600),
+      Size(1280, 800),
     ]) {
       testWidgets('${entry.key} fits ${size.width}x${size.height}', (
         tester,
@@ -77,26 +76,24 @@ void main() {
       await pumpDialog(
         tester,
         entry.value(),
-        narrow ? const Size(360, 640) : const Size(800, 600),
+        const Size(360, 640),
         keyboard: 280,
       );
       await expectNoOverflow(tester);
     });
 
-    if (narrow) {
-      for (final scale in [1.5, 2.0]) {
-        testWidgets('${entry.key} fits 800x600 at text scale $scale', (
+    for (final scale in [1.5, 2.0]) {
+      testWidgets('${entry.key} fits 800x600 at text scale $scale', (
+        tester,
+      ) async {
+        await pumpDialog(
           tester,
-        ) async {
-          await pumpDialog(
-            tester,
-            entry.value(),
-            const Size(800, 600),
-            textScale: scale,
-          );
-          await expectNoOverflow(tester);
-        });
-      }
+          entry.value(),
+          const Size(800, 600),
+          textScale: scale,
+        );
+        await expectNoOverflow(tester);
+      });
     }
   }
 

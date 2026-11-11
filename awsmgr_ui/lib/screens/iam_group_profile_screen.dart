@@ -4,6 +4,7 @@ import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import '../widgets/screen_sized_dialog_box.dart';
+import '../widgets/iam/scope_filter_row.dart';
 
 class IAMGroupProfileScreen extends StatefulWidget {
   final Map<String, dynamic> group;
@@ -767,34 +768,30 @@ class _AttachGroupPoliciesDialogState extends State<AttachGroupPoliciesDialog> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Text(
-                        'Scope: ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                  ScopeFilterRow(
+                    label: const Text(
+                      'Scope: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    scopeSelector: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'All', label: Text('All')),
+                        ButtonSegment(value: 'AWS', label: Text('AWS')),
+                        ButtonSegment(value: 'Local', label: Text('Custom')),
+                      ],
+                      selected: {_scopeFilter},
+                      onSelectionChanged: (Set<String> selected) {
+                        setState(() => _scopeFilter = selected.first);
+                        _loadPolicies();
+                      },
+                    ),
+                    selectedCount: Text(
+                      '${_selectedPolicyArns.length} selected',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 8),
-                      SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'All', label: Text('All')),
-                          ButtonSegment(value: 'AWS', label: Text('AWS')),
-                          ButtonSegment(value: 'Local', label: Text('Custom')),
-                        ],
-                        selected: {_scopeFilter},
-                        onSelectionChanged: (Set<String> selected) {
-                          setState(() => _scopeFilter = selected.first);
-                          _loadPolicies();
-                        },
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${_selectedPolicyArns.length} selected',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

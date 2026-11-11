@@ -4,6 +4,7 @@ import '../widgets/loading_animation.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import '../widgets/screen_sized_dialog_box.dart';
+import '../widgets/iam/scope_filter_row.dart';
 
 class IAMUserProfileScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -900,46 +901,42 @@ class _AttachPoliciesDialogState extends State<AttachPoliciesDialog> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Text(
-                        'Scope: ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                  ScopeFilterRow(
+                    label: const Text(
+                      'Scope: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    scopeSelector: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'All', label: Text('All')),
+                        ButtonSegment(value: 'AWS', label: Text('AWS')),
+                        ButtonSegment(value: 'Local', label: Text('Custom')),
+                      ],
+                      selected: {_scopeFilter},
+                      onSelectionChanged: (Set<String> selected) {
+                        setState(() => _scopeFilter = selected.first);
+                        _loadPolicies();
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith((
+                          states,
+                        ) {
+                          if (states.contains(WidgetState.selected)) {
+                            return AppTheme.primaryPurple;
+                          }
+                          return null;
+                        }),
                       ),
-                      const SizedBox(width: 8),
-                      SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(value: 'All', label: Text('All')),
-                          ButtonSegment(value: 'AWS', label: Text('AWS')),
-                          ButtonSegment(value: 'Local', label: Text('Custom')),
-                        ],
-                        selected: {_scopeFilter},
-                        onSelectionChanged: (Set<String> selected) {
-                          setState(() => _scopeFilter = selected.first);
-                          _loadPolicies();
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith((
-                            states,
-                          ) {
-                            if (states.contains(WidgetState.selected)) {
-                              return AppTheme.primaryPurple;
-                            }
-                            return null;
-                          }),
-                        ),
+                    ),
+                    selectedCount: Text(
+                      '${_selectedPolicyArns.length} selected',
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.textSecondaryDark
+                            : AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const Spacer(),
-                      Text(
-                        '${_selectedPolicyArns.length} selected',
-                        style: TextStyle(
-                          color: isDark
-                              ? AppTheme.textSecondaryDark
-                              : AppTheme.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
