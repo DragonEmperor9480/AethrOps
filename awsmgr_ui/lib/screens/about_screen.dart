@@ -11,6 +11,7 @@ import '../utils/breakpoints.dart';
 import '../utils/insets.dart';
 import 'contributors_screen.dart';
 import 'features_screen.dart';
+import '../widgets/aethrops_wordmark.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -417,15 +418,9 @@ class _AboutScreenState extends State<AboutScreen> {
                             AppTheme.accentCyan,
                           ],
                         ).createShader(bounds),
-                        child: const Text(
-                          'AethrOps',
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Anurati',
-                            color: Colors.white,
-                            letterSpacing: 3,
-                          ),
+                        child: const AethrOpsWordmark(
+                          fontSize: 42,
+                          letterSpacing: 3,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -583,16 +578,7 @@ class _AboutScreenState extends State<AboutScreen> {
               AppTheme.accentCyan,
             ],
           ).createShader(bounds),
-          child: const Text(
-            'AethrOps',
-            style: TextStyle(
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Anurati',
-              color: Colors.white,
-              letterSpacing: 3,
-            ),
-          ),
+          child: const AethrOpsWordmark(fontSize: 40, letterSpacing: 3),
         ),
         const SizedBox(height: 8),
         Text(

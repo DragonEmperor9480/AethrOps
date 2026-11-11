@@ -6,6 +6,7 @@ import '../widgets/security_wrapper.dart';
 import '../utils/toast_utils.dart';
 import 'credentials_setup_screen.dart';
 import 'home_screen.dart';
+import '../widgets/aethrops_wordmark.dart';
 
 class AccountSelectorScreen extends StatefulWidget {
   const AccountSelectorScreen({super.key});
@@ -256,15 +257,9 @@ class _AccountSelectorScreenState extends State<AccountSelectorScreen> {
                         AppTheme.accentCyan,
                       ],
                     ).createShader(bounds),
-                    child: const Text(
-                      'AethrOps',
-                      style: TextStyle(
-                        fontSize: 38,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Anurati',
-                        color: Colors.white,
-                        letterSpacing: 2,
-                      ),
+                    child: const AethrOpsWordmark(
+                      fontSize: 38,
+                      letterSpacing: 2,
                     ),
                   ),
                   const SizedBox(height: 12),
