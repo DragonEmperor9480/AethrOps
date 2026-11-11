@@ -103,6 +103,7 @@ func CreateLogSession(functionName string) (*cloudwatch_model.LogSession, error)
 		CancelFunc:   cancel,
 	}
 
+	session.Streaming.Store(true)
 	startBackgroundWriter(session, ctx)
 
 	logSessionsMutex.Lock()
@@ -120,22 +121,16 @@ func startBackgroundWriter(session *cloudwatch_model.LogSession, ctx context.Con
 		for {
 			select {
 			case <-ctx.Done():
-				// Context cancelled - drain remaining items in channel
+				// Context cancelled - write what is already queued, then stop
 				for {
 					select {
-					case entry, ok := <-session.LogChan:
-						if !ok {
-							return
-						}
+					case entry := <-session.LogChan:
 						writeLogToDisk(session, entry)
 					default:
 						return
 					}
 				}
-			case entry, ok := <-session.LogChan:
-				if !ok {
-					return
-				}
+			case entry := <-session.LogChan:
 				writeLogToDisk(session, entry)
 			}
 		}
@@ -163,7 +158,9 @@ func writeLogToDisk(session *cloudwatch_model.LogSession, entry cloudwatch_model
 	session.LastAccess = time.Now()
 }
 
-// WriteLogToFile non-blockingly queues a log entry to be written asynchronously by the background writer
+// WriteLogToFile non-blockingly queues a log entry to be written asynchronously by the background writer.
+// LogChan is never closed, so this is safe even after the session was closed
+// (the entry is then simply never written).
 func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model.LogEntry) {
 	if session.LogChan == nil {
 		return
@@ -176,39 +173,9 @@ func WriteLogToFile(session *cloudwatch_model.LogSession, entry cloudwatch_model
 }
 
 // CloseLogSession closes a log session, flushes background logs, deletes the log file, and removes the session.
+// Called when the session's stream ends.
 func CloseLogSession(sessionID string) {
-	logSessionsMutex.Lock()
-	session, exists := logSessions[sessionID]
-	if !exists {
-		logSessionsMutex.Unlock()
-		return
-	}
-	delete(logSessions, sessionID)
-	logSessionsMutex.Unlock()
-
-	// Stop background writer and close channel
-	if session.CancelFunc != nil {
-		session.CancelFunc()
-	}
-	if session.LogChan != nil {
-		close(session.LogChan)
-	}
-
-	// Wait for background worker to completely drain and exit
-	session.WG.Wait()
-
-	session.Mutex.Lock()
-	defer session.Mutex.Unlock()
-
-	if session.File != nil {
-		_ = session.File.Close()
-		session.File = nil
-	}
-
-	// Delete the log file from disk
-	if session.FilePath != "" {
-		_ = os.Remove(session.FilePath)
-	}
+	_ = DeleteLogSession(sessionID)
 }
 
 // GetLogSession retrieves a log session by ID
@@ -218,7 +185,9 @@ func GetLogSession(sessionID string) (*cloudwatch_model.LogSession, bool) {
 
 	session, exists := logSessions[sessionID]
 	if exists {
+		session.Mutex.Lock()
 		session.LastAccess = time.Now()
+		session.Mutex.Unlock()
 	}
 	return session, exists
 }
@@ -234,15 +203,14 @@ func DeleteLogSession(sessionID string) error {
 	delete(logSessions, sessionID)
 	logSessionsMutex.Unlock()
 
-	// Stop background writer and close channel
+	session.Streaming.Store(false)
+
+	// Stop the background writer (it writes what is already queued) and wait
+	// for it. LogChan is deliberately not closed: a stream may still be
+	// sending to it, and a send on a closed channel panics.
 	if session.CancelFunc != nil {
 		session.CancelFunc()
 	}
-	if session.LogChan != nil {
-		close(session.LogChan)
-	}
-
-	// Wait for background worker to completely drain and exit
 	session.WG.Wait()
 
 	session.Mutex.Lock()
@@ -253,8 +221,10 @@ func DeleteLogSession(sessionID string) error {
 		session.File = nil
 	}
 
-	if err := os.Remove(session.FilePath); err != nil {
-		return err
+	if session.FilePath != "" {
+		if err := os.Remove(session.FilePath); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -271,9 +241,17 @@ func cleanupOldSessions() {
 
 		logSessionsMutex.RLock()
 		for sessionID, session := range logSessions {
+			// A live stream owns its session and closes it when it ends;
+			// removing it here would cut the stream's log file off mid-stream
+			if session.Streaming.Load() {
+				continue
+			}
+			session.Mutex.Lock()
+			lastAccess := session.LastAccess
+			session.Mutex.Unlock()
 			// Delete sessions older than 1 hour or inactive for 30 minutes
 			if now.Sub(session.CreatedAt) > 1*time.Hour ||
-				now.Sub(session.LastAccess) > 30*time.Minute {
+				now.Sub(lastAccess) > 30*time.Minute {
 				toDelete = append(toDelete, sessionID)
 			}
 		}
