@@ -69,7 +69,9 @@ class ApiService {
         .timeout(_timeout);
 
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      // The endpoint uses the response envelope: counts and per-user results
+      // are under "data"
+      return _envelopeData(response);
     } else {
       throw Exception(errorMessage(response, 'Failed to create users'));
     }

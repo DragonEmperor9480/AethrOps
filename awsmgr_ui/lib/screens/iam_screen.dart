@@ -161,7 +161,7 @@ class _IAMScreenState extends State<IAMScreen> {
 
         final successCount = response['success_count'] ?? 0;
         final failureCount = response['failure_count'] ?? 0;
-        final results = response['results'] as List;
+        final results = response['results'] as List? ?? [];
 
         if (!mounted) return;
         setState(() => _operationInProgress = false);
