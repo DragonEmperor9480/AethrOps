@@ -13,8 +13,8 @@ import (
 // DeleteS3BucketModel empties the bucket (all objects, versions and delete markers)
 // and then deletes it.
 func DeleteS3BucketModel(bucketName string) error {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucketName)
 
 	// Delete current objects, one page (max 1000 keys, the DeleteObjects limit) at a time
 	objects := s3.NewListObjectsV2Paginator(client, &s3.ListObjectsV2Input{
@@ -63,6 +63,7 @@ func DeleteS3BucketModel(bucketName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete bucket: %w", err)
 	}
+	utils.ForgetS3BucketRegion(bucketName)
 
 	return nil
 }

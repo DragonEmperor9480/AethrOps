@@ -11,8 +11,8 @@ import (
 
 // CreateS3Folder creates a "folder" in S3 (empty object with / suffix)
 func CreateS3Folder(bucketName, folderPath string) error {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucketName)
 
 	// Ensure folder path ends with /
 	if !strings.HasSuffix(folderPath, "/") {

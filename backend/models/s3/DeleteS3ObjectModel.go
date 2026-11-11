@@ -10,8 +10,8 @@ import (
 
 // DeleteS3Object deletes an object from S3
 func DeleteS3Object(bucketName, objectKey string) error {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucketName)
 
 	input := &s3.DeleteObjectInput{
 		Bucket: &bucketName,

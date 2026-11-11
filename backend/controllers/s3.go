@@ -177,8 +177,8 @@ func DownloadS3Object(w http.ResponseWriter, r *http.Request) {
 	bucketname := vars["bucketname"]
 	objectkey := vars["objectkey"]
 
-	// Get AWS S3 client
-	client := utils.GetS3Client()
+	// S3 client for the bucket's own region, so the URL is signed for it
+	client := utils.GetS3ClientForBucket(r.Context(), bucketname)
 
 	// Create a PresignClient wrapper
 	presignClient := s3sdk.NewPresignClient(client)
@@ -252,8 +252,8 @@ func UploadS3Object(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get AWS S3 client
-	client := utils.GetS3Client()
+	// S3 client for the bucket's own region, so the URL is signed for it
+	client := utils.GetS3ClientForBucket(r.Context(), bucketname)
 
 	// Create a PresignClient wrapper
 	presignClient := s3sdk.NewPresignClient(client)

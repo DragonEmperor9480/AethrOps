@@ -31,6 +31,10 @@ var (
 
 	// Client cache for region-specific clients
 	ec2ClientCache sync.Map // map[string]*ec2.Client
+
+	// S3 requests about a bucket must be signed for the bucket's own region
+	s3ClientCache  sync.Map // map[region]*s3.Client
+	s3BucketRegion sync.Map // map[bucket name]region
 )
 
 // InitAWSClients initializes AWS SDK clients from the active database account
@@ -93,6 +97,8 @@ func UseAWSConfig(cfg aws.Config) {
 // ?region= would keep acting on the previous account.
 func setAWSClients(cfg aws.Config) {
 	ec2ClientCache.Clear()
+	s3ClientCache.Clear()
+	s3BucketRegion.Clear()
 
 	// Store config for creating region-specific clients
 	awsConfig = cfg
@@ -109,6 +115,8 @@ func setAWSClients(cfg aws.Config) {
 // when no credentials remain.
 func ResetAWSClients() {
 	ec2ClientCache.Clear()
+	s3ClientCache.Clear()
+	s3BucketRegion.Clear()
 	awsConfig = aws.Config{}
 
 	EC2Client = nil
@@ -185,6 +193,74 @@ func GetLambdaClient() *lambda.Client {
 // GetS3Client returns the S3 client
 func GetS3Client() *s3.Client {
 	return S3Client
+}
+
+// GetS3ClientForBucket returns an S3 client for the region the bucket lives
+// in. Listing, presigning and every other request about a bucket must be
+// signed for that region; the default client only works for buckets in the
+// account's region. The region is looked up once per bucket and cached until
+// the credentials change. If the lookup fails (for example without
+// s3:GetBucketLocation), the default client is returned, as before.
+func GetS3ClientForBucket(ctx context.Context, bucket string) *s3.Client {
+	if S3Client == nil {
+		return nil
+	}
+
+	if region, ok := s3BucketRegion.Load(bucket); ok {
+		return getS3ClientForRegion(region.(string))
+	}
+
+	region, err := lookupBucketRegion(ctx, bucket)
+	if err != nil {
+		log.Printf("Could not look up the region of bucket %s, using %s: %v",
+			bucket, S3Client.Options().Region, err)
+		return S3Client
+	}
+	s3BucketRegion.Store(bucket, region)
+	return getS3ClientForRegion(region)
+}
+
+// ForgetS3BucketRegion drops a bucket's cached region (after the bucket is
+// deleted, the name may be reused in another region).
+func ForgetS3BucketRegion(bucket string) {
+	s3BucketRegion.Delete(bucket)
+}
+
+// getS3ClientForRegion returns the default S3 client for the account's region
+// and a cached client for any other region.
+func getS3ClientForRegion(region string) *s3.Client {
+	if region == S3Client.Options().Region {
+		return S3Client
+	}
+	if client, ok := s3ClientCache.Load(region); ok {
+		return client.(*s3.Client)
+	}
+	client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
+		o.Region = region
+	})
+	actual, _ := s3ClientCache.LoadOrStore(region, client)
+	return actual.(*s3.Client)
+}
+
+// lookupBucketRegion asks S3 where a bucket lives. GetBucketLocation sent to
+// us-east-1 answers for buckets in any region.
+func lookupBucketRegion(ctx context.Context, bucket string) (string, error) {
+	out, err := getS3ClientForRegion("us-east-1").GetBucketLocation(ctx, &s3.GetBucketLocationInput{
+		Bucket: &bucket,
+	})
+	if err != nil {
+		return "", err
+	}
+	switch out.LocationConstraint {
+	case "":
+		// Buckets in us-east-1 report no location constraint
+		return "us-east-1", nil
+	case "EU":
+		// Legacy name for eu-west-1
+		return "eu-west-1", nil
+	default:
+		return string(out.LocationConstraint), nil
+	}
 }
 
 // GetSTSClient returns the STS client

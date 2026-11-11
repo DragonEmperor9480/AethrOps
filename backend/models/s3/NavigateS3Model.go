@@ -19,8 +19,8 @@ type S3Item struct {
 
 // ListS3ItemsWithPrefix lists objects in a bucket with a specific prefix (for folder navigation)
 func ListS3ItemsWithPrefix(bucketName, prefix string) ([]S3Item, error) {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucketName)
 
 	delimiter := "/"
 	input := &s3.ListObjectsV2Input{

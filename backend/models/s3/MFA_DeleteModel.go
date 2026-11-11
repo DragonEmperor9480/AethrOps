@@ -11,8 +11,8 @@ import (
 
 // GetBucketVersioning gets current versioning + MFA status
 func GetBucketVersioning(bucket string) string {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucket)
 
 	input := &s3.GetBucketVersioningInput{
 		Bucket: &bucket,
@@ -29,8 +29,8 @@ func GetBucketVersioning(bucket string) string {
 
 // UpdateBucketMFADelete updates MFA Delete config
 func UpdateBucketMFADelete(bucket, securityARN, mfaCode string, enable bool) error {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucket)
 
 	var mfaDelete types.MFADelete
 	if enable {

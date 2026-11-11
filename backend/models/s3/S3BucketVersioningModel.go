@@ -11,8 +11,8 @@ import (
 
 // GetBucketVersioningStatusModel gets current bucket versioning status
 func GetBucketVersioningStatusModel(bucketName string) (string, error) {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucketName)
 
 	input := &s3.GetBucketVersioningInput{
 		Bucket: &bucketName,
@@ -28,8 +28,8 @@ func GetBucketVersioningStatusModel(bucketName string) (string, error) {
 
 // SetBucketVersioningModel sets bucket versioning status
 func SetBucketVersioningModel(bucketName, status string) error {
-	client := utils.GetS3Client()
 	ctx := context.TODO()
+	client := utils.GetS3ClientForBucket(ctx, bucketName)
 
 	var versioningStatus types.BucketVersioningStatus
 	if status == "Enabled" {
