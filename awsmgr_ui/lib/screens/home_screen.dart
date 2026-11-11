@@ -17,6 +17,7 @@ import '../services/aws_credentials_service.dart';
 import '../utils/constants.dart';
 import '../utils/toast_utils.dart';
 import '../utils/exit_handler.dart';
+import '../utils/breakpoints.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -245,7 +246,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 navigator.pop();
               },
               style: TextButton.styleFrom(
-                foregroundColor: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                foregroundColor: isDark
+                    ? AppTheme.textSecondaryDark
+                    : AppTheme.textSecondary,
               ),
               child: const Text("Don't ask again"),
             ),
@@ -349,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               backgroundColor: theme.scaffoldBackgroundColor,
               elevation: 0,
               actions: [
-                  Container(
+                Container(
                   margin: const EdgeInsets.symmetric(
                     vertical: 12,
                     horizontal: 8,
@@ -461,8 +464,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     title: LayoutBuilder(
                       builder: (context, constraints) {
-                        final isMobile =
-                            MediaQuery.of(context).size.width < 600;
+                        final isMobile = Breakpoints.isCompact(
+                          MediaQuery.sizeOf(context).width,
+                        );
                         return SingleChildScrollView(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -638,17 +642,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const SizedBox(height: 24),
                     LayoutBuilder(
                       builder: (context, constraints) {
-                        final crossAxisCount = constraints.maxWidth > 900
+                        final crossAxisCount =
+                            constraints.maxWidth > Breakpoints.expanded
                             ? 4
-                            : constraints.maxWidth > 600
+                            : constraints.maxWidth > Breakpoints.compact
                             ? 3
                             : 2;
 
                         // Adjust aspect ratio based on screen size (width / height)
                         // On small screens, we need more vertical space to prevent description truncation.
-                        final aspectRatio = constraints.maxWidth > 900
+                        final aspectRatio =
+                            constraints.maxWidth > Breakpoints.expanded
                             ? 1.2
-                            : constraints.maxWidth > 600
+                            : constraints.maxWidth > Breakpoints.compact
                             ? 1.15
                             : 0.85;
 

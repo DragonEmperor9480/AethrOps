@@ -6,6 +6,7 @@ import '../widgets/mfa_device_dialog.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import '../widgets/oneui_widgets.dart';
+import '../utils/breakpoints.dart';
 
 class ConfigurationsScreen extends StatefulWidget {
   const ConfigurationsScreen({super.key});
@@ -30,10 +31,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
   Future<void> _loadSettings() async {
     setState(() => _loading = true);
     try {
-      await Future.wait([
-        _loadEmailConfigStatus(),
-        _loadMFADeviceStatus(),
-      ]);
+      await Future.wait([_loadEmailConfigStatus(), _loadMFADeviceStatus()]);
     } catch (e) {
       debugPrint('Error loading settings: $e');
     } finally {
@@ -107,7 +105,9 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           backgroundColor: Colors.transparent,
           child: Container(
             width: 500,
@@ -149,7 +149,10 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
                             SizedBox(height: 4),
                             Text(
                               'Are you sure you want to delete your email configuration? You will need to re-enter it to send credentials via email.',
-                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -180,7 +183,10 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -242,7 +248,9 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           backgroundColor: Colors.transparent,
           child: Container(
             width: 500,
@@ -284,7 +292,10 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
                             SizedBox(height: 4),
                             Text(
                               'Are you sure you want to delete your MFA device configuration? You will need to re-enter it for MFA operations.',
-                              style: TextStyle(fontSize: 13, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -315,7 +326,10 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -357,9 +371,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Configurations'),
-      ),
+      appBar: AppBar(title: const Text('Configurations')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -390,7 +402,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
 
   Widget _buildEmailConfigCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isMobile = Breakpoints.isCompact(MediaQuery.sizeOf(context).width);
 
     Widget mainContent = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -404,9 +416,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
-            _hasEmailConfig
-                ? Icons.mark_email_read
-                : Icons.email_outlined,
+            _hasEmailConfig ? Icons.mark_email_read : Icons.email_outlined,
             color: _hasEmailConfig
                 ? AppTheme.successGreen
                 : AppTheme.warningAmber,
@@ -504,7 +514,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
 
   Widget _buildMFADeviceCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isMobile = Breakpoints.isCompact(MediaQuery.sizeOf(context).width);
 
     Widget mainContent = Row(
       crossAxisAlignment: CrossAxisAlignment.center,

@@ -6,6 +6,7 @@ import 'account_selector_screen.dart';
 import 'configurations_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../utils/breakpoints.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,16 +18,13 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
-    final isLandscape = width > height || width >= 900;
+    final isLandscape = Breakpoints.isTwoColumn(
+      MediaQuery.sizeOf(context).width,
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        centerTitle: isLandscape,
-      ),
+      appBar: AppBar(title: const Text('Settings'), centerTitle: isLandscape),
       body: isLandscape
           ? SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),

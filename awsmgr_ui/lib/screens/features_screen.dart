@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/breakpoints.dart';
 
 class FeaturesScreen extends StatefulWidget {
   const FeaturesScreen({super.key});
@@ -13,9 +14,11 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final width = MediaQuery.of(context).size.width;
-    
+
     // 1-column on mobile, 2-column on tablets, 3-column on desktop
-    final crossAxisCount = width >= 1100 ? 3 : (width >= 750 ? 2 : 1);
+    final crossAxisCount = width >= Breakpoints.large
+        ? 3
+        : (width >= Breakpoints.medium ? 2 : 1);
 
     final features = [
       {
@@ -68,17 +71,16 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
       chunkedFeatures.add(
         features.sublist(
           i,
-          (i + crossAxisCount) > features.length ? features.length : i + crossAxisCount,
+          (i + crossAxisCount) > features.length
+              ? features.length
+              : i + crossAxisCount,
         ),
       );
     }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Features'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Features'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Center(
@@ -124,7 +126,9 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryPurple.withValues(alpha: 0.25),
+                              color: AppTheme.primaryPurple.withValues(
+                                alpha: 0.25,
+                              ),
                               blurRadius: 12,
                               spreadRadius: 2,
                             ),
@@ -180,7 +184,9 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
                         ...rowItems.map((item) {
                           return Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
                               child: _buildFeatureCard(item, isDark),
                             ),
                           );
@@ -188,9 +194,7 @@ class _FeaturesScreenState extends State<FeaturesScreen> {
                         if (rowItems.length < crossAxisCount)
                           ...List.generate(
                             crossAxisCount - rowItems.length,
-                            (index) => const Expanded(
-                              child: SizedBox(),
-                            ),
+                            (index) => const Expanded(child: SizedBox()),
                           ),
                       ],
                     ),
