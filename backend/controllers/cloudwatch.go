@@ -120,7 +120,14 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 			}
 			flusher.Flush()
 
-		case logEntry := <-logChan:
+		case logEntry, ok := <-logChan:
+			if !ok {
+				// The service closed the stream (Live Tail's time limit, or
+				// polling stopped): report why, if it said, and end the
+				// response instead of reading the closed channel forever
+				endStream(w, flusher, &eventID, errChan)
+				return
+			}
 			// Write to file asynchronously (non-blocking channel push)
 			service.WriteLogToFile(session, logEntry)
 
@@ -138,7 +145,13 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 				case <-ctx.Done():
 					drainTimer.Stop()
 					return
-				case entry := <-logChan:
+				case entry, ok := <-logChan:
+					if !ok {
+						drainTimer.Stop()
+						flusher.Flush()
+						endStream(w, flusher, &eventID, errChan)
+						return
+					}
 					// Write to file asynchronously
 					service.WriteLogToFile(session, entry)
 
@@ -173,6 +186,24 @@ func StreamLambdaLogs(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	}
+}
+
+// endStream is called once the service has closed the log channel. If the
+// service reported an error, it is sent to the client as an error event.
+func endStream(w http.ResponseWriter, flusher http.Flusher, eventID *uint64, errChan <-chan error) {
+	select {
+	case err := <-errChan:
+		if err != nil {
+			*eventID++
+			data, _ := json.Marshal(map[string]any{
+				"type":  "error",
+				"error": err.Error(),
+			})
+			fmt.Fprintf(w, "id: %d\ndata: %s\n\n", *eventID, data)
+			flusher.Flush()
+		}
+	default:
 	}
 }
 
