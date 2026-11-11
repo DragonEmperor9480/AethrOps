@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -23,6 +25,18 @@ class ServiceCard extends StatefulWidget {
          icon != null || svgAsset != null,
          'Either icon or svgAsset must be provided',
        );
+
+  /// The height the card's content needs at [textScaler]: padding and
+  /// border, the 44 px icon box, the title, a two-line description and the
+  /// "Open" row, with the gaps between them. Keep in sync with [build].
+  static double minHeight(TextScaler textScaler) {
+    // The title and "Open" inherit Material 3's bodyMedium line height (1.43).
+    const lineHeight = 1.45;
+    final title = textScaler.scale(15) * lineHeight;
+    final description = textScaler.scale(12) * 1.3 * 2;
+    final open = math.max(textScaler.scale(12) * lineHeight, 13.0);
+    return 32 + 3 + 44 + 12 + title + 4 + description + 10 + open + 2;
+  }
 
   @override
   State<ServiceCard> createState() => _ServiceCardState();

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -640,63 +641,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final crossAxisCount =
-                            constraints.maxWidth > Breakpoints.expanded
-                            ? 4
-                            : constraints.maxWidth > Breakpoints.compact
-                            ? 3
-                            : 2;
-
-                        // Adjust aspect ratio based on screen size (width / height)
-                        // On small screens, we need more vertical space to prevent description truncation.
-                        final aspectRatio =
-                            constraints.maxWidth > Breakpoints.expanded
-                            ? 1.2
-                            : constraints.maxWidth > Breakpoints.compact
-                            ? 1.15
-                            : 0.85;
-
-                        return GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: aspectRatio,
-                              ),
-                          itemCount: _mainServices.length,
-                          itemBuilder: (context, index) {
-                            final service = _mainServices[index];
-                            return TweenAnimationBuilder<double>(
-                              duration: Duration(
-                                milliseconds: 300 + (index * 100),
-                              ),
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              builder: (context, value, child) {
-                                return Transform.scale(
-                                  scale: value,
-                                  child: Opacity(opacity: value, child: child),
-                                );
-                              },
-                              child: ServiceCard(
-                                title: service.title,
-                                description: service.description,
-                                icon: service.icon,
-                                svgAsset: service.svgAsset,
-                                color: service.color,
-                                onTap: () => _navigateToService(
-                                  service.route,
-                                  service.comingSoon,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
+                    ServiceGrid(
+                      services: _mainServices,
+                      onOpen: (service) =>
+                          _navigateToService(service.route, service.comingSoon),
                     ),
 
                     const SizedBox(height: 32),
@@ -707,6 +655,78 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The grid of service cards on the home screen.
+class ServiceGrid extends StatelessWidget {
+  final List<ServiceInfo> services;
+  final void Function(ServiceInfo service) onOpen;
+
+  const ServiceGrid({super.key, required this.services, required this.onOpen});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > Breakpoints.expanded
+            ? 4
+            : constraints.maxWidth > Breakpoints.compact
+            ? 3
+            : 2;
+
+        // Adjust aspect ratio based on screen size (width / height)
+        // On small screens, we need more vertical space to prevent description truncation.
+        final aspectRatio = constraints.maxWidth > Breakpoints.expanded
+            ? 1.2
+            : constraints.maxWidth > Breakpoints.compact
+            ? 1.15
+            : 0.85;
+
+        const spacing = 16.0;
+        final cellWidth =
+            (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
+            crossAxisCount;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            // The aspect ratio sets the height at normal text sizes; larger
+            // text makes the cells as tall as the cards need.
+            mainAxisExtent: math.max(
+              cellWidth / aspectRatio,
+              ServiceCard.minHeight(MediaQuery.textScalerOf(context)),
+            ),
+          ),
+          itemCount: services.length,
+          itemBuilder: (context, index) {
+            final service = services[index];
+            return TweenAnimationBuilder<double>(
+              duration: Duration(milliseconds: 300 + (index * 100)),
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Opacity(opacity: value, child: child),
+                );
+              },
+              child: ServiceCard(
+                title: service.title,
+                description: service.description,
+                icon: service.icon,
+                svgAsset: service.svgAsset,
+                color: service.color,
+                onTap: () => onOpen(service),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
