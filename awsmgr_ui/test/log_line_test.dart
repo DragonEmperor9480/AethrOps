@@ -13,6 +13,8 @@ Future<void> pumpLine(
   LogEntry log, {
   String query = '',
   bool isCurrentMatch = false,
+  bool jsonExpanded = false,
+  VoidCallback? onToggleJson,
 }) {
   final isMatch =
       query.isNotEmpty &&
@@ -25,6 +27,8 @@ Future<void> pumpLine(
           searchQuery: query,
           isMatch: isMatch,
           isCurrentMatch: isCurrentMatch,
+          jsonExpanded: jsonExpanded,
+          onToggleJson: onToggleJson,
         ),
       ),
     ),
@@ -155,5 +159,41 @@ void main() {
         expect(span.style!.fontFamilyFallback, monoFontFallback);
       }
     }
+  });
+
+  String shownText(WidgetTester tester) =>
+      spansOf(tester).map((s) => s.text).join();
+
+  testWidgets('JSON is shown on one line, as logged, until expanded', (
+    tester,
+  ) async {
+    var toggles = 0;
+    final log = entry('INFO\t{"user": "alice", "n": 1}');
+    await pumpLine(tester, log, onToggleJson: () => toggles++);
+    expect(shownText(tester), 'INFO\t{"user": "alice", "n": 1}');
+    await tester.tap(find.text('Expand'));
+    expect(toggles, 1);
+
+    await pumpLine(tester, log, jsonExpanded: true, onToggleJson: () {});
+    expect(shownText(tester), 'INFO\t\n{\n  "user": "alice",\n  "n": 1\n}');
+    expect(find.text('Collapse'), findsOneWidget);
+  });
+
+  testWidgets('JSON logged over several lines is collapsed to one', (
+    tester,
+  ) async {
+    await pumpLine(tester, entry('INFO\t{\n  "a": [1, 2],\n  "b": null\n}'));
+    expect(shownText(tester), 'INFO\t{"a":[1,2],"b":null}');
+    // No Expand button when the caller cannot keep the state
+    expect(find.text('Expand'), findsNothing);
+  });
+
+  testWidgets('search highlights the collapsed JSON as logged', (tester) async {
+    await pumpLine(
+      tester,
+      entry('INFO\t{"user": "alice"}'),
+      query: '"user": "a',
+    );
+    expect(colorOf(tester, '"user": "a'), Colors.black);
   });
 }

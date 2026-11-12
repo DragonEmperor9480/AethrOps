@@ -22,6 +22,9 @@ class LiveLogViewerScreen extends StatefulWidget {
 class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     with TickerProviderStateMixin {
   final List<LogEntry> _logs = [];
+  // JSON logs the user expanded. Kept here, by identity, because the list
+  // discards rows that scroll out of view.
+  final Set<LogEntry> _expandedJson = Set.identity();
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
@@ -149,6 +152,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 // Cap log buffer at 10,000 entries to prevent unbounded memory growth
                 if (_logs.length > 10000) {
                   final removeCount = _logs.length - 10000;
+                  _expandedJson.removeAll(_logs.take(removeCount));
                   _logs.removeRange(0, removeCount);
                   // Adjust search match indices
                   _searchMatches.removeWhere((i) => i < removeCount);
@@ -357,6 +361,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   void _resetLogs() {
     setState(() {
       _logs.clear();
+      _expandedJson.clear();
       _searchMatches.clear();
       _currentMatchIndex = -1;
     });
@@ -1101,6 +1106,10 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     searchQuery: _searchQuery,
                     isMatch: isMatch,
                     isCurrentMatch: isCurrentMatch,
+                    jsonExpanded: _expandedJson.contains(log),
+                    onToggleJson: () => setState(() {
+                      if (!_expandedJson.remove(log)) _expandedJson.add(log);
+                    }),
                   ),
                 ),
                 // Copy button

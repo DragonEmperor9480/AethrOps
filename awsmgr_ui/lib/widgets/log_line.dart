@@ -9,11 +9,16 @@ import '../utils/toast_utils.dart';
 
 /// The text of one line in the live log viewer: plain text, or the prefix
 /// and syntax-coloured JSON, with search matches highlighted.
+///
+/// JSON is shown on one line, as it was logged, unless [jsonExpanded];
+/// [onToggleJson] (when given) adds an Expand/Collapse button.
 class LogLineContent extends StatelessWidget {
   final LogEntry log;
   final String searchQuery;
   final bool isMatch;
   final bool isCurrentMatch;
+  final bool jsonExpanded;
+  final VoidCallback? onToggleJson;
 
   const LogLineContent({
     super.key,
@@ -21,6 +26,8 @@ class LogLineContent extends StatelessWidget {
     required this.searchQuery,
     required this.isMatch,
     required this.isCurrentMatch,
+    this.jsonExpanded = false,
+    this.onToggleJson,
   });
 
   @override
@@ -60,7 +67,15 @@ class LogLineContent extends StatelessWidget {
     bool isMatch,
     bool isCurrentMatch,
   ) {
-    final prettyJson = const JsonEncoder.withIndent('  ').convert(jsonObj);
+    // Collapsed: the JSON as logged when it is on one line (so search
+    // highlights match what was searched), else re-encoded without spaces.
+    // Expanded: indented, one value per line.
+    final jsonText = log.jsonText!;
+    final shownJson = jsonExpanded
+        ? const JsonEncoder.withIndent('  ').convert(jsonObj)
+        : jsonText.contains('\n')
+        ? jsonEncode(jsonObj)
+        : jsonText;
 
     final spans = <TextSpan>[];
 
@@ -79,47 +94,69 @@ class LogLineContent extends StatelessWidget {
       );
     }
 
-    // Add newline before JSON for better formatting
-    if (prefix.isNotEmpty) {
+    // Expanded JSON starts on its own line
+    if (prefix.isNotEmpty && jsonExpanded) {
       spans.add(const TextSpan(text: '\n'));
     }
 
     // Add JSON with syntax highlighting
     if (searchQuery.isNotEmpty && isMatch) {
-      spans.addAll(_buildHighlightedJsonSpans(prettyJson, isCurrentMatch));
+      spans.addAll(_buildHighlightedJsonSpans(shownJson, isCurrentMatch));
     } else {
-      spans.addAll(_buildJsonSpans(prettyJson, 0));
+      spans.addAll(_buildJsonSpans(shownJson, 0));
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SelectableText.rich(TextSpan(children: spans)),
-        const SizedBox(height: 8),
-        // Copies the JSON as it was logged, like the line button copies the
-        // line as it was logged
-        TextButton.icon(
-          onPressed: () => copyLogText(context, log.jsonText!, 'JSON'),
-          icon: const Icon(Icons.code, size: 14),
-          label: const Text('Copy JSON'),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.blueAccent.shade400,
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            minimumSize: const Size(0, 32),
-            textStyle: const TextStyle(
-              fontSize: 11,
-              fontFamily: monoFontFamily,
-              fontFamilyFallback: monoFontFallback,
-              fontWeight: FontWeight.w500,
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            // Copies the JSON as it was logged, like the line button copies
+            // the line as it was logged
+            _jsonButton(
+              icon: Icons.code,
+              label: 'Copy JSON',
+              onPressed: () => copyLogText(context, jsonText, 'JSON'),
             ),
-            side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.3)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
+            if (onToggleJson != null)
+              _jsonButton(
+                icon: jsonExpanded ? Icons.unfold_less : Icons.unfold_more,
+                label: jsonExpanded ? 'Collapse' : 'Expand',
+                onPressed: onToggleJson!,
+              ),
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _jsonButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 14),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.blueAccent.shade400,
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: const Size(0, 32),
+        textStyle: const TextStyle(
+          fontSize: 11,
+          fontFamily: monoFontFamily,
+          fontFamilyFallback: monoFontFallback,
+          fontWeight: FontWeight.w500,
+        ),
+        side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.3)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
     );
   }
 
