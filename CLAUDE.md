@@ -11,8 +11,10 @@ Pinned toolchain versions (Flutter 3.41.3, Go 1.24.3, JDK 17, NDK r26d, etc.) ar
 ## Commands
 
 ```bash
-# Linux dev run: builds backend/aethrops_core, starts `flutter run -d linux`,
-# then copies the backend binary into build/linux/x64/debug/bundle/
+# Linux dev run: builds backend/aethrops_core, then runs `flutter run -d linux` in the
+# foreground (hot reload works). linux/CMakeLists.txt copies backend/aethrops_core into
+# the bundle at install time, because the bundle is recreated on every build.
+# Note: this dev build has no version ldflags, so the backend reports "placeholder for version".
 ./scripts/run_linux.sh
 
 # Backend only (desktop HTTP server on 127.0.0.1:9480). It refuses to start without a token,
@@ -35,7 +37,9 @@ cd backend && go vet ./... && go fmt ./... && staticcheck ./...
 cd awsmgr_ui && flutter analyze --no-fatal-infos && dart format lib/
 ```
 
-The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` directory. Run `go vet`, `flutter analyze` and the app itself to check changes.
+Tests:
+- **Flutter:** `cd awsmgr_ui && flutter test`. `awsmgr_ui/test/` holds widget tests for layout (screens and dialogs pumped at 360×640, 800×360, 800×600 and 1280×800, and at text scale 1.5/2.0), plus small unit tests. Screens that call the backend in `initState` are tested through an extracted widget (e.g. `SplashContent`, `ServiceGrid`, `AboutVersionCard`), not with mocks. Tests that depend on text width call `loadRoboto()` from `test/helpers/real_fonts.dart`, because the default Ahem test font is about twice as wide as Roboto. Reset `tester.view` at the end of each test.
+- **Go:** there are no `_test.go` files yet. Run `go vet` (and `staticcheck`) and the app itself to check backend changes.
 
 ## Architecture
 
@@ -58,7 +62,7 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
   - **IAM (refactored):** the logic is in `service/iam_user_service.go`, `iam_group_service.go` and `iam_policy_service.go`. Request/result types are flat files in `models/` (`iamUser.go`, `iamGroup.go`, `iamPolicy.go`). Simple list calls may call `utils.IAMClient` directly from the controller. The old `models/iam/{user,group,policy}/` packages are gone.
   - **S3, EC2 and CloudWatch:** still use the older layout of one file per operation under `models/<service>/` (e.g. `models/s3/CreateS3FolderModel.go`), with mixed snake_case/PascalCase file names.
   - Several IAM routes in `routes.go` are commented out or marked `NEED TO IMPLEMENT IT LATER` while the refactor is in progress.
-- `utils/aws_client.go`: global SDK clients (`utils.EC2Client`, `IAMClient`, `S3Client`, …) plus a per-region EC2 client cache. `InitAWSClients()` loads the **active account from SQLite** and falls back to file/env config. Switching accounts or credentials re-runs this (`controllers/aws_reload.go`).
+- `utils/aws_client.go`: global SDK clients (`utils.EC2Client`, `IAMClient`, `S3Client`, …) plus a per-region EC2 client cache. S3 calls about a single bucket must use `utils.GetS3ClientForBucket(ctx, bucket)`, which signs for the bucket's own region (looked up once with `GetBucketLocation` and cached). Only `ListBuckets` and `CreateBucket` use the default `S3Client`. All these caches are cleared whenever the credentials change. `InitAWSClients()` loads the **active account from SQLite** and falls back to file/env config. Switching accounts or credentials re-runs this (`controllers/aws_reload.go`).
 - `db_service/`: GORM + SQLite (`aethrops.db`; v1.1 started a fresh database, and the old `aethrops_data.db` is ignored). Desktop stores it under `~/.aethrops/`, and mobile uses the directory passed to `SetDataDirectory`. Secret keys are encrypted at rest through `db_service.Encrypt/Decrypt`.
 - `service/`: IAM business logic (see above), plus longer-running and cross-cutting features such as CloudWatch log streaming and sessions, SMTP mail for sending IAM credentials, and MFA.
 
@@ -71,15 +75,16 @@ The repo has no unit tests, either Go `_test.go` files or a Flutter `test/` dire
 
 ### Data-heavy flows
 - **S3 transfers never go through the backend.** `POST /s3/buckets/{b}/upload` and `GET /s3/buckets/{b}/objects/{key}` only return 15-minute **presigned URLs**. For uploads, `S3Service` PUTs directly to S3 with a separate `Dio` client and throttles its progress callbacks. Viewing and downloading open the presigned URL in the system browser (`launchUrl` in `s3_browser_screen.dart`).
-- **CloudWatch live logs** use Server-Sent Events. `GET /api/cloudwatch/lambda/{fn}/logs` streams `data: {json}` events with event IDs. `service/cloudwatch_service.go` uses a shared `FilterLogEvents` polling loop with a dedup cache. The native StartLiveTail API is used only with `?live_tail=true` (the app never sends it), because AWS bills Live Tail per minute after 1,800 free minutes a month. Each stream also writes to a log session file (`service/log_session_service.go`), which can be downloaded from `/api/cloudwatch/logs/download/{sessionId}`. On the Flutter side, `CloudWatchService.streamLambdaLogs` parses the SSE by hand.
+- **CloudWatch live logs** use Server-Sent Events. `GET /api/cloudwatch/lambda/{fn}/logs` streams `data: {json}` events with event IDs. `service/cloudwatch_service.go` uses a shared `FilterLogEvents` polling loop with a dedup cache. The native StartLiveTail API is used only with `?live_tail=true` (the app never sends it), because AWS bills Live Tail per minute after 1,800 free minutes a month. Each stream also writes to a log session file (`service/log_session_service.go`). The session lives as long as its stream: `LogChan` is never closed (the writer stops on context cancel), and the idle cleanup skips streaming sessions. The file can be downloaded from `/api/cloudwatch/logs/download/{sessionId}`. On the Flutter side, `CloudWatchService.streamLambdaLogs` parses the SSE by hand.
 
 ### Flutter (`awsmgr_ui/lib/`)
-- **Startup flow:** `main.dart` → `SplashScreen` starts the backend (`BackendService.start()`, which polls `/health` for up to 15 s), then routes based on `auth-status`. `authenticated` goes to `SecurityWrapper(child: HomeScreen())`, `select_account` to `AccountSelectorScreen`, and `no_accounts` to `CredentialsSetupScreen`.
+- **Startup flow:** `main.dart` locks phones (shortest side < 600 logical px) to portrait (`utils/orientation_lock.dart`), then → `SplashScreen` starts the backend (`BackendService.start()`, which polls `/health` for up to 15 s), then routes based on `auth-status`. `authenticated` goes to `SecurityWrapper(child: HomeScreen())`, `select_account` to `AccountSelectorScreen`, and `no_accounts` to `CredentialsSetupScreen`.
 - **PIN and biometric lock:** `services/security_service.dart` stores a hashed PIN in `flutter_secure_storage` and uses `local_auth`. `widgets/security_wrapper.dart` locks the app again after 5 minutes in the background.
 - **Desktop window close:** `main.dart` sets `windowManager.setPreventClose(true)`. `onWindowClose` → `utils/exit_handler.dart` shows a confirmation, then POSTs `/api/shutdown` (the backend calls `os.Exit`).
 - **`services/`** holds thin, static backend clients. Most use `package:http` with a 30 s timeout (`api_service.dart` covers IAM, accounts, email and version). S3 uses `dio` for its long timeouts and progress reporting. Add a new endpoint to the matching service, not inside a screen.
 - **State:** `provider` with only two `ChangeNotifier`s, `ThemeProvider` and `AwsConfigProvider` (current/available region, cached in `shared_preferences`). Everything else is local `StatefulWidget` state in the screens, which are large (1–1.5k lines).
 - **UI:** `screens/` holds one screen per AWS area plus its detail and profile screens. Shared widgets are in `widgets/`, including the Samsung-style `oneui_widgets.dart`, and IAM dialogs are in `widgets/iam/`. Theme lives in `theme/app_theme.dart`. Use `utils/toast_utils.dart` for notifications.
+- **Layout:** use the named widths in `utils/breakpoints.dart`, not new numbers; layouts are chosen by width only, never by `width > height`. Scroll views with their own padding wrap it in `withBottomInset` (`utils/insets.dart`) so the end clears the gesture bar. List dialogs size themselves with `widgets/screen_sized_dialog_box.dart`. The "AethrOps" logo text is `widgets/aethrops_wordmark.dart` (Anurati has only capitals, so the lowercase is Quantify).
 - **Platform checks:** code that differs by platform branches on `Platform.isAndroid` / desktop (window manager, FFI vs. process, `download_service.dart` storage permissions and media scan on Android).
 
 ### Versioning and releases
