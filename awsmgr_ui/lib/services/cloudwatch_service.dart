@@ -9,8 +9,9 @@ class LogEntry {
   final String message;
   final DateTime timestamp;
 
-  // Cache for pre-parsed structures to optimize UI list scroll performance
-  final Map<String, dynamic>? parsedJson;
+  // Cache for pre-parsed structures to optimize UI list scroll performance.
+  // The JSON part of the line: a Map (object) or a List (array).
+  final Object? parsedJson;
   final String? jsonPrefix;
 
   LogEntry({
@@ -29,9 +30,9 @@ class LogEntry {
       timestamp: json['timestamp'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['timestamp'])
           : null,
-      parsedJson: parsed != null
-          ? parsed['json'] as Map<String, dynamic>?
-          : null,
+      // An object or an array; a cast to Map threw on arrays and the line was
+      // dropped
+      parsedJson: parsed?['json'],
       jsonPrefix: parsed != null ? parsed['prefix'] as String? : null,
     );
   }

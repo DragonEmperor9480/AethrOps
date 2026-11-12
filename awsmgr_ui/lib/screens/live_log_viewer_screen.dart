@@ -1156,7 +1156,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
 
   Widget _buildJsonLog(
     String prefix,
-    Map<String, dynamic> jsonObj,
+    Object jsonObj,
     bool isMatch,
     bool isCurrentMatch,
   ) {
