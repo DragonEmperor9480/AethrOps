@@ -14,6 +14,12 @@ class LogEntry {
   final Object? parsedJson;
   final String? jsonPrefix;
 
+  /// The JSON part of the line exactly as it was logged (not re-encoded), or
+  /// null when the line has no JSON.
+  String? get jsonText => parsedJson == null
+      ? null
+      : message.substring((jsonPrefix ?? '').length).trimRight();
+
   LogEntry({
     required this.message,
     DateTime? timestamp,

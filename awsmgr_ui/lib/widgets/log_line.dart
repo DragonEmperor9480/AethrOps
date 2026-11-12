@@ -93,43 +93,25 @@ class LogLineContent extends StatelessWidget {
       children: [
         SelectableText.rich(TextSpan(children: spans)),
         const SizedBox(height: 8),
-        // Copy JSON button
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: prettyJson));
-              ToastUtils.show(
-                context,
-                'JSON copied to clipboard',
-                isError: false,
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
-                borderRadius: BorderRadius.circular(3),
-                border: Border.all(
-                  color: Colors.blueAccent.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.code, size: 12, color: Colors.blueAccent.shade400),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Copy JSON',
-                    style: TextStyle(
-                      color: Colors.blueAccent.shade400,
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+        // Copies the JSON as it was logged, like the line button copies the
+        // line as it was logged
+        TextButton.icon(
+          onPressed: () => copyLogText(context, log.jsonText!, 'JSON'),
+          icon: const Icon(Icons.code, size: 14),
+          label: const Text('Copy JSON'),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.blueAccent.shade400,
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            minimumSize: const Size(0, 32),
+            textStyle: const TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w500,
+            ),
+            side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.3)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
         ),
@@ -345,7 +327,14 @@ class LogLineContent extends StatelessWidget {
   }
 }
 
-/// The copy button at the end of a log line.
+/// Copies [text] and confirms it with a toast naming [what] was copied.
+void copyLogText(BuildContext context, String text, String what) {
+  Clipboard.setData(ClipboardData(text: text));
+  ToastUtils.show(context, '$what copied to clipboard', isError: false);
+}
+
+/// The button at the end of a log line that copies the whole line as it was
+/// logged.
 class LogCopyButton extends StatelessWidget {
   final String content;
 
@@ -353,27 +342,14 @@ class LogCopyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: content));
-          ToastUtils.show(context, 'Copied to clipboard', isError: false);
-        },
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
-            borderRadius: BorderRadius.circular(3),
-            border: Border.all(color: const Color(0xFF30363D)),
-          ),
-          child: Icon(
-            Icons.content_copy,
-            size: 14,
-            color: const Color(0xFF8B949E),
-          ),
-        ),
-      ),
+    return IconButton(
+      onPressed: () => copyLogText(context, content, 'Line'),
+      tooltip: 'Copy line',
+      icon: const Icon(Icons.content_copy, size: 16),
+      color: const Color(0xFF8B949E),
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
     );
   }
 }

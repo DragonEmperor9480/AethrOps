@@ -1,6 +1,7 @@
 import 'package:aethr_ops/services/cloudwatch_service.dart';
 import 'package:aethr_ops/widgets/log_line.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 LogEntry entry(String message) =>
@@ -53,6 +54,22 @@ Color? colorOf(WidgetTester tester, String text) {
 }
 
 void main() {
+  String? clipboard;
+  setUp(() {
+    clipboard = null;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            clipboard = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        });
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
+  });
+
   testWidgets('a plain line is drawn as text', (tester) async {
     await pumpLine(tester, entry('START RequestId: abc'));
     expect(find.text('START RequestId: abc'), findsOneWidget);
@@ -63,5 +80,37 @@ void main() {
     final text = spansOf(tester).map((s) => s.text).join();
     expect(text, contains('2026-11-12\tabc\tINFO\t'));
     expect(text, contains('"alice"'));
+  });
+
+  const jsonLine = '2026-11-12\tabc\tINFO\t{"b": 1.50, "a": [1e3]}  ';
+
+  testWidgets('Copy JSON copies the JSON exactly as it was logged', (
+    tester,
+  ) async {
+    await pumpLine(tester, entry(jsonLine));
+    await tester.tap(find.text('Copy JSON'));
+    await tester.pump();
+    expect(clipboard, '{"b": 1.50, "a": [1e3]}');
+    await tester.pump(const Duration(seconds: 5)); // let the toast go
+  });
+
+  testWidgets('the line button copies the whole line, with a big target', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: LogCopyButton(content: jsonLine)),
+        ),
+      ),
+    );
+    expect(find.byTooltip('Copy line'), findsOneWidget);
+    final button = find.byType(IconButton);
+    expect(tester.getSize(button).width, greaterThanOrEqualTo(32));
+    expect(tester.getSize(button).height, greaterThanOrEqualTo(32));
+    await tester.tap(button);
+    await tester.pump();
+    expect(clipboard, jsonLine);
+    await tester.pump(const Duration(seconds: 5));
   });
 }
