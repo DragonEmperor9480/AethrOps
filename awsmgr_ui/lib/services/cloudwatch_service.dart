@@ -37,76 +37,45 @@ class LogEntry {
     );
   }
 
+  /// The most opening brackets tried per line, so a long line full of
+  /// brackets does not decode the rest of the line hundreds of times.
+  static const int _maxJsonStarts = 20;
+
+  /// Finds a JSON object or array that runs to the end of [text], and returns
+  /// it with the text before it.
+  ///
+  /// Every `{` or `[` that could open it is tried from left to right, so a
+  /// Python line such as `[INFO] ... {"a": 1}` finds the object after the
+  /// `[INFO]` tag. Text that is not valid JSON is never shown as JSON.
   static Map<String, dynamic>? _tryParseJson(String text) {
-    final jsonStartIndex = text.indexOf('{');
-    final arrayStartIndex = text.indexOf('[');
-
-    int startIndex = -1;
-    if (jsonStartIndex != -1 && arrayStartIndex != -1) {
-      startIndex = jsonStartIndex < arrayStartIndex
-          ? jsonStartIndex
-          : arrayStartIndex;
-    } else if (jsonStartIndex != -1) {
-      startIndex = jsonStartIndex;
-    } else if (arrayStartIndex != -1) {
-      startIndex = arrayStartIndex;
+    final trimmed = text.trimRight();
+    if (trimmed.isEmpty) return null;
+    final String open;
+    switch (trimmed[trimmed.length - 1]) {
+      case '}':
+        open = '{';
+      case ']':
+        open = '[';
+      default:
+        return null;
     }
 
-    if (startIndex == -1) {
-      return null;
-    }
-
-    final jsonPart = text.substring(startIndex).trim();
-
-    try {
-      final decoded = json.decode(jsonPart);
-      return {'prefix': text.substring(0, startIndex), 'json': decoded};
-    } catch (e) {
-      // Not valid JSON, try to convert Go struct format like {Key:Value}
-      final goStructMatch = RegExp(r'\{([^}]+)\}').firstMatch(jsonPart);
-      if (goStructMatch != null) {
-        final structContent = goStructMatch.group(1)!;
-        final converted = _convertGoStructToJson(structContent);
-        if (converted != null) {
-          return {'prefix': text.substring(0, startIndex), 'json': converted};
+    var tries = 0;
+    for (
+      var start = trimmed.indexOf(open);
+      start != -1 && tries < _maxJsonStarts;
+      start = trimmed.indexOf(open, start + 1), tries++
+    ) {
+      try {
+        final decoded = json.decode(trimmed.substring(start));
+        if (decoded is Map || decoded is List) {
+          return {'prefix': text.substring(0, start), 'json': decoded};
         }
+      } on FormatException {
+        // Not JSON from here; try the next bracket
       }
-      return null;
     }
-  }
-
-  static Map<String, dynamic>? _convertGoStructToJson(String goStruct) {
-    try {
-      final result = <String, dynamic>{};
-      final pairs = goStruct.split(RegExp(r'\s+(?=[A-Z])'));
-
-      for (final pair in pairs) {
-        final colonIndex = pair.indexOf(':');
-        if (colonIndex == -1) continue;
-
-        final key = pair.substring(0, colonIndex).trim();
-        final value = pair.substring(colonIndex + 1).trim();
-
-        if (key.isEmpty) continue;
-
-        final numValue = num.tryParse(value);
-        if (numValue != null) {
-          result[key] = numValue;
-        } else if (value.toLowerCase() == 'true') {
-          result[key] = true;
-        } else if (value.toLowerCase() == 'false') {
-          result[key] = false;
-        } else if (value.toLowerCase() == 'null') {
-          result[key] = null;
-        } else {
-          result[key] = value;
-        }
-      }
-
-      return result.isEmpty ? null : result;
-    } catch (e) {
-      return null;
-    }
+    return null;
   }
 }
 
