@@ -165,8 +165,10 @@ class LogLineContent extends StatelessWidget {
       FontWeight? fontWeight;
 
       if (match.group(1) != null) {
-        // String (including keys)
-        if (matchText.endsWith('":')) {
+        // A string is a key when the next non-space character is a colon.
+        // (The match never includes the colon, so checking the string
+        // itself for '":' was never true.)
+        if (line.substring(match.end).trimLeft().startsWith(':')) {
           // It's a key - use cyan/aqua color to distinguish from values
           textColor = Colors.cyan.shade300;
           fontWeight = FontWeight.bold;

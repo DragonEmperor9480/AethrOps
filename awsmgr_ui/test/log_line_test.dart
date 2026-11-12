@@ -113,4 +113,16 @@ void main() {
     expect(clipboard, jsonLine);
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets('JSON keys and string values get different colours', (
+    tester,
+  ) async {
+    await pumpLine(tester, entry('{"user": "alice", "n": {"id": "x"}}'));
+    final key = colorOf(tester, '"user"');
+    final value = colorOf(tester, '"alice"');
+    expect(key, isNot(value));
+    expect(colorOf(tester, '"n"'), key);
+    expect(colorOf(tester, '"id"'), key);
+    expect(colorOf(tester, '"x"'), value);
+  });
 }
