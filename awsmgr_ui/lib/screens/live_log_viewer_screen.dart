@@ -1044,83 +1044,70 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               _currentMatchIndex < _searchMatches.length &&
               _searchMatches[_currentMatchIndex] == index;
 
-          // Animate new logs (last 5 entries)
-          final isNewLog = index >= _logs.length - 5 && !_isPaused;
+          // Only the newest line is marked, with a fixed bar. Rows used to
+          // fade and slide in by position (the last five), so those five kept
+          // the bar however old they were and replayed the animation whenever
+          // the list rebuilt them, e.g. on coming back to the bottom.
+          final isNewest = index == _logs.length - 1 && !_isPaused;
 
-          return TweenAnimationBuilder<double>(
-            key: ValueKey('log_$index'),
-            duration: isNewLog
-                ? const Duration(milliseconds: 400)
-                : Duration.zero,
-            tween: Tween(begin: isNewLog ? 0.0 : 1.0, end: 1.0),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, child) {
-              return Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, (1 - value) * 20),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 1),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 1),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: isCurrentMatch
+                  ? Colors.yellow.shade700.withValues(alpha: 0.3)
+                  : isMatch
+                  ? Colors.yellow.shade900.withValues(alpha: 0.2)
+                  : index % 2 == 0
+                  ? const Color(0xFF161B22).withValues(alpha: 0.5)
+                  : Colors.transparent,
+              border: Border(
+                left: BorderSide(
+                  color: isNewest
+                      ? Colors.greenAccent.shade400
+                      : isCurrentMatch
+                      ? Colors.yellow.shade700
+                      : Colors.transparent,
+                  width: isNewest ? 3 : 2,
+                ),
+              ),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Line number
+                Container(
+                  width: 50,
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      color: const Color(0xFF8B949E).withValues(alpha: 0.5),
+                      fontSize: 11,
+                      fontFamily: monoFontFamily,
+                      fontFamilyFallback: monoFontFallback,
                     ),
-                    decoration: BoxDecoration(
-                      color: isCurrentMatch
-                          ? Colors.yellow.shade700.withValues(alpha: 0.3)
-                          : isMatch
-                          ? Colors.yellow.shade900.withValues(alpha: 0.2)
-                          : index % 2 == 0
-                          ? const Color(0xFF161B22).withValues(alpha: 0.5)
-                          : Colors.transparent,
-                      border: Border(
-                        left: BorderSide(
-                          color: isNewLog
-                              ? Colors.greenAccent.shade400.withValues(alpha: value)
-                              : isCurrentMatch
-                              ? Colors.yellow.shade700
-                              : Colors.transparent,
-                          width: isNewLog ? 3 : 2,
-                        ),
-                      ),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Line number
-                        Container(
-                          width: 50,
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Text(
-                            '${index + 1}',
-                            style: TextStyle(
-                              color: const Color(0xFF8B949E).withValues(alpha: 0.5),
-                              fontSize: 11,
-                              fontFamily: monoFontFamily,
-                              fontFamilyFallback: monoFontFallback,
-                            ),
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                        // Log content
-                        Expanded(
-                          child: LogLineContent(
-                            log: log,
-                            searchQuery: _searchQuery,
-                            isMatch: isMatch,
-                            isCurrentMatch: isCurrentMatch,
-                          ),
-                        ),
-                        // Copy button
-                        const SizedBox(width: 8),
-                        LogCopyButton(content: log.message),
-                      ],
-                    ),
+                    textAlign: TextAlign.right,
                   ),
                 ),
-              );
-            },
+                // Log content
+                Expanded(
+                  child: LogLineContent(
+                    log: log,
+                    searchQuery: _searchQuery,
+                    isMatch: isMatch,
+                    isCurrentMatch: isCurrentMatch,
+                  ),
+                ),
+                // Copy button
+                const SizedBox(width: 8),
+                LogCopyButton(content: log.message),
+              ],
+            ),
           );
         },
       ),
