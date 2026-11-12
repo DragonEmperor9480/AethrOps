@@ -125,4 +125,18 @@ void main() {
     expect(colorOf(tester, '"id"'), key);
     expect(colorOf(tester, '"x"'), value);
   });
+
+  testWidgets('the current match line keeps readable text around the match', (
+    tester,
+  ) async {
+    await pumpLine(
+      tester,
+      entry('ERROR timeout calling orders'),
+      query: 'timeout',
+      isCurrentMatch: true,
+    );
+    expect(colorOf(tester, 'ERROR'), Colors.white);
+    expect(colorOf(tester, 'calling orders'), Colors.white);
+    expect(colorOf(tester, 'timeout'), Colors.black);
+  });
 }

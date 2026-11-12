@@ -268,7 +268,9 @@ class LogLineContent extends StatelessWidget {
   }
 
   Widget _buildHighlightedText(String text, bool isCurrentMatch) {
-    final textColor = isCurrentMatch ? Colors.black : Colors.white;
+    // The row stays dark when it is the current match, so the text around
+    // the match stays white; only the match itself is black on orange.
+    const textColor = Colors.white;
     final query = searchQuery.toLowerCase();
     final textLower = text.toLowerCase();
 
@@ -311,7 +313,7 @@ class LogLineContent extends StatelessWidget {
         TextSpan(
           text: text.substring(index, index + query.length),
           style: TextStyle(
-            color: isCurrentMatch ? Colors.black : Colors.black,
+            color: Colors.black,
             backgroundColor: isCurrentMatch
                 ? Colors.orange.shade400
                 : Colors.yellow.shade600,
