@@ -50,8 +50,20 @@ else
     echo "✓ Using NDK: $ANDROID_NDK_HOME"
 fi
 
-# Define architectures to build
-ARCHS=("arm64-v8a" "armeabi-v7a" "x86_64")
+# Architectures to build: the ones given as arguments, or all of them
+# Usage: ./scripts/build_backend_android.sh [arm64-v8a] [armeabi-v7a] [x86_64]
+ALL_ARCHS=("arm64-v8a" "armeabi-v7a" "x86_64")
+if [ "$#" -gt 0 ]; then
+    ARCHS=("$@")
+    for arch in "${ARCHS[@]}"; do
+        if [[ ! " ${ALL_ARCHS[*]} " == *" $arch "* ]]; then
+            echo "❌ Unknown architecture: $arch (expected one of: ${ALL_ARCHS[*]})"
+            exit 1
+        fi
+    done
+else
+    ARCHS=("${ALL_ARCHS[@]}")
+fi
 
 # Read version from version.json (android key)
 VERSION=""
@@ -126,7 +138,7 @@ for arch in "${ARCHS[@]}"; do
     fi
 done
 
-echo "  ✓ Go backend compiled for all architectures"
+echo "  ✓ Go backend compiled for: ${ARCHS[*]}"
 
 # Copy to Flutter project
 echo ""
