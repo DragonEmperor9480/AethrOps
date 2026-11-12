@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'about_screen.dart';
 import 'security_settings_screen.dart';
 import 'account_selector_screen.dart';
 import 'configurations_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../utils/toast_utils.dart';
 import '../utils/breakpoints.dart';
 import '../utils/insets.dart';
 
@@ -67,6 +69,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: 16),
                             _buildConfigurationsNavigationCard(),
                             const SizedBox(height: 32),
+                            _buildSectionHeader('Billing'),
+                            const SizedBox(height: 16),
+                            _buildBillingNavigationCard(),
+                            const SizedBox(height: 32),
                             _buildSectionHeader('About'),
                             const SizedBox(height: 16),
                             _buildAboutNavigationCard(),
@@ -92,6 +98,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSectionHeader('AWS Profiles'),
                 const SizedBox(height: 16),
                 _buildProfilesNavigationCard(),
+
+                const SizedBox(height: 32),
+
+                // Billing Section (opens the AWS billing console)
+                _buildSectionHeader('Billing'),
+                const SizedBox(height: 16),
+                _buildBillingNavigationCard(),
 
                 const SizedBox(height: 32),
 
@@ -473,6 +486,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
               size: 18,
               color: AppTheme.primaryPurple,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The AWS Billing and Cost Management console. Billing is not a feature
+  /// of the app: the console shows the full history and needs no paid API.
+  static final Uri _billingConsoleUrl = Uri.parse(
+    'https://console.aws.amazon.com/costmanagement/home',
+  );
+
+  Future<void> _openBillingConsole() async {
+    try {
+      if (!await launchUrl(
+        _billingConsoleUrl,
+        mode: LaunchMode.externalApplication,
+      )) {
+        await launchUrl(_billingConsoleUrl, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      if (mounted) {
+        ToastUtils.show(
+          context,
+          'Could not open the browser: $e',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  /// Opens the AWS billing console in the browser
+  Widget _buildBillingNavigationCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    const color = Color(0xFF4CC38A); // Money green
+    return InkWell(
+      onTap: _openBillingConsole,
+      borderRadius: BorderRadius.circular(32),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Billing',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Opens the AWS billing console in your browser',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.open_in_new, size: 18, color: color),
           ],
         ),
       ),
