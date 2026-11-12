@@ -4,6 +4,7 @@ import '../services/security_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import 'pin_lock_screen.dart';
+import '../utils/insets.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -52,10 +53,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PinLockScreen(
-            isSetup: true,
-            isCancelable: true,
-          ),
+          builder: (context) =>
+              const PinLockScreen(isSetup: true, isCancelable: true),
         ),
       );
 
@@ -86,10 +85,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => const PinLockScreen(
-          isSetup: false,
-          isCancelable: true,
-        ),
+        builder: (context) =>
+            const PinLockScreen(isSetup: false, isCancelable: true),
       ),
     );
     return result == true;
@@ -103,10 +100,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PinLockScreen(
-            isSetup: true,
-            isCancelable: true,
-          ),
+          builder: (context) =>
+              const PinLockScreen(isSetup: true, isCancelable: true),
         ),
       );
 
@@ -173,7 +168,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: withBottomInset(context, const EdgeInsets.all(16)),
               children: [
                 _buildSecurityCard(),
                 const SizedBox(height: 16),

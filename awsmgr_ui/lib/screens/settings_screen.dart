@@ -7,6 +7,7 @@ import 'configurations_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../utils/breakpoints.dart';
+import '../utils/insets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,7 +28,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(title: const Text('Settings'), centerTitle: isLandscape),
       body: isLandscape
           ? SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              padding: withBottomInset(
+                context,
+                const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1200),
@@ -75,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(20),
+              padding: withBottomInset(context, const EdgeInsets.all(20)),
               children: [
                 // Dark Mode Section
                 _buildSectionHeader('Appearance'),

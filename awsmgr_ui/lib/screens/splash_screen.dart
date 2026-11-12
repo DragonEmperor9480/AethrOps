@@ -144,26 +144,30 @@ class SplashContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Full size (250 animation, 60 gaps) from about 600 high; shorter
-        // windows shrink the animation and gaps first, then scroll.
-        final height = constraints.maxHeight;
-        final animationHeight = (height - (hasError ? 400 : 350)).clamp(
-          100.0,
-          250.0,
-        );
-        final gap = ((height - 480) / 2).clamp(24.0, 60.0);
+    // The splash has no app bar, so keep clear of the status bar, cutout and
+    // gesture bar itself.
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Full size (250 animation, 60 gaps) from about 600 high; shorter
+          // windows shrink the animation and gaps first, then scroll.
+          final height = constraints.maxHeight;
+          final animationHeight = (height - (hasError ? 400 : 350)).clamp(
+            100.0,
+            250.0,
+          );
+          final gap = ((height - 480) / 2).clamp(24.0, 60.0);
 
-        return CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: _buildColumn(isDark, animationHeight, gap),
-            ),
-          ],
-        );
-      },
+          return CustomScrollView(
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _buildColumn(isDark, animationHeight, gap),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

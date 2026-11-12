@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
 import '../widgets/oneui_widgets.dart';
 import '../utils/breakpoints.dart';
+import '../utils/insets.dart';
 
 class ConfigurationsScreen extends StatefulWidget {
   const ConfigurationsScreen({super.key});
@@ -375,7 +376,7 @@ class _ConfigurationsScreenState extends State<ConfigurationsScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(20),
+              padding: withBottomInset(context, const EdgeInsets.all(20)),
               children: [
                 // Email Configuration Section
                 _buildSectionHeader('Email Configuration'),

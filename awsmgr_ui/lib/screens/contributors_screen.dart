@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../utils/toast_utils.dart';
+import '../utils/insets.dart';
 
 class ContributorsScreen extends StatelessWidget {
   const ContributorsScreen({super.key});
@@ -43,7 +44,7 @@ class ContributorsScreen extends StatelessWidget {
         backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: withBottomInset(context, const EdgeInsets.all(20)),
         children: [
           // Header
           Container(
