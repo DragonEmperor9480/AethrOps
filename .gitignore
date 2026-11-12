@@ -29,7 +29,6 @@ awsmgr_ui/.dart_tool/
 awsmgr_ui/.flutter-plugins
 awsmgr_ui/.flutter-plugins-dependencies
 awsmgr_ui/.packages
-awsmgr_ui/pubspec.lock
 build/
 
 # Database files
