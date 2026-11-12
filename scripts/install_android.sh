@@ -2,6 +2,9 @@
 # Build a release APK (with a freshly built Go backend) and install it on the
 # connected Android phone, keeping the app's data.
 #
+# Only the phone's own architecture (arm64-v8a, armeabi-v7a or x86_64) is
+# built: one Go backend instead of three, and an APK with one copy of it.
+#
 # Usage: ./scripts/install_android.sh [--skip-backend] [--wipe]
 #   --skip-backend  reuse the libbackend.so files already in jniLibs
 #   --wipe          if the installed app is signed with a different key,
@@ -19,7 +22,7 @@ for arg in "$@"; do
     case "$arg" in
         --skip-backend) SKIP_BACKEND=1 ;;
         --wipe) WIPE=1 ;;
-        -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
         *) echo "❌ Unknown option: $arg"; exit 1 ;;
     esac
 done
@@ -27,7 +30,6 @@ done
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
 PACKAGE=com.amrut.aethrops
-APK="$ROOT/awsmgr_ui/build/app/outputs/flutter-apk/app-release.apk"
 
 # Pick the device before the long build, so a missing phone fails fast
 if [ -z "$ANDROID_SERIAL" ]; then
@@ -45,19 +47,36 @@ if [ -z "$ANDROID_SERIAL" ]; then
 fi
 echo "✓ Device: $ANDROID_SERIAL"
 
+# The phone's main architecture, and Flutter's name for it
+ABI=$(adb shell getprop ro.product.cpu.abi | tr -d '\r')
+case "$ABI" in
+    arm64-v8a) PLATFORM=android-arm64 ;;
+    armeabi-v7a) PLATFORM=android-arm ;;
+    x86_64) PLATFORM=android-x64 ;;
+    *) echo "❌ Unsupported architecture: '$ABI'"; exit 1 ;;
+esac
+echo "✓ Architecture: $ABI"
+APK="$ROOT/awsmgr_ui/build/app/outputs/flutter-apk/app-$ABI-release.apk"
+
 if [ "$SKIP_BACKEND" -eq 0 ]; then
     echo ""
-    echo "Step 1: Building the Go backend for Android..."
-    "$ROOT/scripts/build_backend_android.sh"
+    echo "Step 1: Building the Go backend for $ABI..."
+    "$ROOT/scripts/build_backend_android.sh" "$ABI"
 else
     echo ""
     echo "Step 1: Skipped (reusing the backend libraries in jniLibs)"
 fi
+if [ ! -f "$ROOT/awsmgr_ui/android/app/src/main/jniLibs/$ABI/libbackend.so" ]; then
+    echo "❌ No backend library for $ABI in jniLibs; run without --skip-backend"
+    exit 1
+fi
 
 echo ""
-echo "Step 2: Building the release APK..."
+echo "Step 2: Building the release APK for $ABI..."
 cd "$ROOT/awsmgr_ui"
-flutter build apk --release
+# --split-per-abi packages only this ABI's native libraries (the release
+# workflow builds the same way, so version codes match the GitHub APKs)
+flutter build apk --release --split-per-abi --target-platform "$PLATFORM"
 
 echo ""
 echo "Step 3: Installing on $ANDROID_SERIAL (keeping app data)..."
