@@ -8,6 +8,7 @@ backend/awsmgr_backend_linux
 backend/awsmgr_backend_macos
 backend/awsmgr_backend_arm64
 backend/main
+backend/aethrops_core
 
 # Go shared libraries
 *.so
