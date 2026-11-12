@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:io';
 import '../services/cloudwatch_service.dart';
+import '../theme/mono_font.dart';
 import '../services/api_service.dart';
 import '../utils/toast_utils.dart';
 import '../widgets/log_line.dart';
@@ -481,7 +482,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   widget.functionName,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontFamily: 'monospace',
+                    fontFamily: monoFontFamily,
+                    fontFamilyFallback: monoFontFallback,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -583,7 +585,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 focusNode: _searchFocusNode,
                 style: const TextStyle(
                   color: Color(0xFFC9D1D9),
-                  fontFamily: 'monospace',
+                  fontFamily: monoFontFamily,
+                  fontFamilyFallback: monoFontFallback,
                   fontSize: 13,
                 ),
                 decoration: InputDecoration(
@@ -591,7 +594,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                       'Search logs... (↑↓ navigate, Enter next, Esc close)',
                   hintStyle: TextStyle(
                     color: const Color(0xFF8B949E).withValues(alpha: 0.5),
-                    fontFamily: 'monospace',
+                    fontFamily: monoFontFamily,
+                    fontFamilyFallback: monoFontFallback,
                     fontSize: 13,
                   ),
                   border: InputBorder.none,
@@ -620,7 +624,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 style: TextStyle(
                   color: Colors.yellowAccent.shade400,
                   fontSize: 11,
-                  fontFamily: 'monospace',
+                  fontFamily: monoFontFamily,
+                  fontFamilyFallback: monoFontFallback,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -754,7 +759,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                       : Colors.greenAccent.shade400,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
-                  fontFamily: 'monospace',
+                  fontFamily: monoFontFamily,
+                  fontFamilyFallback: monoFontFallback,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -794,7 +800,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 style: TextStyle(
                   color: Colors.blueAccent.shade400,
                   fontSize: 11,
-                  fontFamily: 'monospace',
+                  fontFamily: monoFontFamily,
+                  fontFamilyFallback: monoFontFallback,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -858,7 +865,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 _autoScroll ? 'AUTO' : 'MANUAL',
                 style: TextStyle(
                   fontSize: 10,
-                  fontFamily: 'monospace',
+                  fontFamily: monoFontFamily,
+                  fontFamilyFallback: monoFontFallback,
                   color: _autoScroll
                       ? Colors.blueAccent.shade400
                       : const Color(0xFF8B949E),
@@ -922,7 +930,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             label,
             style: TextStyle(
               fontSize: 9,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               color: color.withValues(alpha: 0.7),
               fontWeight: FontWeight.w600,
             ),
@@ -932,7 +941,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             value,
             style: TextStyle(
               fontSize: 11,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               color: color,
               fontWeight: FontWeight.bold,
             ),
@@ -992,7 +1002,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             style: TextStyle(
               color: const Color(0xFFC9D1D9),
               fontSize: 16,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1003,7 +1014,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             style: TextStyle(
               color: const Color(0xFF8B949E),
               fontSize: 13,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
             ),
           ),
         ],
@@ -1085,7 +1097,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                             style: TextStyle(
                               color: const Color(0xFF8B949E).withValues(alpha: 0.5),
                               fontSize: 11,
-                              fontFamily: 'monospace',
+                              fontFamily: monoFontFamily,
+                              fontFamilyFallback: monoFontFallback,
                             ),
                             textAlign: TextAlign.right,
                           ),

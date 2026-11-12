@@ -1,4 +1,5 @@
 import 'package:aethr_ops/services/cloudwatch_service.dart';
+import 'package:aethr_ops/theme/mono_font.dart';
 import 'package:aethr_ops/widgets/log_line.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -138,5 +139,21 @@ void main() {
     expect(colorOf(tester, 'ERROR'), Colors.white);
     expect(colorOf(tester, 'calling orders'), Colors.white);
     expect(colorOf(tester, 'timeout'), Colors.black);
+  });
+
+  testWidgets('every span names fixed-width fallbacks for Windows', (
+    tester,
+  ) async {
+    for (final line in ['plain text', 'INFO\t{"a": [1, true, null]}']) {
+      await pumpLine(tester, entry(line), query: 'a');
+      final styled = spansOf(
+        tester,
+      ).where((s) => s.style?.fontFamily != null).toList();
+      expect(styled, isNotEmpty);
+      for (final span in styled) {
+        expect(span.style!.fontFamily, monoFontFamily);
+        expect(span.style!.fontFamilyFallback, monoFontFallback);
+      }
+    }
   });
 }

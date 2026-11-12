@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/cloudwatch_service.dart';
+import '../theme/mono_font.dart';
 import '../utils/toast_utils.dart';
 
 /// The text of one line in the live log viewer: plain text, or the prefix
@@ -44,7 +45,8 @@ class LogLineContent extends StatelessWidget {
         log.message,
         style: const TextStyle(
           color: Colors.white,
-          fontFamily: 'monospace',
+          fontFamily: monoFontFamily,
+          fontFamilyFallback: monoFontFallback,
           fontSize: 13,
         ),
       );
@@ -69,7 +71,8 @@ class LogLineContent extends StatelessWidget {
           text: prefix,
           style: const TextStyle(
             color: Colors.white,
-            fontFamily: 'monospace',
+            fontFamily: monoFontFamily,
+            fontFamilyFallback: monoFontFallback,
             fontSize: 13,
           ),
         ),
@@ -106,7 +109,8 @@ class LogLineContent extends StatelessWidget {
             minimumSize: const Size(0, 32),
             textStyle: const TextStyle(
               fontSize: 11,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               fontWeight: FontWeight.w500,
             ),
             side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.3)),
@@ -153,7 +157,8 @@ class LogLineContent extends StatelessWidget {
             text: line.substring(lastIndex, match.start),
             style: const TextStyle(
               color: Colors.white,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               fontSize: 13,
             ),
           ),
@@ -196,7 +201,8 @@ class LogLineContent extends StatelessWidget {
           text: matchText,
           style: TextStyle(
             color: textColor,
-            fontFamily: 'monospace',
+            fontFamily: monoFontFamily,
+            fontFamilyFallback: monoFontFallback,
             fontSize: 13,
             fontWeight: fontWeight,
           ),
@@ -213,7 +219,8 @@ class LogLineContent extends StatelessWidget {
           text: line.substring(lastIndex),
           style: const TextStyle(
             color: Colors.white,
-            fontFamily: 'monospace',
+            fontFamily: monoFontFamily,
+            fontFamilyFallback: monoFontFallback,
             fontSize: 13,
           ),
         ),
@@ -254,7 +261,8 @@ class LogLineContent extends StatelessWidget {
             backgroundColor: isCurrentMatch
                 ? Colors.orange.shade400
                 : Colors.yellow.shade600,
-            fontFamily: 'monospace',
+            fontFamily: monoFontFamily,
+            fontFamilyFallback: monoFontFallback,
             fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
@@ -286,7 +294,8 @@ class LogLineContent extends StatelessWidget {
             text: text.substring(start),
             style: TextStyle(
               color: textColor,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               fontSize: 13,
             ),
           ),
@@ -301,7 +310,8 @@ class LogLineContent extends StatelessWidget {
             text: text.substring(start, index),
             style: TextStyle(
               color: textColor,
-              fontFamily: 'monospace',
+              fontFamily: monoFontFamily,
+              fontFamilyFallback: monoFontFallback,
               fontSize: 13,
             ),
           ),
@@ -317,7 +327,8 @@ class LogLineContent extends StatelessWidget {
             backgroundColor: isCurrentMatch
                 ? Colors.orange.shade400
                 : Colors.yellow.shade600,
-            fontFamily: 'monospace',
+            fontFamily: monoFontFamily,
+            fontFamilyFallback: monoFontFallback,
             fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
