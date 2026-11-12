@@ -1,4 +1,5 @@
 import 'package:aethr_ops/services/cloudwatch_service.dart';
+import 'package:aethr_ops/theme/log_viewer_colors.dart';
 import 'package:aethr_ops/theme/mono_font.dart';
 import 'package:aethr_ops/widgets/log_line.dart';
 import 'package:flutter/material.dart';
@@ -140,9 +141,9 @@ void main() {
       query: 'timeout',
       isCurrentMatch: true,
     );
-    expect(colorOf(tester, 'ERROR'), Colors.white);
-    expect(colorOf(tester, 'calling orders'), Colors.white);
-    expect(colorOf(tester, 'timeout'), Colors.black);
+    expect(colorOf(tester, 'ERROR'), LogViewerColors.logText);
+    expect(colorOf(tester, 'calling orders'), LogViewerColors.logText);
+    expect(colorOf(tester, 'timeout'), LogViewerColors.onMatch);
   });
 
   testWidgets('every span names fixed-width fallbacks for Windows', (
@@ -194,6 +195,35 @@ void main() {
       entry('INFO\t{"user": "alice"}'),
       query: '"user": "a',
     );
-    expect(colorOf(tester, '"user": "a'), Colors.black);
+    expect(colorOf(tester, '"user": "a'), LogViewerColors.logText);
+  });
+
+  test('status, search and JSON colours do not share a colour', () {
+    final roles = {
+      'live': LogViewerColors.live,
+      'warning': LogViewerColors.warning,
+      'accent': LogViewerColors.accent,
+      'match': LogViewerColors.match,
+      'jsonKey': LogViewerColors.jsonKey,
+      'jsonString': LogViewerColors.jsonString,
+      'jsonNumber': LogViewerColors.jsonNumber,
+      'jsonLiteral': LogViewerColors.jsonLiteral,
+      'logText': LogViewerColors.logText,
+      'textMuted': LogViewerColors.textMuted,
+    };
+    expect(roles.values.toSet(), hasLength(roles.length));
+  });
+
+  testWidgets('other matches keep the normal text colour on a gold tint', (
+    tester,
+  ) async {
+    await pumpLine(
+      tester,
+      entry('ERROR timeout calling orders'),
+      query: 'timeout',
+    );
+    final span = spansOf(tester).firstWhere((s) => s.text == 'timeout');
+    expect(span.style!.color, LogViewerColors.logText);
+    expect(span.style!.backgroundColor, LogViewerColors.matchBackground);
   });
 }

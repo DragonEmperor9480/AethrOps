@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:io';
 import '../services/cloudwatch_service.dart';
+import '../theme/log_viewer_colors.dart';
 import '../theme/mono_font.dart';
 import '../services/api_service.dart';
 import '../utils/toast_utils.dart';
@@ -464,14 +465,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117), // GitHub dark theme
+      backgroundColor: LogViewerColors.background, // GitHub dark theme
       appBar: AppBar(
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF161B22),
+            color: LogViewerColors.surface,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: const Color(0xFF30363D)),
+            border: Border.all(color: LogViewerColors.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -479,7 +480,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
               Icon(
                 Icons.functions,
                 size: 16,
-                color: Colors.greenAccent.shade400,
+                color: LogViewerColors.textMuted,
               ),
               const SizedBox(width: 6),
               Flexible(
@@ -498,8 +499,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             ],
           ),
         ),
-        backgroundColor: const Color(0xFF161B22),
-        foregroundColor: const Color(0xFFC9D1D9),
+        backgroundColor: LogViewerColors.surface,
+        foregroundColor: LogViewerColors.text,
         elevation: 0,
         actions: [
           IconButton(
@@ -509,26 +510,26 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 ? 'Download ${_logs.length} logs'
                 : 'Waiting for session...',
             color: _sessionId != null
-                ? Colors.greenAccent
-                : const Color(0xFF8B949E),
+                ? LogViewerColors.text
+                : LogViewerColors.textMuted,
           ),
           IconButton(
             icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
             onPressed: _togglePause,
             tooltip: _isPaused ? 'Resume' : 'Pause',
-            color: _isPaused ? Colors.orange : const Color(0xFFC9D1D9),
+            color: _isPaused ? LogViewerColors.accent : LogViewerColors.text,
           ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _toggleSearchMode,
             tooltip: 'Search',
-            color: _isSearchMode ? Colors.blueAccent : const Color(0xFFC9D1D9),
+            color: _isSearchMode ? LogViewerColors.accent : LogViewerColors.text,
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             onPressed: _resetLogs,
             tooltip: 'Clear',
-            color: const Color(0xFFC9D1D9),
+            color: LogViewerColors.text,
           ),
         ],
       ),
@@ -546,17 +547,17 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: LogViewerColors.surface,
         border: Border(
           bottom: BorderSide(
-            color: Colors.blueAccent.withValues(alpha: 0.3),
+            color: LogViewerColors.accent.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.search, size: 18, color: Colors.blueAccent.shade400),
+          Icon(Icons.search, size: 18, color: LogViewerColors.accent),
           const SizedBox(width: 12),
           Expanded(
             child: KeyboardListener(
@@ -589,7 +590,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 controller: _searchController,
                 focusNode: _searchFocusNode,
                 style: const TextStyle(
-                  color: Color(0xFFC9D1D9),
+                  color: LogViewerColors.text,
                   fontFamily: monoFontFamily,
                   fontFamilyFallback: monoFontFallback,
                   fontSize: 13,
@@ -598,7 +599,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   hintText:
                       'Search logs... (↑↓ navigate, Enter next, Esc close)',
                   hintStyle: TextStyle(
-                    color: const Color(0xFF8B949E).withValues(alpha: 0.5),
+                    color: LogViewerColors.textMuted.withValues(alpha: 0.5),
                     fontFamily: monoFontFamily,
                     fontFamilyFallback: monoFontFallback,
                     fontSize: 13,
@@ -620,14 +621,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF0D1117),
+                color: LogViewerColors.background,
                 borderRadius: BorderRadius.circular(3),
-                border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.3)),
+                border: Border.all(color: LogViewerColors.match.withValues(alpha: 0.3)),
               ),
               child: Text(
                 '${_currentMatchIndex + 1}/${_searchMatches.length}',
                 style: TextStyle(
-                  color: Colors.yellowAccent.shade400,
+                  color: LogViewerColors.match,
                   fontSize: 11,
                   fontFamily: monoFontFamily,
                   fontFamilyFallback: monoFontFallback,
@@ -641,7 +642,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             icon: const Icon(Icons.keyboard_arrow_up, size: 20),
             onPressed: _prevMatch,
             tooltip: 'Previous match (Shift+Enter)',
-            color: const Color(0xFFC9D1D9),
+            color: LogViewerColors.text,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -650,7 +651,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             icon: const Icon(Icons.keyboard_arrow_down, size: 20),
             onPressed: _nextMatch,
             tooltip: 'Next match (Enter)',
-            color: const Color(0xFFC9D1D9),
+            color: LogViewerColors.text,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -659,7 +660,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             icon: const Icon(Icons.close, size: 20),
             onPressed: _toggleSearchMode,
             tooltip: 'Close search (Esc)',
-            color: const Color(0xFF8B949E),
+            color: LogViewerColors.textMuted,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -671,14 +672,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
   Widget _buildStatusBar() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: LogViewerColors.surface,
         border: Border(
           bottom: BorderSide(
             color: _isPaused
-                ? Colors.red.withValues(alpha: 0.3)
+                ? LogViewerColors.paused.withValues(alpha: 0.3)
                 : _isReconnecting
-                ? Colors.orange.withValues(alpha: 0.3)
-                : Colors.greenAccent.withValues(alpha: 0.3),
+                ? LogViewerColors.warning.withValues(alpha: 0.3)
+                : LogViewerColors.live.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -720,15 +721,15 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1117),
+            color: LogViewerColors.background,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
               color:
                   (_isPaused
-                          ? Colors.red
+                          ? LogViewerColors.paused
                           : _isReconnecting
-                          ? Colors.orange
-                          : Colors.greenAccent)
+                          ? LogViewerColors.warning
+                          : LogViewerColors.live)
                       .withValues(alpha: 0.5),
             ),
           ),
@@ -741,10 +742,10 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 decoration: BoxDecoration(
                   color:
                       (_isPaused
-                              ? Colors.red
+                              ? LogViewerColors.paused
                               : _isReconnecting
-                              ? Colors.orange
-                              : Colors.greenAccent.shade400)
+                              ? LogViewerColors.warning
+                              : LogViewerColors.live)
                           .withValues(alpha: _isPaused ? 1.0 : _pulseAnimation.value),
                   shape: BoxShape.circle,
                 ),
@@ -758,10 +759,10 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     : 'LIVE',
                 style: TextStyle(
                   color: _isPaused
-                      ? Colors.red
+                      ? LogViewerColors.paused
                       : _isReconnecting
-                      ? Colors.orange
-                      : Colors.greenAccent.shade400,
+                      ? LogViewerColors.warning
+                      : LogViewerColors.live,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                   fontFamily: monoFontFamily,
@@ -783,9 +784,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1117),
+            color: LogViewerColors.background,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
+            border: Border.all(color: LogViewerColors.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -796,14 +797,14 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 child: Icon(
                   Icons.sync,
                   size: 14,
-                  color: Colors.blueAccent.shade400,
+                  color: LogViewerColors.textMuted,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 'Polling CloudWatch',
                 style: TextStyle(
-                  color: Colors.blueAccent.shade400,
+                  color: LogViewerColors.textMuted,
                   fontSize: 11,
                   fontFamily: monoFontFamily,
                   fontFamilyFallback: monoFontFallback,
@@ -824,7 +825,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                     width: 3,
                     height: 3,
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.shade400.withValues(
+                      color: LogViewerColors.textMuted.withValues(
                         alpha: 0.3 + opacity * 0.7,
                       ),
                       shape: BoxShape.circle,
@@ -847,12 +848,12 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1117),
+            color: LogViewerColors.background,
             borderRadius: BorderRadius.circular(3),
             border: Border.all(
               color: _autoScroll
-                  ? Colors.blueAccent.withValues(alpha: 0.3)
-                  : const Color(0xFF30363D),
+                  ? LogViewerColors.accent.withValues(alpha: 0.3)
+                  : LogViewerColors.border,
             ),
           ),
           child: Row(
@@ -862,8 +863,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 _autoScroll ? Icons.vertical_align_bottom : Icons.pan_tool,
                 size: 12,
                 color: _autoScroll
-                    ? Colors.blueAccent.shade400
-                    : const Color(0xFF8B949E),
+                    ? LogViewerColors.accent
+                    : LogViewerColors.textMuted,
               ),
               const SizedBox(width: 4),
               Text(
@@ -873,8 +874,8 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   fontFamily: monoFontFamily,
                   fontFamilyFallback: monoFontFallback,
                   color: _autoScroll
-                      ? Colors.blueAccent.shade400
-                      : const Color(0xFF8B949E),
+                      ? LogViewerColors.accent
+                      : LogViewerColors.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -887,7 +888,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           icon: Icons.article_outlined,
           label: 'LOGS',
           value: _logs.length.toString(),
-          color: Colors.cyanAccent,
+          color: LogViewerColors.text,
         ),
         // Logs per second (only show if > 0)
         if (_logsPerSecond > 0) ...[
@@ -896,7 +897,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             icon: Icons.speed,
             label: 'RATE',
             value: '$_logsPerSecond/s',
-            color: Colors.greenAccent,
+            color: LogViewerColors.text,
           ),
         ],
         // Search matches
@@ -906,7 +907,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             icon: Icons.search,
             label: 'MATCHES',
             value: _searchMatches.length.toString(),
-            color: Colors.yellowAccent,
+            color: LogViewerColors.match,
           ),
         ],
       ],
@@ -922,7 +923,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1117),
+        color: LogViewerColors.background,
         borderRadius: BorderRadius.circular(3),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
@@ -973,9 +974,9 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                 (_shimmerController.value + 0.3).clamp(0.0, 1.0),
               ],
               colors: [
-                Colors.orange.withValues(alpha: 0.0),
-                Colors.orange,
-                Colors.orange.withValues(alpha: 0.0),
+                LogViewerColors.warning.withValues(alpha: 0.0),
+                LogViewerColors.warning,
+                LogViewerColors.warning.withValues(alpha: 0.0),
               ],
             ),
           ),
@@ -996,7 +997,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             child: CircularProgressIndicator(
               strokeWidth: 3,
               valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.greenAccent.shade400,
+                LogViewerColors.live,
               ),
             ),
           ),
@@ -1005,7 +1006,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           Text(
             'Fetching logs...',
             style: TextStyle(
-              color: const Color(0xFFC9D1D9),
+              color: LogViewerColors.text,
               fontSize: 16,
               fontFamily: monoFontFamily,
               fontFamilyFallback: monoFontFallback,
@@ -1017,7 +1018,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
           Text(
             'Invoke the Lambda function to see logs here',
             style: TextStyle(
-              color: const Color(0xFF8B949E),
+              color: LogViewerColors.textMuted,
               fontSize: 13,
               fontFamily: monoFontFamily,
               fontFamilyFallback: monoFontFallback,
@@ -1031,7 +1032,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
 
   Widget _buildLogList() {
     return Container(
-      color: const Color(0xFF0D1117),
+      color: LogViewerColors.background,
       child: ScrollablePositionedList.builder(
         itemScrollController: _itemScrollController,
         itemPositionsListener: _itemPositionsListener,
@@ -1063,18 +1064,18 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
             ),
             decoration: BoxDecoration(
               color: isCurrentMatch
-                  ? Colors.yellow.shade700.withValues(alpha: 0.3)
+                  ? LogViewerColors.currentMatchRow
                   : isMatch
-                  ? Colors.yellow.shade900.withValues(alpha: 0.2)
+                  ? LogViewerColors.matchRow
                   : index % 2 == 0
-                  ? const Color(0xFF161B22).withValues(alpha: 0.5)
+                  ? LogViewerColors.surface.withValues(alpha: 0.5)
                   : Colors.transparent,
               border: Border(
                 left: BorderSide(
                   color: isNewest
-                      ? Colors.greenAccent.shade400
+                      ? LogViewerColors.live
                       : isCurrentMatch
-                      ? Colors.yellow.shade700
+                      ? LogViewerColors.match
                       : Colors.transparent,
                   width: isNewest ? 3 : 2,
                 ),
@@ -1091,7 +1092,7 @@ class _LiveLogViewerScreenState extends State<LiveLogViewerScreen>
                   child: Text(
                     '${index + 1}',
                     style: TextStyle(
-                      color: const Color(0xFF8B949E).withValues(alpha: 0.5),
+                      color: LogViewerColors.textMuted.withValues(alpha: 0.5),
                       fontSize: 11,
                       fontFamily: monoFontFamily,
                       fontFamilyFallback: monoFontFallback,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/cloudwatch_service.dart';
+import '../theme/log_viewer_colors.dart';
 import '../theme/mono_font.dart';
 import '../utils/toast_utils.dart';
 
@@ -51,7 +52,7 @@ class LogLineContent extends StatelessWidget {
       return SelectableText(
         log.message,
         style: const TextStyle(
-          color: Colors.white,
+          color: LogViewerColors.logText,
           fontFamily: monoFontFamily,
           fontFamilyFallback: monoFontFallback,
           fontSize: 13,
@@ -85,7 +86,7 @@ class LogLineContent extends StatelessWidget {
         TextSpan(
           text: prefix,
           style: const TextStyle(
-            color: Colors.white,
+            color: LogViewerColors.logText,
             fontFamily: monoFontFamily,
             fontFamilyFallback: monoFontFallback,
             fontSize: 13,
@@ -144,7 +145,7 @@ class LogLineContent extends StatelessWidget {
       icon: Icon(icon, size: 14),
       label: Text(label),
       style: TextButton.styleFrom(
-        foregroundColor: Colors.blueAccent.shade400,
+        foregroundColor: LogViewerColors.accent,
         visualDensity: VisualDensity.compact,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         minimumSize: const Size(0, 32),
@@ -154,7 +155,7 @@ class LogLineContent extends StatelessWidget {
           fontFamilyFallback: monoFontFallback,
           fontWeight: FontWeight.w500,
         ),
-        side: BorderSide(color: Colors.blueAccent.withValues(alpha: 0.3)),
+        side: BorderSide(color: LogViewerColors.accent.withValues(alpha: 0.3)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
     );
@@ -193,7 +194,7 @@ class LogLineContent extends StatelessWidget {
           TextSpan(
             text: line.substring(lastIndex, match.start),
             style: const TextStyle(
-              color: Colors.white,
+              color: LogViewerColors.logText,
               fontFamily: monoFontFamily,
               fontFamilyFallback: monoFontFallback,
               fontSize: 13,
@@ -212,25 +213,25 @@ class LogLineContent extends StatelessWidget {
         // itself for '":' was never true.)
         if (line.substring(match.end).trimLeft().startsWith(':')) {
           // It's a key - use cyan/aqua color to distinguish from values
-          textColor = Colors.cyan.shade300;
+          textColor = LogViewerColors.jsonKey;
           fontWeight = FontWeight.bold;
         } else {
           // It's a string value - use green
-          textColor = Colors.green.shade300;
+          textColor = LogViewerColors.jsonString;
         }
       } else if (match.group(2) != null) {
         // Boolean or null - use purple/magenta
-        textColor = Colors.purple.shade300;
+        textColor = LogViewerColors.jsonLiteral;
         fontWeight = FontWeight.bold;
       } else if (match.group(3) != null) {
         // Number
-        textColor = Colors.orange.shade300;
+        textColor = LogViewerColors.jsonNumber;
       } else if (match.group(4) != null) {
         // Structural characters
-        textColor = Colors.grey.shade400;
+        textColor = LogViewerColors.jsonPunctuation;
       } else {
         // Whitespace
-        textColor = Colors.white;
+        textColor = LogViewerColors.logText;
       }
 
       spans.add(
@@ -255,7 +256,7 @@ class LogLineContent extends StatelessWidget {
         TextSpan(
           text: line.substring(lastIndex),
           style: const TextStyle(
-            color: Colors.white,
+            color: LogViewerColors.logText,
             fontFamily: monoFontFamily,
             fontFamilyFallback: monoFontFallback,
             fontSize: 13,
@@ -294,10 +295,12 @@ class LogLineContent extends StatelessWidget {
         TextSpan(
           text: json.substring(index, index + query.length),
           style: TextStyle(
-            color: Colors.black,
+            color: isCurrentMatch
+                ? LogViewerColors.onMatch
+                : LogViewerColors.logText,
             backgroundColor: isCurrentMatch
-                ? Colors.orange.shade400
-                : Colors.yellow.shade600,
+                ? LogViewerColors.match
+                : LogViewerColors.matchBackground,
             fontFamily: monoFontFamily,
             fontFamilyFallback: monoFontFallback,
             fontSize: 13,
@@ -314,8 +317,9 @@ class LogLineContent extends StatelessWidget {
 
   Widget _buildHighlightedText(String text, bool isCurrentMatch) {
     // The row stays dark when it is the current match, so the text around
-    // the match stays white; only the match itself is black on orange.
-    const textColor = Colors.white;
+    // the match keeps the normal colour; only the current match itself is
+    // dark on solid gold.
+    const textColor = LogViewerColors.logText;
     final query = searchQuery.toLowerCase();
     final textLower = text.toLowerCase();
 
@@ -360,10 +364,12 @@ class LogLineContent extends StatelessWidget {
         TextSpan(
           text: text.substring(index, index + query.length),
           style: TextStyle(
-            color: Colors.black,
+            color: isCurrentMatch
+                ? LogViewerColors.onMatch
+                : LogViewerColors.logText,
             backgroundColor: isCurrentMatch
-                ? Colors.orange.shade400
-                : Colors.yellow.shade600,
+                ? LogViewerColors.match
+                : LogViewerColors.matchBackground,
             fontFamily: monoFontFamily,
             fontFamilyFallback: monoFontFallback,
             fontSize: 13,
@@ -398,7 +404,7 @@ class LogCopyButton extends StatelessWidget {
       onPressed: () => copyLogText(context, content, 'Line'),
       tooltip: 'Copy line',
       icon: const Icon(Icons.content_copy, size: 16),
-      color: const Color(0xFF8B949E),
+      color: LogViewerColors.textMuted,
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints.tightFor(width: 32, height: 32),
